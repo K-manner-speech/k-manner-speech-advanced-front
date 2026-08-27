@@ -71,7 +71,7 @@ export const api = {
   async messages(roomId: string) {
     return unwrap(
       await http.GET("/api/v1/rooms/{room_id}/messages", {
-        params: { path: { room_id: roomId }, query: { limit: 100 } },
+        params: { path: { room_id: roomId }, query: { limit: 20 } },
       }),
     );
   },
