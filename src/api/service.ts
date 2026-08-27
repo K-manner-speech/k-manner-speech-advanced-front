@@ -36,13 +36,13 @@ export const api = {
   },
   async personas() {
     return unwrap(
-      await http.GET("/api/v1/personas", { params: { query: { limit: 50 } } }),
+      await http.GET("/api/v1/personas", { params: { query: { limit: 20 } } }),
     );
   },
   async scenarios(personaId?: string) {
     return unwrap(
       await http.GET("/api/v1/scenarios", {
-        params: { query: { limit: 50, persona_id: personaId ?? null } },
+        params: { query: { limit: 20, persona_id: personaId ?? null } },
       }),
     );
   },
