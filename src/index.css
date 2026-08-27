@@ -11,8 +11,9 @@
   --font-size-sm: 13px; --font-size-md: 15px; --font-size-lg: 18px; --font-size-xl: 22px; --font-size-2xl: 28px; --font-size-display: 32px;
 }
 * { box-sizing: border-box; }
-html { min-width: 320px; background: var(--color-surface-muted); }
-body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--color-text); background: var(--color-surface-muted); font-size: var(--font-size-md); line-height: 1.6; }
+html { min-width: 320px; background: #e9e6df; }
+body { margin:0; min-width:320px; height:100vh; overflow:hidden; color:var(--color-text); background:#e9e6df; font-size:var(--font-size-md); line-height:1.5; }
+#root { height:100vh; padding:24px 0; }
 button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
@@ -22,3 +23,4 @@ textarea { resize: vertical; }
 :focus-visible { outline: 3px solid color-mix(in srgb, var(--color-brand) 35%, transparent); outline-offset: 2px; }
 ::selection { background: var(--color-brand-soft); color: var(--color-brand-strong); }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+@media (max-width:380px) { body,#root { height:100dvh; } #root { padding:0; } }

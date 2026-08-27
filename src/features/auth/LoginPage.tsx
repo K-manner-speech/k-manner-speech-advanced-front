@@ -34,10 +34,10 @@ export function LoginPage() {
   return (
     <main className={styles.authPage}>
       <section className={styles.authCard} aria-labelledby="login-title">
-        <div className={styles.brandMark}>K</div>
-        <p className={styles.eyebrow}>Korean communication coach</p>
-        <h1 id="login-title">한국어 대화를 편안하게 연습하세요</h1>
-        <p className={styles.lead}>상황별 대화와 이력서 기반 면접을 실제처럼 준비합니다.</p>
+        <div className={styles.authStatus}><span>9:41</span><span>5G ▰</span></div>
+        <div className={styles.brandRow}><div className={styles.brandMark}>K</div><strong>K-MANNER SPEECH</strong></div>
+        <h1 id="login-title">환영합니다<br />다시 만나서 반가워요</h1>
+        <p className={styles.lead}>로그인 · Log in</p>
         {search.get("expired") && (
           <div className={styles.warning} role="alert">
             세션이 만료되었습니다. 미전송 입력은 보존되지 않았어요. 다시 로그인해 주세요.
@@ -45,21 +45,22 @@ export function LoginPage() {
         )}
         <form onSubmit={submit} className={styles.form} noValidate>
           <label>
-            이메일
-            <input type="email" autoComplete="email" {...form.register("email")} />
+            이메일 · Email
+            <input type="email" autoComplete="email" placeholder="name@example.com" {...form.register("email")} />
             <span className={styles.fieldError}>{form.formState.errors.email?.message}</span>
           </label>
           <label>
-            비밀번호
-            <input type="password" autoComplete="current-password" {...form.register("password")} />
+            비밀번호 · Password
+            <input type="password" autoComplete="current-password" placeholder="비밀번호 입력 · Password" {...form.register("password")} />
             <span className={styles.fieldError}>{form.formState.errors.password?.message}</span>
           </label>
+          <span className={styles.authHelp}>이메일 / 비밀번호 찾기<br />Forgot Email or password?</span>
           {submitError && <div role="alert" className={styles.error}>{submitError}</div>}
+          <button type="button" className={styles.secondaryButton} disabled>처음이신가요? 회원가입 · Sign up</button>
           <button className={styles.primaryButton} disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "로그인 중…" : "로그인"}
+            {form.formState.isSubmitting ? "로그인 중…" : "로그인 · Log in"}
           </button>
         </form>
-        <p className={styles.caption}>로컬 시연에서는 준비된 테스트 계정으로 로그인해 주세요.</p>
       </section>
     </main>
   );

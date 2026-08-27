@@ -65,13 +65,13 @@ export function InterviewPage() {
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
-        <p className={styles.eyebrow}>이력서 기반 AI 면접</p>
-        <h1>내 경험에서 시작하는<br />실전 면접 연습</h1>
-        <p className={styles.lead}>텍스트를 읽을 수 있는 PDF 또는 DOCX를 분석해 근거 있는 질문 3개를 만듭니다.</p>
+        <p className={styles.eyebrow}>I01 · 면접 연습</p>
+        <h1>{stage === "idle" ? <>모의 면접을<br />준비해 볼까요?</> : <>모의 면접을<br />준비하고 있어요</>}</h1>
+        <p className={styles.lead}>첨부한 자료와 선택한 조건으로 실제와 같은 면접 흐름을 만들어요.</p>
       </header>
       <div className={styles.interviewLayout}>
         <section className={styles.panel} aria-labelledby="interview-form-title">
-          <h2 id="interview-form-title">면접 준비 정보</h2>
+          <h2 id="interview-form-title">지원 정보와 이력서</h2>
           <div className={styles.form}>
             <label>지원 직무<input value={desiredRole} onChange={(event) => setDesiredRole(event.target.value)} maxLength={200} /></label>
             <label>지원 유형<select value={applicationType} onChange={(event) => setApplicationType(event.target.value)}><option>신입</option><option>경력</option><option>인턴</option></select></label>

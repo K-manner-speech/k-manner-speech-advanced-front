@@ -60,7 +60,7 @@ export function ConversationPage() {
         <div className={styles.turnBadge}>{room.data?.turn_count ?? 0}턴</div>
       </header>
       <section className={styles.personaStage}>
-        <img src="/personas/demo.png" alt="대화 상대가 차분하게 이야기를 듣는 모습" />
+        <img src="/figma/persona.png" alt="대화 상대가 차분하게 이야기를 듣는 모습" />
         <div><span>AI가 추정한 현재 반응</span><strong>{emotionLabels[sortedMessages.at(-1)?.emotion?.label ?? "neutral"] ?? "차분함"}</strong></div>
       </section>
       {currentQuestion && <section className={styles.questionBanner}><span>질문 {currentQuestion.sequence} / {questions.data?.questions.length}</span><strong>{currentQuestion.text}</strong></section>}

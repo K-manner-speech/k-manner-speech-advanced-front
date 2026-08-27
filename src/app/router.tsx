@@ -7,6 +7,8 @@ import { StatusPanel } from "../components/ui/StatusPanel";
 import { useAuth, LoginPage, OnboardingPage } from "../features/auth";
 import { ConversationPage } from "../features/conversation";
 import { HomePage } from "../features/home";
+import { MyAccountPage } from "../features/account";
+import { RoomListPage } from "../features/rooms";
 import { InterviewPage } from "../features/interview";
 import { PracticePage } from "../features/practice";
 import { ResultPage } from "../features/results";
@@ -37,9 +39,11 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <HomePage /> },
           { path: "/practice", element: <PracticePage /> },
+          { path: "/rooms", element: <RoomListPage /> },
           { path: "/rooms/:roomId", element: <ConversationPage /> },
           { path: "/interview", element: <InterviewPage /> },
           { path: "/results/:roomId", element: <ResultPage /> },
+          { path: "/me", element: <MyAccountPage /> },
         ],
       },
     ],

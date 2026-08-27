@@ -17,9 +17,10 @@ beforeEach(() => {
 
 test("persona와 scenario를 모두 골라야 상황 대화를 시작할 수 있다", async () => {
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PracticePage /></MemoryRouter></QueryClientProvider>);
+  await userEvent.click(await screen.findByRole("button", { name: "선택하고 계속" }));
+  await userEvent.click(await screen.findByRole("button", { name: /민준/ }));
+  await userEvent.click(screen.getByRole("button", { name: "다음" }));
   const start = await screen.findByRole("button", { name: "대화 시작" });
-  expect(start).toBeDisabled();
-  await userEvent.click(screen.getByRole("button", { name: /민준/ }));
   expect(start).toBeDisabled();
   await userEvent.click(await screen.findByRole("button", { name: /마감 연장 요청/ }));
   expect(await screen.findByRole("button", { name: "대화 시작" })).toBeEnabled();

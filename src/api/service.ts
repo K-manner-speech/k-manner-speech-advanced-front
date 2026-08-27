@@ -54,6 +54,13 @@ export const api = {
       }),
     );
   },
+  async rooms() {
+    return unwrap(
+      await http.GET("/api/v1/rooms", {
+        params: { query: { limit: 20 } },
+      }),
+    );
+  },
   async room(roomId: string) {
     return unwrap(
       await http.GET("/api/v1/rooms/{room_id}", {

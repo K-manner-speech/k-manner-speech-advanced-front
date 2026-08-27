@@ -10,7 +10,9 @@ const schema = z.object({
   display_name: z.string().trim().min(1, "이름을 입력해 주세요."),
   birth_date: z.string().min(1, "생년월일을 선택해 주세요."),
   gender: z.string().min(1, "성별을 선택해 주세요."),
-  native_language: z.string().trim().min(1, "모국어를 입력해 주세요."),
+  native_language: z.enum(["English", "Japanese", "Chinese"], {
+    error: "모국어를 선택해 주세요.",
+  }),
   display_language: z.enum(["ko", "en"]),
   terms: z.literal(true, { error: "필수 약관에 동의해 주세요." }),
 });
@@ -54,7 +56,7 @@ export function OnboardingPage() {
           <label>이름<input {...form.register("display_name")} /></label>
           <label>생년월일<input type="date" {...form.register("birth_date")} /></label>
           <label>성별<select {...form.register("gender")}><option value="">선택</option><option value="female">여성</option><option value="male">남성</option><option value="other">기타/응답하지 않음</option></select></label>
-          <label>모국어<input placeholder="예: English" {...form.register("native_language")} /></label>
+          <label>모국어<select {...form.register("native_language")}><option value="">선택</option><option value="English">영어</option><option value="Japanese">일본어</option><option value="Chinese">중국어</option></select></label>
           <fieldset className={styles.fullWidth}>
             <legend>화면 언어</legend>
             <label className={styles.inline}><input type="radio" value="ko" {...form.register("display_language")} />한국어</label>
