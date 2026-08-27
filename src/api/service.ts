@@ -13,6 +13,7 @@ export type InterviewAnalysis = components["schemas"]["InterviewAnalysis"];
 export type InterviewConfiguration = components["schemas"]["InterviewConfiguration"];
 export type InterviewQuestion = components["schemas"]["InterviewQuestion"];
 export type SessionResult = components["schemas"]["SessionResult"];
+export type SessionResultSummary = components["schemas"]["SessionResultSummary"];
 
 export const api = {
   async me() {
@@ -71,7 +72,7 @@ export const api = {
   async messages(roomId: string) {
     return unwrap(
       await http.GET("/api/v1/rooms/{room_id}/messages", {
-        params: { path: { room_id: roomId }, query: { limit: 100 } },
+        params: { path: { room_id: roomId }, query: { limit: 20 } },
       }),
     );
   },
@@ -114,10 +115,49 @@ export const api = {
       }),
     );
   },
+  async retryTts(messageId: string) {
+    return unwrap(
+      await http.POST("/api/v1/messages/{message_id}/tts/retry", {
+        params: { path: { message_id: messageId }, header: { "Idempotency-Key": createIdempotencyKey() } },
+      }),
+    );
+  },
+  async repeatMessage(messageId: string, recommendedExpression: string) {
+    return unwrap(
+      await http.POST("/api/v1/messages/{message_id}/repeat", {
+        params: { path: { message_id: messageId }, header: { "Idempotency-Key": createIdempotencyKey() } },
+        body: { recommended_expression: recommendedExpression },
+      }),
+    );
+  },
   async result(roomId: string) {
     return unwrap(
       await http.GET("/api/v1/rooms/{room_id}/result", {
         params: { path: { room_id: roomId } },
+      }),
+    );
+  },
+  async retryResult(roomId: string) {
+    return unwrap(
+      await http.POST("/api/v1/rooms/{room_id}/result/retry", {
+        params: { path: { room_id: roomId }, header: { "Idempotency-Key": createIdempotencyKey() } },
+      }),
+    );
+  },
+  async results(cursor?: string, limit = 20) {
+    return unwrap(
+      await http.GET("/api/v1/results", { params: { query: { cursor: cursor ?? null, limit } } }),
+    );
+  },
+  async resultById(resultId: string) {
+    return unwrap(
+      await http.GET("/api/v1/results/{result_id}", { params: { path: { result_id: resultId } } }),
+    );
+  },
+  async deleteResult(resultId: string) {
+    return unwrap(
+      await http.DELETE("/api/v1/results/{result_id}", {
+        params: { path: { result_id: resultId }, header: { "Idempotency-Key": createIdempotencyKey() } },
       }),
     );
   },

@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api } from "../../api/service";
+import { api, waitForTerminal } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
 import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
@@ -13,10 +13,23 @@ const labels: Record<string, string> = {
   delivery_attitude: "전달력·태도",
 };
 
-export function ResultPage() {
+export function ResultPage({ source = "room" }: { source?: "room" | "result" }) {
+  const { roomId = "", resultId = "" } = useParams();
+  const resourceId = source === "room" ? roomId : resultId;
   const navigate = useNavigate();
-  const { roomId = "" } = useParams();
-  const result = useQuery({ queryKey: ["result", roomId], queryFn: () => api.result(roomId) });
+  const queryClient = useQueryClient();
+  const result = useQuery({ queryKey: ["result", source, resourceId], queryFn: () => source === "room" ? api.result(resourceId) : api.resultById(resourceId) });
+  const retry = useMutation({
+    mutationFn: async () => {
+      const accepted = await api.retryResult(roomId);
+      return waitForTerminal(() => api.job(accepted.job.job_id), "succeeded");
+    },
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["result", source, resourceId] }); },
+  });
+  const remove = useMutation({
+    mutationFn: () => api.deleteResult(resultId),
+    onSuccess: () => navigate("/results", { replace: true }),
+  });
   if (result.isLoading) return <StatusPanel title="연습 결과를 정리하고 있어요" />;
   if (result.error) return <StatusPanel title="결과가 아직 준비되지 않았어요" detail={result.error.message} onRetry={() => void result.refetch()} />;
   const data = result.data;
@@ -27,7 +40,13 @@ export function ResultPage() {
       <section className={styles.resultHero}><div><span>종합 점수</span><strong>{data?.overall_score ?? interview?.overall_score ?? "—"}</strong><small>/ 100</small></div><p>점수가 일부 누락되면 임의로 0점을 채우지 않고 설명형 피드백만 제공합니다.</p></section>
       {interview && <section className={styles.scoreGrid}>{interview.scores.map((score) => <article key={score.category}><span>{labels[score.category]}</span><strong>{score.score} / {score.max_score}</strong><p>{score.strength ?? score.suggestion ?? "답변 근거를 더 구체화해 보세요."}</p></article>)}</section>}
       {!!data?.items.length && <section className={styles.panel}><h2>표현별 코칭</h2><div className={styles.feedbackList}>{data.items.map((item) => <article key={`${item.item_type}-${item.order}`}><span className={styles.cardTag}>{item.category ?? item.item_type}</span><h3>{item.title}</h3><p>{item.explanation ?? item.evidence}</p>{item.recommended_expression && <blockquote>{item.recommended_expression}</blockquote>}</article>)}</div></section>}
-      <div className={styles.actionRow}><Link className={styles.secondaryLink} to="/">홈으로</Link><Link className={styles.primaryLink} to="/practice">다시 연습하기</Link></div>
+      {(retry.error || remove.error) && <div className={styles.partialError} role="alert">{(retry.error ?? remove.error)?.message}</div>}
+      <div className={styles.actionRow}>
+        <Link className={styles.secondaryLink} to="/results">결과 목록</Link>
+        {source === "room" && data?.status === "failed" && <button className={styles.secondaryButton} disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? "결과 다시 생성 중…" : "결과 생성 재시도"}</button>}
+        {source === "result" && <button className={styles.dangerButton} disabled={remove.isPending} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(); }}>결과 삭제</button>}
+        <Link className={styles.primaryLink} to="/practice">다시 연습하기</Link>
+      </div>
     </div>
   );
 }

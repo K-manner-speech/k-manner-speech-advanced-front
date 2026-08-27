@@ -11,7 +11,7 @@ import { MyAccountPage, ProfileEditPage } from "../features/account";
 import { RoomListPage } from "../features/rooms";
 import { InterviewPage } from "../features/interview";
 import { PracticePage } from "../features/practice";
-import { ResultPage } from "../features/results";
+import { ResultListPage, ResultPage } from "../features/results";
 
 export function RequireAuth() {
   const { session, isLoading } = useAuth();
@@ -42,7 +42,9 @@ export const router = createBrowserRouter([
           { path: "/rooms", element: <RoomListPage /> },
           { path: "/rooms/:roomId", element: <ConversationPage /> },
           { path: "/interview", element: <InterviewPage /> },
-          { path: "/results/:roomId", element: <ResultPage /> },
+          { path: "/results", element: <ResultListPage /> },
+          { path: "/results/:resultId", element: <ResultPage source="result" /> },
+          { path: "/rooms/:roomId/result", element: <ResultPage source="room" /> },
           { path: "/me", element: <MyAccountPage /> },
           { path: "/me/edit", element: <ProfileEditPage /> },
         ],

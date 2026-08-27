@@ -5,6 +5,7 @@ import { api, waitForTerminal, type Message } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
 import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
+import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
 
 const emotionLabels: Record<string, string> = {
   neutral: "차분함",
@@ -36,6 +37,8 @@ export function ConversationPage() {
     () => [...(messages.data?.items ?? [])].sort((a, b) => a.sequence_no - b.sequence_no),
     [messages.data],
   );
+  const currentEmotion = latestPersonaReaction(sortedMessages);
+  const currentEmotionLabel = emotionLabels[currentEmotion] ?? emotionLabels.neutral;
   const send = useMutation({
     mutationFn: async () => {
       const normalizedContent = content.trim();
@@ -48,6 +51,26 @@ export function ConversationPage() {
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
       await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+    },
+  });
+  const mediaAction = useMutation({
+    mutationFn: async ({ type, message }: { type: "audio" | "retry" | "repeat"; message: Message }) => {
+      if (type === "audio") {
+        const audio = await api.audio(message.id);
+        if (!audio.signed_url) throw new Error("음성이 아직 준비되지 않았습니다.");
+        await new Audio(audio.signed_url).play();
+        return;
+      }
+      if (type === "retry") {
+        const accepted = await api.retryTts(message.id);
+        await waitForTerminal(() => api.job(accepted.job.job_id), "succeeded");
+      } else {
+        const accepted = await api.repeatMessage(message.id, message.content);
+        await waitForTerminal(() => api.job(accepted.job.job_id), "succeeded", 20_000);
+      }
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
     },
   });
 
@@ -63,8 +86,8 @@ export function ConversationPage() {
         <div className={styles.turnBadge}>{room.data?.turn_count ?? 0}턴</div>
       </header>
       <section className={styles.personaStage}>
-        <img src="/figma/persona.png" alt="대화 상대가 차분하게 이야기를 듣는 모습" />
-        <div><span>AI가 추정한 현재 반응</span><strong>{emotionLabels[sortedMessages.at(-1)?.emotion?.label ?? "neutral"] ?? "차분함"}</strong></div>
+        <img src={personaImageForEmotion(currentEmotion)} alt={`대화 상대의 ${currentEmotionLabel} 표정`} />
+        <div><span>AI가 추정한 현재 반응</span><strong>{currentEmotionLabel}</strong></div>
       </section>
       {currentQuestion && <section className={styles.questionBanner}><span>질문 {currentQuestion.sequence} / {questions.data?.questions.length}</span><strong>{currentQuestion.text}</strong></section>}
       <section className={styles.messages} aria-live="polite" aria-label="대화 내용">
@@ -73,17 +96,23 @@ export function ConversationPage() {
           <article key={message.id} className={message.sender_type === "user" ? styles.userMessage : styles.aiMessage}>
             <span>{message.sender_type === "user" ? "나" : "AI 대화 상대"}</span>
             <p>{message.content}</p>
-            <footer>
+            <footer className={styles.messageFooter}>
               <small>{message.delivery_status === "generating" ? "응답 생성 중" : "전송됨"}</small>
               {message.sender_type === "user" && <button onClick={() => setFeedbackMessage(message)}>피드백 보기</button>}
+              {message.sender_type === "persona" && <span className={styles.messageActions}>
+                <button onClick={() => mediaAction.mutate({ type: "audio", message })} aria-label="AI 음성 재생">음성 재생</button>
+                <button onClick={() => mediaAction.mutate({ type: "retry", message })} aria-label="음성 생성 재시도">음성 재시도</button>
+                <button onClick={() => mediaAction.mutate({ type: "repeat", message })} aria-label="이 표현으로 반복 연습">반복 연습</button>
+              </span>}
             </footer>
           </article>
         ))}
         {send.isPending && <div className={styles.aiTyping} role="status"><span /><span /><span /> AI가 맥락을 살펴보고 있어요</div>}
       </section>
+      {mediaAction.error && <div className={styles.partialError} role="alert">{mediaAction.error.message}</div>}
       {send.error && <div className={styles.partialError} role="alert"><strong>AI 응답을 완료하지 못했어요.</strong><span>{send.error.message}</span><small>보낸 메시지는 유지됩니다. 잠시 후 다시 시도해 주세요.</small></div>}
       {isTerminal ? (
-        <section className={styles.completeCard}><h2>이번 연습이 끝났어요</h2><p>대화 내용은 그대로 유지됩니다. 결과에서 강점과 다음 연습을 확인하세요.</p><Link className={styles.primaryLink} to={`/results/${roomId}`}>결과 보기</Link></section>
+        <section className={styles.completeCard}><h2>이번 연습이 끝났어요</h2><p>대화 내용은 그대로 유지됩니다. 결과에서 강점과 다음 연습을 확인하세요.</p><Link className={styles.primaryLink} to={`/rooms/${roomId}/result`}>결과 보기</Link></section>
       ) : (
         <form className={styles.composer} onSubmit={(event) => { event.preventDefault(); if (!send.isPending) send.mutate(); }}>
           <label htmlFor="message-input">내 답변</label>

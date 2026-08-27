@@ -59,7 +59,7 @@ export function PracticePage() {
           <div className={styles.cardGrid}>
             {personas.data.items.map((persona) => (
               <button key={persona.id} className={styles.selectCard} aria-pressed={persona.id === personaId} onClick={() => { setPersonaId(persona.id); setScenarioId(""); }}>
-                <img src="/figma/persona.png" alt={`${persona.role_title ?? "대화 상대"} ${persona.name}의 차분한 표정`} />
+                <img src="/personas/neutral.png" alt={`${persona.role_title ?? "대화 상대"} ${persona.name}의 차분한 표정`} />
                 <span className={styles.cardBody}><strong>{persona.name}</strong><small>{persona.role_title ?? "한국어 대화 파트너"}</small><span>{persona.description ?? "함께 자연스러운 대화를 연습해요."}</span></span>
               </button>
             ))}

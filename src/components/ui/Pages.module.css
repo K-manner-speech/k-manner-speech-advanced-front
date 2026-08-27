@@ -34,6 +34,7 @@
 .partialError { display:grid; gap:var(--space-1); color:var(--color-text-body); border-left:4px solid var(--color-warning); }
 .partialError strong { color:var(--color-warning); }
 .primaryButton,.secondaryButton { min-height:48px; padding:var(--space-3) var(--space-5); border-radius:var(--radius-md); border:1px solid transparent; font-weight:750; }
+.dangerButton { min-height:48px; padding:var(--space-3) var(--space-5); border:1px solid var(--color-danger); border-radius:var(--radius-md); color:var(--color-danger); background:var(--color-surface); font-weight:750; }
 .primaryButton { color:white; background:var(--color-brand); }
 .primaryButton:hover:not(:disabled) { background:var(--color-brand-strong); }
 .secondaryButton { color:var(--color-brand-strong); border-color:var(--color-brand); background:var(--color-surface); }
@@ -84,6 +85,8 @@
 .aiMessage p,.userMessage p { margin:var(--space-2) 0; font-size:17px; white-space:pre-wrap; }
 .aiMessage footer,.userMessage footer { display:flex; justify-content:space-between; align-items:center; }
 .aiMessage footer button,.userMessage footer button { min-height:44px; border:0; color:inherit; background:transparent; text-decoration:underline; }
+.messageFooter { flex-wrap:wrap; gap:var(--space-2); }
+.messageActions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:var(--space-2); }
 .aiTyping { color:var(--color-text-muted); }
 .aiTyping>span { display:inline-block; width:7px; height:7px; margin-right:3px; border-radius:50%; background:var(--color-brand); animation:pulse 1.2s infinite; }
 .composer { display:grid; gap:var(--space-2); position:sticky; bottom:84px; padding:var(--space-4); border:1px solid var(--color-border); border-radius:var(--radius-xl); background:var(--color-surface); box-shadow:var(--shadow-md); }
@@ -122,6 +125,9 @@
 .feedbackList h3,.feedbackList p { margin:var(--space-2) 0; }
 .feedbackList blockquote { margin:var(--space-3) 0 0; padding:var(--space-3) var(--space-4); border-left:3px solid var(--color-success); background:white; }
 .actionRow { display:flex; justify-content:flex-end; gap:var(--space-3); }
+.resultList { display:grid; gap:var(--space-4); }
+.resultListItem { display:flex; align-items:center; justify-content:space-between; gap:var(--space-5); padding:var(--space-5); border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--color-surface); box-shadow:var(--shadow-sm); }
+.resultListItem h2,.resultListItem p { margin:var(--space-2) 0; }
 @media (max-width:767px) { .page{gap:var(--space-8)} .hero{min-height:auto;padding:var(--space-6)} .heroAccent{display:none} .choiceGrid,.scoreGrid,.interviewLayout,.formGrid{grid-template-columns:1fr} .infoStrip,.stickyAction,.resultHero{align-items:stretch;flex-direction:column} .stickyAction{bottom:76px} .selectCard{min-height:210px} .personaStage>div{right:var(--space-3);bottom:var(--space-3)} .aiMessage,.userMessage{width:92%} .composer{bottom:74px} .dialog{padding:var(--space-6) var(--space-4)} }
 
 /* Figma 01 Screen Plan 1.0 · Prototype — 360×800 mobile web shell */
