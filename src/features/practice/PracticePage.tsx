@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
+import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
 
 export function PracticePage() {
@@ -28,6 +29,12 @@ export function PracticePage() {
   const canStart = Boolean(
     personaId && (practiceType === "free_chat" || scenarioId),
   );
+  const title = step === "type" ? "연습 유형" : step === "persona" ? "페르소나" : "시나리오";
+  const goBack = () => {
+    if (step === "scenario") setStep("persona");
+    else if (step === "persona") setStep("type");
+    else navigate("/");
+  };
   if (personas.isLoading || scenarios.isLoading) {
     return <StatusPanel title="연습 상대와 상황을 불러오고 있어요" />;
   }
@@ -37,7 +44,7 @@ export function PracticePage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.mobileTitle}><span>{step === "type" ? "연습 유형" : step === "persona" ? "페르소나" : "시나리오"}</span><p>{step === "type" ? "H02" : step === "persona" ? "H03" : "H04"}</p><h1>{step === "type" ? "연습 유형" : step === "persona" ? "페르소나" : "시나리오"}</h1></header>
+      <header className={styles.mobileTitle}><BackHeader title={title} onBack={goBack} /><p>{step === "type" ? "H02" : step === "persona" ? "H03" : "H04"}</p><h1>{title}</h1></header>
       {step === "type" && <>
         <section className={styles.segmented} aria-label="연습 방식">
           <button aria-pressed={practiceType === "free_chat"} onClick={() => { setPracticeType("free_chat"); setScenarioId(""); }}>자유채팅</button>

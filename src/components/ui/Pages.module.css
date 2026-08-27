@@ -1,4 +1,6 @@
 .page { display:grid; gap:var(--space-10); max-width:860px; }
+:global(.figmaBackHeader) { min-height:34px; display:flex; align-items:center; gap:13px; font-size:16px; font-weight:800; }
+:global(.figmaBackHeader) button { width:16px; min-height:32px; padding:0; border:0; color:var(--color-text); background:transparent; font-size:28px; line-height:1; }
 .pageHeader h1,.hero h1 { margin:var(--space-2) 0 var(--space-4); font-size:clamp(28px,4vw,40px); line-height:1.22; letter-spacing:-.025em; }
 .eyebrow { margin:0; color:var(--color-brand-strong); font-size:var(--font-size-sm); font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
 .lead { max-width:620px; margin:0; color:var(--color-text-body); font-size:17px; line-height:1.7; }
@@ -126,6 +128,7 @@
 .page { display:flex; flex-direction:column; gap:10px; width:100%; max-width:none; }
 .pageHeader,.mobileTitle { margin:0 0 34px; }
 .mobileTitle>span,.pageHeader::before { display:block; min-height:34px; font-size:16px; font-weight:800; content:""; }
+.pageHeader:has(:global(.figmaBackHeader))::before { display:none; }
 .mobileTitle p,.pageHeader .eyebrow { margin:8px 0 6px; color:var(--color-brand); font-size:11px; font-weight:800; }
 .mobileTitle h1,.pageHeader h1,.conversationHeader h1 { margin:0; font-size:24px; line-height:1.4; letter-spacing:-.03em; }
 .pageHeader .lead { margin-top:4px; font-size:13px; line-height:1.35; }

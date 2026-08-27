@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, waitForTerminal, type Message } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
+import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
 
 const emotionLabels: Record<string, string> = {
@@ -15,6 +16,7 @@ const emotionLabels: Record<string, string> = {
 };
 
 export function ConversationPage() {
+  const navigate = useNavigate();
   const { roomId = "" } = useParams();
   const [search] = useSearchParams();
   const configurationId = search.get("configuration");
@@ -56,6 +58,7 @@ export function ConversationPage() {
   return (
     <div className={`${styles.page} ${styles.conversationPage}`}>
       <header className={styles.conversationHeader}>
+        <BackHeader title={room.data?.practice_type === "interview" ? "면접" : "대화"} onBack={() => navigate(room.data?.practice_type === "interview" ? "/interview" : "/practice")} />
         <div><span className={styles.cardTag}>{room.data?.practice_type === "interview" ? "AI 면접" : "대화 연습"}</span><h1>{room.data?.title}</h1><p>{room.data?.goal ?? "상대의 말을 듣고 자연스럽게 답해 보세요."}</p></div>
         <div className={styles.turnBadge}>{room.data?.turn_count ?? 0}턴</div>
       </header>

@@ -7,7 +7,7 @@ import { StatusPanel } from "../components/ui/StatusPanel";
 import { useAuth, LoginPage, OnboardingPage } from "../features/auth";
 import { ConversationPage } from "../features/conversation";
 import { HomePage } from "../features/home";
-import { MyAccountPage } from "../features/account";
+import { MyAccountPage, ProfileEditPage } from "../features/account";
 import { RoomListPage } from "../features/rooms";
 import { InterviewPage } from "../features/interview";
 import { PracticePage } from "../features/practice";
@@ -44,6 +44,7 @@ export const router = createBrowserRouter([
           { path: "/interview", element: <InterviewPage /> },
           { path: "/results/:roomId", element: <ResultPage /> },
           { path: "/me", element: <MyAccountPage /> },
+          { path: "/me/edit", element: <ProfileEditPage /> },
         ],
       },
     ],

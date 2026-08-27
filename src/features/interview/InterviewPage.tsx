@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, waitForTerminal } from "../../api/service";
+import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
 
 const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
@@ -65,6 +66,7 @@ export function InterviewPage() {
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
+        <BackHeader title="면접 연습" onBack={() => navigate("/practice")} />
         <p className={styles.eyebrow}>I01 · 면접 연습</p>
         <h1>{stage === "idle" ? <>모의 면접을<br />준비해 볼까요?</> : <>모의 면접을<br />준비하고 있어요</>}</h1>
         <p className={styles.lead}>첨부한 자료와 선택한 조건으로 실제와 같은 면접 흐름을 만들어요.</p>

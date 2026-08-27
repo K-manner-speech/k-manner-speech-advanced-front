@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api/service";
+import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "./RoomListPage.module.css";
 
 export function RoomListPage() {
+  const navigate = useNavigate();
   const rooms = useQuery({ queryKey: ["rooms"], queryFn: api.rooms });
   return <div className={styles.page}>
-    <div className={styles.topTitle}>대화 목록</div><p className={styles.code}>L01</p><h1>대화 목록</h1><p className={styles.subtitle}>Chat history</p>
+    <BackHeader title="대화 목록" onBack={() => navigate("/")} /><p className={styles.code}>L01</p><h1>대화 목록</h1><p className={styles.subtitle}>Chat history</p>
     {rooms.isLoading && <p className={styles.empty}>대화 목록을 불러오고 있어요.</p>}
     {rooms.isError && <p className={styles.empty}>대화 목록을 불러오지 못했어요.</p>}
     <div className={styles.list}>{rooms.data?.items.map((room) => <Link key={room.id} to={`/rooms/${room.id}`}>

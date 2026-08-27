@@ -38,7 +38,7 @@ export function MyAccountPage() {
         <div><dt>표시 언어 · Display language</dt><dd>{languageName(me.data?.display_language)}</dd></div>
       </dl>
       <button className={styles.deleteButton} onClick={() => window.alert("회원 탈퇴는 확인 절차 화면에서 진행됩니다.")}>회원 탈퇴 · Delete account</button>
-      <button className={styles.editButton} onClick={() => navigate("/onboarding")}>프로필 수정 · Edit profile</button>
+      <button className={styles.editButton} onClick={() => navigate("/me/edit")}>프로필 수정 · Edit profile</button>
     </div>
   );
 }

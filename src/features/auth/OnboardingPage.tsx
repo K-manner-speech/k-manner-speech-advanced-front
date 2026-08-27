@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { api } from "../../api/service";
+import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
 
 const schema = z.object({
@@ -49,6 +50,7 @@ export function OnboardingPage() {
   return (
     <main className={styles.centerPage}>
       <section className={styles.panel} aria-labelledby="onboarding-title">
+        <BackHeader title="프로필" onBack={() => navigate("/login")} />
         <p className={styles.eyebrow}>첫 연습 전 한 번만</p>
         <h1 id="onboarding-title">기본 정보를 확인해 주세요</h1>
         <p className={styles.lead}>AI 코칭과 화면 언어에 필요한 최소 정보만 사용합니다.</p>
