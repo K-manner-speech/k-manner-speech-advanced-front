@@ -194,7 +194,11 @@ export function ConversationPage() {
         {!sortedMessages.length && <div className={styles.empty}>첫 문장을 보내 대화를 시작해 보세요.</div>}
         {sortedMessages.map((message) => (
           <article key={message.id} className={message.sender_type === "user" ? styles.userMessage : styles.aiMessage}>
-            <span>{message.sender_type === "user" ? "나" : "AI 대화 상대"}</span>
+            <span>{message.sender_type === "user"
+              ? "나"
+              : message.sender_type === "system"
+                ? "시스템"
+                : room.data?.persona_name ?? (room.data?.practice_type === "interview" ? "AI 면접관" : "AI 대화 상대")}</span>
             <p>{message.content}</p>
             <footer className={styles.messageFooter}>
               <small>{message.delivery_status === "generating" ? "응답 생성 중" : "전송됨"}</small>

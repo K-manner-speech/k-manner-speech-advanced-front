@@ -1512,6 +1512,8 @@ export interface components {
             updated_at: string;
             /** Goal */
             goal: string | null;
+            /** Persona Name */
+            persona_name: string | null;
         };
         /** RoomSummary */
         RoomSummary: {
