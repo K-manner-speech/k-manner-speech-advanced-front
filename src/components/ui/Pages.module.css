@@ -356,12 +356,16 @@
 .personaStage>div span { display:none; }
 .questionBanner { min-height:42px; padding:10px 14px; border:0; border-radius:12px; order:-1; text-align:center; }
 .messages { gap:10px; max-height:290px; overflow:auto; }
-.aiMessage,.userMessage { width:228px; padding:13px; border-radius:14px; box-shadow:none; font-size:13px; }
+.aiMessage,.userMessage { width:fit-content; max-width:78%; min-width:0; padding:9px 12px; border-radius:16px; box-shadow:none; font-size:13px; }
+.aiMessage>span,.userMessage>span { font-size:11px; font-weight:800; opacity:.66; }
+.aiMessage footer,.userMessage footer { gap:16px; margin-top:5px; justify-content:flex-start; }
+.aiMessage footer small,.userMessage footer small { font-size:11px; }
+.aiMessage footer button,.userMessage footer button { min-height:24px; padding:0; font-size:11px; }
 .aiMessage { background:var(--color-border); }
-.aiMessage p,.userMessage p { font-size:13px; line-height:1.45; }
+.aiMessage p,.userMessage p { margin:2px 0 0; font-size:14px; line-height:1.45; word-break:break-word; }
 .composer { position:sticky; left:auto; right:auto; bottom:0; display:flex; gap:8px; padding:8px 0 0; border:0; background:linear-gradient(transparent,var(--color-surface-app) 18%); box-shadow:none; }
 .composer>label,.composer>div>span { display:none; }
-.composer textarea { height:52px; min-height:52px; margin:0; resize:none; border-color:var(--color-text-muted); border-radius:16px; }
+.composer textarea { height:52px; min-height:52px; margin:0; padding:16px 14px; resize:none; border-color:var(--color-text-muted); border-radius:16px; font-size:13px; line-height:20px; }
 .composer>div { display:block; }
 .composer .primaryButton { width:52px; height:52px; padding:0; border-radius:50%; font-size:0; }
 .composer .primaryButton::after { content:"➤"; font-size:20px; }
