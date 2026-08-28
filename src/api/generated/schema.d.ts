@@ -382,6 +382,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rooms/{room_id}/voice-messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Voice Message */
+        post: operations["room_voice_message.create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rooms/{room_id}/result": {
         parameters: {
             query?: never;
@@ -1673,7 +1690,7 @@ export interface components {
             ctx?: Record<string, never>;
         };
         /** Body_interview_document.create */
-        create: {
+        fastapi___compat__v2__Body_interview_document__create: {
             /**
              * Setup Id
              * Format: uuid
@@ -1686,6 +1703,15 @@ export interface components {
             document_type: "resume" | "portfolio" | "self_introduction";
             /** File */
             file: string;
+        };
+        /** Body_room_voice_message.create */
+        fastapi___compat__v2__Body_room_voice_message__create: {
+            /** Transcript */
+            transcript: string;
+            /** Audio */
+            audio: string;
+            /** Current Interview Question Id */
+            current_interview_question_id?: string | null;
         };
         /** Body_interview_document.replace */
         replace: {
@@ -2530,6 +2556,43 @@ export interface operations {
             };
         };
     };
+    "room_voice_message.create": {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["fastapi___compat__v2__Body_room_voice_message__create"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     "room_result.get": {
         parameters: {
             query?: never;
@@ -2767,7 +2830,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["create"];
+                "multipart/form-data": components["schemas"]["fastapi___compat__v2__Body_interview_document__create"];
             };
         };
         responses: {

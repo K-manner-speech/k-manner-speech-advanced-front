@@ -116,8 +116,21 @@ export function ConversationPage() {
       setVoiceError("마이크 권한이 필요합니다. 브라우저 설정에서 마이크를 허용해 주세요.");
       return;
     }
-    const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
-    const recorder = new MediaRecorder(stream, { mimeType });
+    const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"]
+      .find((candidate) => MediaRecorder.isTypeSupported(candidate));
+    if (!mimeType) {
+      stream.getTracks().forEach((track) => track.stop());
+      setVoiceError("이 브라우저에서 지원하는 음성 녹음 형식을 찾지 못했습니다. Chrome 또는 Safari 최신 버전을 사용해 주세요.");
+      return;
+    }
+    let recorder: MediaRecorder;
+    try {
+      recorder = new MediaRecorder(stream, { mimeType });
+    } catch {
+      stream.getTracks().forEach((track) => track.stop());
+      setVoiceError("음성 녹음을 시작하지 못했습니다. 브라우저를 새로고침한 뒤 다시 시도해 주세요.");
+      return;
+    }
     const chunks: Blob[] = [];
     recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
     recorder.onstop = () => setVoiceBlob(new Blob(chunks, { type: mimeType }));
@@ -212,8 +225,18 @@ export function ConversationPage() {
 }
 
 function FeedbackDialog({ message, onClose }: { message: Message; onClose: () => void }) {
-  const feedback = useQuery({ queryKey: ["feedback", message.id], queryFn: () => api.feedback(message.id) });
+  const feedback = useQuery({
+    queryKey: ["feedback", message.id],
+    queryFn: () => api.feedback(message.id),
+    refetchInterval: (query) => query.state.data?.status === "processing" ? 1_000 : false,
+  });
   const isVoice = message.input_mode === "voice";
+  const feedbackStatus = feedback.data?.status;
+  const statusLabel = feedbackStatus === "processing"
+    ? "분석 중"
+    : feedbackStatus === "failed"
+      ? "분석 실패"
+      : "분석 완료";
   const scoreDescription = (feedback.data?.overall_score ?? 0) >= 85
     ? (isVoice ? "균형 잡힌 답변" : "명확하고 정중해요")
     : "조금 더 다듬으면 좋아요";
@@ -222,12 +245,14 @@ function FeedbackDialog({ message, onClose }: { message: Message; onClose: () =>
       <section className={styles.feedbackSheet} role="dialog" aria-modal="true" aria-labelledby="feedback-title">
         <div className={styles.feedbackHandle} aria-hidden="true" />
         <header className={styles.feedbackHeader}>
-          <div><h2 id="feedback-title">답변 피드백</h2><p>{isVoice ? "마이크 입력 · 분석 완료" : "텍스트 입력 · 분석 완료"}</p></div>
+          <div><h2 id="feedback-title">답변 피드백</h2><p>{isVoice ? `마이크 입력 · ${statusLabel}` : `텍스트 입력 · ${statusLabel}`}</p></div>
           <button className={styles.feedbackClose} onClick={onClose} aria-label="피드백 닫기">×</button>
         </header>
         {feedback.isLoading && <StatusPanel title="피드백을 확인하고 있어요" />}
         {feedback.error && <div className={styles.partialError}><strong>피드백만 준비되지 않았어요.</strong><span>대화는 정상적으로 보존되었습니다.</span></div>}
-        {feedback.data && <div className={styles.feedbackContent}>
+        {feedbackStatus === "processing" && <StatusPanel title="피드백을 분석하고 있어요" detail="완료되면 이 화면에 자동으로 표시됩니다." />}
+        {feedbackStatus === "failed" && <div className={styles.partialError}><strong>피드백 분석을 완료하지 못했어요.</strong><span>대화는 정상적으로 보존되었습니다. 잠시 후 다시 확인해 주세요.</span></div>}
+        {feedback.data && ["ready", "partial"].includes(feedback.data.status) && <div className={styles.feedbackContent}>
           <section className={styles.feedbackOverall} aria-label="종합 점수">
             <span>종합 점수</span>
             <div><strong>{feedback.data.overall_score ?? "—"}</strong><small>/100</small></div>

@@ -103,6 +103,23 @@ test("음성 인식 미지원 브라우저에서는 안내하고 전송하지 �
   expect(api.sendVoiceMessage).not.toHaveBeenCalled();
 });
 
+test("지원하는 녹음 형식이 없으면 스트림을 닫고 안내한다", async () => {
+  class SpeechRecognitionMock {}
+  class UnsupportedMediaRecorderMock {
+    static isTypeSupported = () => false;
+  }
+  const stopTrack = vi.fn();
+  Object.defineProperty(window, "webkitSpeechRecognition", { configurable: true, value: SpeechRecognitionMock });
+  Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [{ stop: stopTrack }] }) } });
+  vi.stubGlobal("MediaRecorder", UnsupportedMediaRecorderMock);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  await userEvent.click(await screen.findByRole("button", { name: "음성 입력 시작" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("지원하는 음성 녹음 형식을 찾지 못했습니다");
+  expect(stopTrack).toHaveBeenCalledOnce();
+  expect(api.sendVoiceMessage).not.toHaveBeenCalled();
+});
+
 const feedbackResponse = {
   status: "ready" as const,
   overall_score: 88,
@@ -154,4 +171,18 @@ test("음성 답변 피드백은 C07 구성으로 감정과 인상을 표시한�
   expect(screen.getByText("상대가 느끼는 인상")).toBeInTheDocument();
   expect(screen.getByText("차분하게 들려요")).toBeInTheDocument();
   expect(screen.queryByText("context_fit")).not.toBeInTheDocument();
+});
+
+test("처리 중인 피드백은 완료될 때까지 자동으로 다시 조회한다", async () => {
+  vi.mocked(api.feedback)
+    .mockResolvedValueOnce({ status: "processing", overall_score: null, summary: null, scores: [], emotions: [], error: null })
+    .mockResolvedValue(feedbackResponse);
+  renderFeedbackMessage("text");
+  await userEvent.click(await screen.findByRole("button", { name: "피드백 보기" }));
+
+  expect(await screen.findByText("텍스트 입력 · 분석 중")).toBeInTheDocument();
+  expect(screen.getByText("피드백을 분석하고 있어요")).toBeInTheDocument();
+  expect(screen.queryByLabelText("종합 점수")).not.toBeInTheDocument();
+  expect(await screen.findByText("텍스트 입력 · 분석 완료", {}, { timeout: 2_500 })).toBeInTheDocument();
+  expect(api.feedback).toHaveBeenCalledTimes(2);
 });

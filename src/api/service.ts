@@ -1,9 +1,6 @@
 import type { components } from "./generated/schema";
 import { http, unwrap } from "./http";
-import { ApiError } from "./http";
 import { createIdempotencyKey } from "../lib/idempotency";
-import { supabase } from "./supabase";
-import { publicConfig } from "../lib/env";
 
 export type Me = components["schemas"]["MeResponse"];
 export type Persona = components["schemas"]["PersonaSummary"];
@@ -112,22 +109,26 @@ export const api = {
     currentInterviewQuestionId?: string,
   ) {
     const key = createIdempotencyKey();
-    const form = new FormData();
-    form.set("transcript", transcript);
-    form.set("audio", audio, `recording.${audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") ? "mp4" : "webm"}`);
-    if (currentInterviewQuestionId) form.set("current_interview_question_id", currentInterviewQuestionId);
-    const { data } = await supabase.auth.getSession();
-    const response = await fetch(`${publicConfig.VITE_API_BASE_URL}/api/v1/rooms/${roomId}/voice-messages`, {
-      method: "POST",
-      headers: {
-        ...(data.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {}),
-        "Idempotency-Key": key,
-      },
-      body: form,
-    });
-    const payload = await response.json() as components["schemas"]["MessageAccepted"] & { code?: string; message?: string; retryable?: boolean };
-    if (!response.ok) throw new ApiError(payload.code ?? "VOICE_UPLOAD_FAILED", payload.message ?? "음성을 전송하지 못했습니다.", payload.retryable ?? false, response.status);
-    return payload;
+    return unwrap(
+      await http.POST("/api/v1/rooms/{room_id}/voice-messages", {
+        params: {
+          path: { room_id: roomId },
+          header: { "Idempotency-Key": key },
+        },
+        body: {
+          transcript,
+          audio: audio as unknown as string,
+          current_interview_question_id: currentInterviewQuestionId ?? null,
+        },
+        bodySerializer(body) {
+          const form = new FormData();
+          form.set("transcript", body.transcript);
+          form.set("audio", audio, `recording.${audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") ? "mp4" : "webm"}`);
+          if (body.current_interview_question_id) form.set("current_interview_question_id", body.current_interview_question_id);
+          return form;
+        },
+      }),
+    );
   },
   async job(jobId: string) {
     return unwrap(
