@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { useAuth } from "./AuthContext";
 import styles from "../../components/ui/Pages.module.css";
@@ -43,6 +43,11 @@ export function LoginPage() {
             세션이 만료되었습니다. 미전송 입력은 보존되지 않았어요. 다시 로그인해 주세요.
           </div>
         )}
+        {search.get("registered") && (
+          <div className={styles.infoStrip} role="alert">
+            회원가입 요청이 완료되었습니다. 이메일 인증 후 로그인해 주세요.
+          </div>
+        )}
         <form onSubmit={submit} className={styles.form} noValidate>
           <label>
             이메일 · Email
@@ -56,7 +61,7 @@ export function LoginPage() {
           </label>
           <span className={styles.authHelp}>이메일 / 비밀번호 찾기<br />Forgot Email or password?</span>
           {submitError && <div role="alert" className={styles.error}>{submitError}</div>}
-          <button type="button" className={styles.secondaryButton} disabled>처음이신가요? 회원가입 · Sign up</button>
+          <Link className={styles.secondaryButton} to="/signup">처음이신가요? 회원가입 · Sign up</Link>
           <button className={styles.primaryButton} disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "로그인 중…" : "로그인 · Log in"}
           </button>

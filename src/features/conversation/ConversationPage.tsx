@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, waitForTerminal, type Message } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
@@ -16,6 +16,26 @@ const emotionLabels: Record<string, string> = {
   embarrassment: "난처함",
 };
 
+const feedbackCategoryLabels: Record<string, string> = {
+  honorifics: "높임법",
+  courtesy: "예의와 배려",
+  context_fit: "상황 적합성",
+  naturalness: "자연스러움",
+};
+
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
 export function ConversationPage() {
   const navigate = useNavigate();
   const { roomId = "" } = useParams();
@@ -23,6 +43,13 @@ export function ConversationPage() {
   const configurationId = search.get("configuration");
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
+  const [inputMode, setInputMode] = useState<"text" | "voice">("text");
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<Message | null>(null);
   const room = useQuery({ queryKey: ["room", roomId], queryFn: () => api.room(roomId) });
   const messages = useQuery({ queryKey: ["messages", roomId], queryFn: () => api.messages(roomId) });
@@ -43,8 +70,12 @@ export function ConversationPage() {
     mutationFn: async () => {
       const normalizedContent = content.trim();
       if (!normalizedContent) throw new Error("AC-T3-NO-BLANK-MESSAGE: 공백 메시지는 보낼 수 없습니다.");
-      const accepted = await api.sendMessage(roomId, normalizedContent, currentQuestion?.id);
+      const accepted = inputMode === "voice" && voiceBlob
+        ? await api.sendVoiceMessage(roomId, normalizedContent, voiceBlob, currentQuestion?.id)
+        : await api.sendMessage(roomId, normalizedContent, currentQuestion?.id, "text");
       setContent("");
+      setInputMode("text");
+      setVoiceBlob(null);
       await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
       return waitForTerminal(() => api.job(accepted.job.job_id), "succeeded", 20_000);
     },
@@ -53,21 +84,77 @@ export function ConversationPage() {
       await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
     },
   });
+
+  useEffect(() => () => {
+    recognitionRef.current?.stop();
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+  }, []);
+
+  const toggleVoiceInput = async () => {
+    setVoiceError(null);
+    if (isListening) {
+      recognitionRef.current?.stop();
+      if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      setIsListening(false);
+      return;
+    }
+    const speechWindow = window as typeof window & {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Recognition || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setVoiceError("이 브라우저에서는 음성 입력을 지원하지 않습니다. Chrome 또는 Safari 최신 버전을 사용해 주세요.");
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setVoiceError("마이크 권한이 필요합니다. 브라우저 설정에서 마이크를 허용해 주세요.");
+      return;
+    }
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+    const recorder = new MediaRecorder(stream, { mimeType });
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+    recorder.onstop = () => setVoiceBlob(new Blob(chunks, { type: mimeType }));
+    recorderRef.current = recorder;
+    streamRef.current = stream;
+    setVoiceBlob(null);
+    const recognition = new Recognition();
+    recognition.lang = "ko-KR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript?.trim();
+      if (transcript) {
+        setContent(transcript);
+        setInputMode("voice");
+      }
+    };
+    const finishRecording = () => {
+      if (recorder.state === "recording") recorder.stop();
+      stream.getTracks().forEach((track) => track.stop());
+      setIsListening(false);
+    };
+    recognition.onerror = (event) => {
+      finishRecording();
+      setVoiceError(event.error === "not-allowed" ? "마이크 권한이 필요합니다. 브라우저 설정에서 마이크를 허용해 주세요." : "음성을 인식하지 못했습니다. 다시 시도해 주세요.");
+    };
+    recognition.onend = finishRecording;
+    recognitionRef.current = recognition;
+    setIsListening(true);
+    recorder.start();
+    recognition.start();
+  };
   const mediaAction = useMutation({
-    mutationFn: async ({ type, message }: { type: "audio" | "retry" | "repeat"; message: Message }) => {
-      if (type === "audio") {
-        const audio = await api.audio(message.id);
-        if (!audio.signed_url) throw new Error("음성이 아직 준비되지 않았습니다.");
-        await new Audio(audio.signed_url).play();
-        return;
-      }
-      if (type === "retry") {
-        const accepted = await api.retryTts(message.id);
-        await waitForTerminal(() => api.job(accepted.job.job_id), "succeeded");
-      } else {
-        const accepted = await api.repeatMessage(message.id, message.content);
-        await waitForTerminal(() => api.job(accepted.job.job_id), "succeeded", 20_000);
-      }
+    mutationFn: async (message: Message) => {
+      const audio = await api.audio(message.id);
+      if (!audio.signed_url) throw new Error("음성이 아직 준비되지 않았습니다.");
+      await new Audio(audio.signed_url).play();
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
@@ -100,9 +187,7 @@ export function ConversationPage() {
               <small>{message.delivery_status === "generating" ? "응답 생성 중" : "전송됨"}</small>
               {message.sender_type === "user" && <button onClick={() => setFeedbackMessage(message)}>피드백 보기</button>}
               {message.sender_type === "persona" && <span className={styles.messageActions}>
-                <button onClick={() => mediaAction.mutate({ type: "audio", message })} aria-label="AI 음성 재생">음성 재생</button>
-                <button onClick={() => mediaAction.mutate({ type: "retry", message })} aria-label="음성 생성 재시도">음성 재시도</button>
-                <button onClick={() => mediaAction.mutate({ type: "repeat", message })} aria-label="이 표현으로 반복 연습">반복 연습</button>
+                <button onClick={() => mediaAction.mutate(message)} aria-label="AI 음성 재생">음성 재생</button>
               </span>}
             </footer>
           </article>
@@ -111,13 +196,14 @@ export function ConversationPage() {
       </section>
       {mediaAction.error && <div className={styles.partialError} role="alert">{mediaAction.error.message}</div>}
       {send.error && <div className={styles.partialError} role="alert"><strong>AI 응답을 완료하지 못했어요.</strong><span>{send.error.message}</span><small>보낸 메시지는 유지됩니다. 잠시 후 다시 시도해 주세요.</small></div>}
+      {voiceError && <div className={styles.partialError} role="alert">{voiceError}</div>}
       {isTerminal ? (
         <section className={styles.completeCard}><h2>이번 연습이 끝났어요</h2><p>대화 내용은 그대로 유지됩니다. 결과에서 강점과 다음 연습을 확인하세요.</p><Link className={styles.primaryLink} to={`/rooms/${roomId}/result`}>결과 보기</Link></section>
       ) : (
         <form className={styles.composer} onSubmit={(event) => { event.preventDefault(); if (!send.isPending) send.mutate(); }}>
           <label htmlFor="message-input">내 답변</label>
-          <textarea id="message-input" rows={3} value={content} onChange={(event) => setContent(event.target.value)} placeholder={currentQuestion ? "질문에 대한 답변을 입력하세요" : "상황에 맞는 표현을 입력하세요"} disabled={send.isPending} />
-          <div><span>{content.trim().length ? `${content.trim().length}자` : "공백만 있는 내용은 전송되지 않아요"}</span><button className={styles.primaryButton} disabled={!content || send.isPending}>{send.isPending ? "답변 기다리는 중…" : "보내기"}</button></div>
+          <textarea id="message-input" rows={3} value={content} onChange={(event) => { setContent(event.target.value); setInputMode("text"); }} placeholder={isListening ? "듣고 있어요…" : currentQuestion ? "질문에 대한 답변을 입력하세요" : "상황에 맞는 표현을 입력하세요"} disabled={send.isPending} />
+          <div><span>{isListening ? "말씀해 주세요" : content.trim().length ? `${content.trim().length}자 · ${inputMode === "voice" ? voiceBlob ? "음성 녹음 완료" : "녹음 정리 중" : "텍스트 입력"}` : "공백만 있는 내용은 전송되지 않아요"}</span><div className={styles.composerActions}><button type="button" className={`${styles.micButton} ${isListening ? styles.micButtonActive : ""}`} onClick={() => { void toggleVoiceInput(); }} disabled={send.isPending} aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"} aria-pressed={isListening}>{isListening ? "■" : "🎙"}</button><button className={styles.primaryButton} disabled={!content.trim() || send.isPending || isListening || (inputMode === "voice" && !voiceBlob)}>{send.isPending ? "답변 기다리는 중…" : "보내기"}</button></div></div>
         </form>
       )}
       {feedbackMessage && <FeedbackDialog message={feedbackMessage} onClose={() => setFeedbackMessage(null)} />}
@@ -127,14 +213,66 @@ export function ConversationPage() {
 
 function FeedbackDialog({ message, onClose }: { message: Message; onClose: () => void }) {
   const feedback = useQuery({ queryKey: ["feedback", message.id], queryFn: () => api.feedback(message.id) });
+  const isVoice = message.input_mode === "voice";
+  const scoreDescription = (feedback.data?.overall_score ?? 0) >= 85
+    ? (isVoice ? "균형 잡힌 답변" : "명확하고 정중해요")
+    : "조금 더 다듬으면 좋아요";
   return (
-    <div className={styles.dialogBackdrop} role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
-      <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-        <button className={styles.dialogClose} onClick={onClose} aria-label="피드백 닫기">×</button>
-        <p className={styles.eyebrow}>AI 코칭 · 추정 결과</p><h2 id="feedback-title">이 표현의 좋은 점과 개선점</h2>
+    <div className={styles.feedbackBackdrop} role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
+      <section className={styles.feedbackSheet} role="dialog" aria-modal="true" aria-labelledby="feedback-title">
+        <div className={styles.feedbackHandle} aria-hidden="true" />
+        <header className={styles.feedbackHeader}>
+          <div><h2 id="feedback-title">답변 피드백</h2><p>{isVoice ? "마이크 입력 · 분석 완료" : "텍스트 입력 · 분석 완료"}</p></div>
+          <button className={styles.feedbackClose} onClick={onClose} aria-label="피드백 닫기">×</button>
+        </header>
         {feedback.isLoading && <StatusPanel title="피드백을 확인하고 있어요" />}
         {feedback.error && <div className={styles.partialError}><strong>피드백만 준비되지 않았어요.</strong><span>대화는 정상적으로 보존되었습니다.</span></div>}
-        {feedback.data && <><div className={styles.scoreHero}><strong>{feedback.data.overall_score ?? "—"}</strong><span>/ 100</span><p>{feedback.data.summary ?? "점수 없이 설명형 피드백을 제공합니다."}</p></div><div className={styles.scoreGrid}>{feedback.data.scores.map((score) => <article key={score.category}><span>{score.category}</span><strong>{score.score} / {score.max_score}</strong><p>{score.strength ?? score.suggestion ?? "분석 중입니다."}</p></article>)}</div></>}
+        {feedback.data && <div className={styles.feedbackContent}>
+          <section className={styles.feedbackOverall} aria-label="종합 점수">
+            <span>종합 점수</span>
+            <div><strong>{feedback.data.overall_score ?? "—"}</strong><small>/100</small></div>
+            <b>{scoreDescription}</b>
+            {feedback.data.summary && <p>{feedback.data.summary}</p>}
+          </section>
+
+          <section className={styles.feedbackPanel} aria-labelledby="criteria-title">
+            <h3 id="criteria-title">항목별 평가</h3>
+            <div className={styles.feedbackCriteria}>
+              {feedback.data.scores.map((score) => {
+                const percentage = Math.max(0, Math.min(100, (score.score / score.max_score) * 100));
+                return <div className={styles.feedbackCriterion} key={score.category}>
+                  <div><span>{feedbackCategoryLabels[score.category]}</span><strong>{score.score}/{score.max_score}</strong></div>
+                  <div className={styles.feedbackTrack} aria-hidden="true"><i style={{ width: `${percentage}%` }} /></div>
+                </div>;
+              })}
+            </div>
+          </section>
+
+          {isVoice && feedback.data.emotions.length > 0 && <section className={styles.feedbackPanel} aria-labelledby="emotion-title">
+            <h3 id="emotion-title">감정 분석</h3>
+            <div className={styles.feedbackEmotions}>
+              {feedback.data.emotions.map((emotion) => <div key={`${emotion.label}-${emotion.sort_order}`}>
+                <div><span>{emotionLabels[emotion.label] ?? emotion.label}</span><strong>{emotion.percentage ?? 0}%</strong></div>
+                <div className={styles.feedbackTrack} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, emotion.percentage ?? 0))}%` }} /></div>
+              </div>)}
+            </div>
+          </section>}
+
+          {isVoice && feedback.data.emotions.some((emotion) => emotion.impression) && <section className={styles.feedbackPanel} aria-labelledby="impression-title">
+            <h3 id="impression-title">상대가 느끼는 인상</h3>
+            <div className={styles.feedbackImpressions}>{feedback.data.emotions.map((emotion) => emotion.impression && <span key={`${emotion.label}-impression`}>{emotion.impression}</span>)}</div>
+          </section>}
+
+          <section className={styles.feedbackPanel} aria-labelledby="expression-title">
+            <h3 id="expression-title">항목별 표현 피드백</h3>
+            <div className={styles.feedbackExpressions}>{feedback.data.scores.map((score) => <article key={`${score.category}-detail`}>
+              <h4>{feedbackCategoryLabels[score.category]}</h4>
+              {score.strength && <p><strong>잘했어요</strong>{score.strength}</p>}
+              {(score.suggestion || score.recommended_text) && <p><strong>제안</strong>{score.suggestion ?? score.recommended_text}</p>}
+              {score.recommended_text && score.suggestion && <blockquote>“{score.recommended_text}”</blockquote>}
+            </article>)}</div>
+          </section>
+        </div>}
       </section>
     </div>
   );

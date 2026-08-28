@@ -4,7 +4,7 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { api } from "../api/service";
 import { AppShell } from "../components/shell/AppShell";
 import { StatusPanel } from "../components/ui/StatusPanel";
-import { useAuth, LoginPage, OnboardingPage } from "../features/auth";
+import { useAuth, LoginPage, OnboardingPage, SignupPage } from "../features/auth";
 import { ConversationPage } from "../features/conversation";
 import { HomePage } from "../features/home";
 import { MyAccountPage, ProfileEditPage } from "../features/account";
@@ -30,6 +30,7 @@ function RequireOnboarding() {
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
+  { path: "/signup", element: <SignupPage /> },
   {
     element: <RequireAuth />,
     children: [

@@ -14,6 +14,7 @@ type AuthContextValue = {
   session: Session | null;
   isLoading: boolean;
   signIn(email: string, password: string): Promise<void>;
+  signUp(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
 };
 
@@ -54,6 +55,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
       async signIn(email, password) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw new Error("이메일 또는 비밀번호를 확인해 주세요.");
+      },
+      async signUp(email, password) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/onboarding`,
+          },
+        });
+        if (error) {
+          if (/already.*register/i.test(error.message)) {
+            throw new Error("이미 가입된 이메일입니다.");
+          }
+          throw new Error("회원가입하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        }
       },
       async signOut() {
         await supabase.auth.signOut();
