@@ -43,6 +43,8 @@ http.use(authMiddleware);
 
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (result.data !== undefined) return result.data;
+  // 204 No Content는 본문이 없어 data가 undefined다. 성공을 실패로 오인하지 않는다.
+  if (result.error === undefined && result.response.ok) return undefined as T;
   const payload = result.error as
     | { code?: string; message?: string; retryable?: boolean }
     | { error?: { code?: string; message?: string; retryable?: boolean } }

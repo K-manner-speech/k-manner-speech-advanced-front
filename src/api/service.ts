@@ -69,6 +69,16 @@ export const api = {
       }),
     );
   },
+  async deleteRoom(roomId: string) {
+    return unwrap(
+      await http.DELETE("/api/v1/rooms/{room_id}", {
+        params: {
+          path: { room_id: roomId },
+          header: { "Idempotency-Key": createIdempotencyKey() },
+        },
+      }),
+    );
+  },
   async room(roomId: string) {
     return unwrap(
       await http.GET("/api/v1/rooms/{room_id}", {

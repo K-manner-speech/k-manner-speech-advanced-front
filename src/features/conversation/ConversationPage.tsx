@@ -223,13 +223,14 @@ export function ConversationPage() {
                 ? "시스템"
                 : room.data?.persona_name ?? (room.data?.practice_type === "interview" ? "AI 면접관" : "AI 대화 상대")}</span>
             <p>{message.content}</p>
-            <footer className={styles.messageFooter}>
+            {/* 시나리오 인사말은 DB에서 그대로 넣은 문장이라 TTS 음성도 전송 상태도 없다. */}
+            {!(message.sender_type === "persona" && message.sequence_no === 1) && <footer className={styles.messageFooter}>
               <small>{message.delivery_status === "generating" ? "응답 생성 중" : "전송됨"}</small>
               {message.sender_type === "user" && <button onClick={() => setFeedbackMessage(message)}>피드백 보기</button>}
               {message.sender_type === "persona" && <span className={styles.messageActions}>
                 <button onClick={() => mediaAction.mutate(message)} aria-label="AI 음성 재생">음성 재생</button>
               </span>}
-            </footer>
+            </footer>}
           </article>
         ))}
         {send.isPending && <div className={styles.aiTyping} role="status"><span /><span /><span /> AI가 맥락을 살펴보고 있어요</div>}
@@ -249,7 +250,7 @@ export function ConversationPage() {
       ) : (
         <form className={styles.composer} onSubmit={(event) => { event.preventDefault(); if (!send.isPending) send.mutate(); }}>
           <label htmlFor="message-input">내 답변</label>
-          <textarea id="message-input" rows={3} value={content} onChange={(event) => { setContent(event.target.value); setInputMode("text"); }} placeholder={isListening ? "듣고 있어요…" : currentQuestion ? "질문에 대한 답변을 입력하세요" : "상황에 맞는 표현을 입력하세요"} disabled={send.isPending} />
+          <textarea id="message-input" rows={3} value={content} onChange={(event) => { setContent(event.target.value); setInputMode("text"); }} placeholder={isListening ? "듣고 있어요…" : currentQuestion ? "답변을 입력하세요" : "표현을 입력하세요"} disabled={send.isPending} />
           <div><span>{isListening ? "말씀해 주세요" : content.trim().length ? `${content.trim().length}자 · ${inputMode === "voice" ? voiceBlob ? "음성 녹음 완료" : "녹음 정리 중" : "텍스트 입력"}` : "공백만 있는 내용은 전송되지 않아요"}</span><div className={styles.composerActions}><button type="button" className={`${styles.micButton} ${isListening ? styles.micButtonActive : ""}`} onClick={() => { void toggleVoiceInput(); }} disabled={send.isPending} aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"} aria-pressed={isListening}>{isListening ? "■" : "🎙"}</button><button className={styles.primaryButton} disabled={!content.trim() || send.isPending || isListening || (inputMode === "voice" && !voiceBlob)}>{send.isPending ? "답변 기다리는 중…" : "보내기"}</button></div></div>
         </form>
       )}
