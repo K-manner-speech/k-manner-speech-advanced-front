@@ -205,13 +205,17 @@ export const api = {
       }),
     );
   },
-  async uploadResume(setupId: string, file: File) {
+  async uploadInterviewDocument(
+    setupId: string,
+    file: File,
+    documentType: "resume" | "portfolio" | "self_introduction",
+  ) {
     return unwrap(
       await http.POST("/api/v1/interview-documents", {
         params: { header: { "Idempotency-Key": createIdempotencyKey() } },
         body: {
           setup_id: setupId,
-          document_type: "resume",
+          document_type: documentType,
           file: file as unknown as string,
         },
         bodySerializer(body) {
@@ -223,6 +227,9 @@ export const api = {
         },
       }),
     );
+  },
+  async uploadResume(setupId: string, file: File) {
+    return this.uploadInterviewDocument(setupId, file, "resume");
   },
   async analyzeDocument(documentId: string) {
     return unwrap(
@@ -241,13 +248,13 @@ export const api = {
       }),
     );
   },
-  async createInterviewConfiguration(setupId: string, analysisId: string) {
+  async createInterviewConfiguration(setupId: string, analysisIds: string | string[]) {
     return unwrap(
       await http.POST("/api/v1/interview-configurations", {
         params: { header: { "Idempotency-Key": createIdempotencyKey() } },
         body: {
           setup_id: setupId,
-          analysis_ids: [analysisId],
+          analysis_ids: Array.isArray(analysisIds) ? analysisIds : [analysisIds],
           conditions: { difficulty: "junior", language: "ko" },
           question_count: 3,
         },

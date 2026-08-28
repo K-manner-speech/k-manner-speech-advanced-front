@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, vi } from "vitest";
 import { api } from "../../api/service";
 import { ConversationPage } from "./ConversationPage";
+import { InterviewCompletePage } from "./InterviewCompletePage";
 
 vi.mock("../../api/service", async () => ({
   api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn() },
@@ -121,6 +122,68 @@ test("지원하는 녹음 형식이 없으면 스트림을 닫고 안내한다",
   expect(await screen.findByRole("alert")).toHaveTextContent("지원하는 음성 녹음 형식을 찾지 못했습니다");
   expect(stopTrack).toHaveBeenCalledOnce();
   expect(api.sendVoiceMessage).not.toHaveBeenCalled();
+});
+
+test("종료된 면접방은 채팅 아래 카드 대신 독립 I11 화면으로 이동한다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, persona_name: "현우 면접관", scenario_id: null, status: "completed", turn_count: 3, ended_reason: "question_limit", started_at: "2026-01-01T00:00:00Z", completed_at: "2026-01-01T00:08:42Z", updated_at: "2026-01-01T00:08:42Z", goal: "백엔드 개발자 면접" });
+  vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [{ id: "q1", sequence: 1, text: "지원 동기를 말씀해 주세요", type: "motivation", source_document_ids: [] }] } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1?configuration=c1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /><Route path="/rooms/:roomId/interview-complete" element={<h1>I11 면접 종료 화면</h1>} /></Routes></MemoryRouter></QueryClientProvider>);
+  expect(await screen.findByRole("heading", { name: "I11 면접 종료 화면" })).toBeInTheDocument();
+  expect(screen.queryByText("면접 시뮬레이션")).not.toBeInTheDocument();
+});
+
+test("I11 독립 화면은 종료 정보와 종합 피드백 이동을 제공한다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, persona_name: "현우 면접관", scenario_id: null, status: "completed", turn_count: 3, ended_reason: "completed", started_at: "2026-01-01T00:00:00Z", completed_at: "2026-01-01T00:08:42Z", updated_at: "2026-01-01T00:08:42Z", goal: "백엔드 개발자 면접" });
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1/interview-complete"]}><Routes><Route path="/rooms/:roomId/interview-complete" element={<InterviewCompletePage />} /></Routes></MemoryRouter></QueryClientProvider>);
+  expect(await screen.findByRole("heading", { name: "면접이 종료되었습니다" })).toBeInTheDocument();
+  expect(screen.getByText("답변 3개 저장 완료")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "종합 피드백 확인" })).toHaveAttribute("href", "/rooms/r1/result");
+});
+
+test("진행 중 면접은 질문을 면접관 말풍선으로 표시하고 마이크만 제공한다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, scenario_id: null, status: "in_progress", turn_count: 0, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:08Z", goal: "백엔드 개발자 면접", current_interview_question_id: "q1" } as never);
+  vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [{ id: "q1", sequence: 1, text: "지원 동기를 말씀해 주세요", type: "motivation", source_document_ids: [] }] } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1?configuration=c1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+  const image = await screen.findByRole("img", { name: /면접 상대의/ });
+  const question = screen.getByRole("group", { name: "현우 면접관의 질문" });
+  expect(image.compareDocumentPosition(question) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(question).toHaveTextContent("지원 동기를 말씀해 주세요");
+  expect(screen.getByRole("button", { name: "음성 입력 시작" })).toBeInTheDocument();
+  expect(screen.queryByLabelText("내 답변")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "보내기" })).not.toBeInTheDocument();
+  expect(screen.queryByText("AI 대화 상대")).not.toBeInTheDocument();
+});
+
+test("대화 목록에서 query 없이 면접방에 재입장해도 저장된 질문을 복원한다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, scenario_id: null, status: "in_progress", turn_count: 0, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:08Z", goal: "백엔드 개발자 면접", interview_configuration_id: "c1", current_interview_question_id: "q1" } as never);
+  vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [{ id: "q1", sequence: 1, text: "저장된 면접 질문입니다", type: "motivation", source_document_ids: [] }] } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+  expect(await screen.findByRole("group", { name: "현우 면접관의 질문" })).toHaveTextContent("저장된 면접 질문입니다");
+  expect(api.interviewQuestions).toHaveBeenCalledWith("c1");
+});
+
+test("대화 목록에서 들어온 방의 뒤로가기는 대화 목록으로 돌아간다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "다시 연 면접", practice_type: "interview", persona_id: null, scenario_id: null, status: "in_progress", turn_count: 0, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:08Z", goal: "면접", interview_configuration_id: "c1", current_interview_question_id: "q1" } as never);
+  vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [{ id: "q1", sequence: 1, text: "질문", type: "motivation", source_document_ids: [] }] } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={[{ pathname: "/rooms/r1", state: { from: "/rooms" } }]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /><Route path="/rooms" element={<h1>대화 목록 도착</h1>} /></Routes></MemoryRouter></QueryClientProvider>);
+  await userEvent.click(await screen.findByRole("button", { name: "뒤로 가기" }));
+  expect(screen.getByRole("heading", { name: "대화 목록 도착" })).toBeInTheDocument();
+  expect(screen.queryByText("면접 시뮬레이션")).not.toBeInTheDocument();
+});
+
+test("답변 횟수와 무관하게 서버가 지정한 현재 질문을 유지한다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, scenario_id: null, status: "in_progress", turn_count: 2, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:08Z", goal: "백엔드 개발자 면접", interview_configuration_id: "c1", current_interview_question_id: "q1" } as never);
+  vi.mocked(api.messages).mockResolvedValue({ items: [
+    { id: "u1", room_id: "r1", sender_type: "user", content: "아직 답변 중입니다", sequence_no: 1, input_mode: "voice", delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:01Z", updated_at: "2026-01-01T00:00:01Z", emotion: null },
+    { id: "u2", room_id: "r1", sender_type: "user", content: "조금 더 설명하겠습니다", sequence_no: 2, input_mode: "voice", delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:02Z", updated_at: "2026-01-01T00:00:02Z", emotion: null },
+  ], next_cursor: null });
+  vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [
+    { id: "q1", sequence: 1, text: "현재 질문을 계속 답해주세요", type: "motivation", source_document_ids: [] },
+    { id: "q2", sequence: 2, text: "아직 나오면 안 되는 다음 질문", type: "experience", source_document_ids: [] },
+  ] } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+  expect(await screen.findByRole("group", { name: "현우 면접관의 질문" })).toHaveTextContent("현재 질문을 계속 답해주세요");
+  expect(screen.queryByText("아직 나오면 안 되는 다음 질문")).not.toBeInTheDocument();
 });
 
 const feedbackResponse = {

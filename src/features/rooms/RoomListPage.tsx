@@ -11,7 +11,7 @@ export function RoomListPage() {
     <BackHeader title="대화 목록" onBack={() => navigate("/")} /><p className={styles.code}>L01</p><h1>대화 목록</h1><p className={styles.subtitle}>Chat history</p>
     {rooms.isLoading && <p className={styles.empty}>대화 목록을 불러오고 있어요.</p>}
     {rooms.isError && <p className={styles.empty}>대화 목록을 불러오지 못했어요.</p>}
-    <div className={styles.list}>{rooms.data?.items.map((room) => <Link key={room.id} to={`/rooms/${room.id}`}>
+    <div className={styles.list}>{rooms.data?.items.map((room) => <Link key={room.id} to={`/rooms/${room.id}`} state={{ from: "/rooms" }}>
       <span>{room.practice_type === "interview" ? "면접" : room.practice_type === "scenario" ? "상황 연습" : "자유 대화"}</span>
       <strong>{room.title}</strong><small>{new Date(room.updated_at).toLocaleDateString("ko-KR")} · {room.turn_count}턴</small>
     </Link>)}</div>

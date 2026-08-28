@@ -1514,6 +1514,10 @@ export interface components {
             goal: string | null;
             /** Persona Name */
             persona_name: string | null;
+            /** Interview Configuration Id */
+            interview_configuration_id?: string | null;
+            /** Current Interview Question Id */
+            current_interview_question_id?: string | null;
         };
         /** RoomSummary */
         RoomSummary: {

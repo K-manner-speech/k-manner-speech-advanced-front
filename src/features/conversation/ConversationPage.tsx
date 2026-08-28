@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, waitForTerminal, type Message } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
 import { BackHeader } from "../../components/ui/BackHeader";
@@ -38,9 +38,10 @@ type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 export function ConversationPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { roomId = "" } = useParams();
   const [search] = useSearchParams();
-  const configurationId = search.get("configuration");
+  const configurationIdFromUrl = search.get("configuration");
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
   const [inputMode, setInputMode] = useState<"text" | "voice">("text");
@@ -53,13 +54,17 @@ export function ConversationPage() {
   const [feedbackMessage, setFeedbackMessage] = useState<Message | null>(null);
   const room = useQuery({ queryKey: ["room", roomId], queryFn: () => api.room(roomId) });
   const messages = useQuery({ queryKey: ["messages", roomId], queryFn: () => api.messages(roomId) });
+  const configurationId = configurationIdFromUrl ?? room.data?.interview_configuration_id ?? null;
   const questions = useQuery({
     queryKey: ["interview-questions", configurationId],
     queryFn: () => api.interviewQuestions(configurationId!),
     enabled: Boolean(configurationId),
   });
-  const userAnswerCount = messages.data?.items.filter((message) => message.sender_type === "user").length ?? 0;
-  const currentQuestion = questions.data?.questions[userAnswerCount];
+  const currentQuestion = room.data?.current_interview_question_id === undefined
+    ? (room.data?.practice_type === "interview" ? questions.data?.questions[0] : undefined)
+    : questions.data?.questions.find(
+      (question) => question.id === room.data?.current_interview_question_id,
+    );
   const sortedMessages = useMemo(
     () => [...(messages.data?.items ?? [])].sort((a, b) => a.sequence_no - b.sequence_no),
     [messages.data],
@@ -177,22 +182,40 @@ export function ConversationPage() {
   if (room.isLoading || messages.isLoading) return <StatusPanel title="대화 내용을 불러오고 있어요" />;
   if (room.error || messages.error) return <StatusPanel title="대화를 불러오지 못했어요" detail={(room.error ?? messages.error)?.message} onRetry={() => { void room.refetch(); void messages.refetch(); }} />;
   const isTerminal = room.data?.status !== "in_progress";
+  const isInterview = room.data?.practice_type === "interview";
+  const backDestination = (location.state as { from?: unknown } | null)?.from === "/rooms"
+    ? "/rooms"
+    : isInterview ? "/interview" : "/practice";
+  const elapsedSeconds = Math.max(0, Math.round((new Date(room.data?.completed_at ?? room.data?.updated_at ?? 0).getTime() - new Date(room.data?.started_at ?? 0).getTime()) / 1000));
+  const elapsed = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
+  if (isTerminal && isInterview) return <Navigate to={`/rooms/${roomId}/interview-complete`} replace />;
+  const hasInterviewerMessage = sortedMessages.some((message) => message.sender_type === "persona");
 
   return (
-    <div className={`${styles.page} ${styles.conversationPage}`}>
+    <div className={`${styles.page} ${styles.conversationPage} ${isInterview ? styles.interviewConversation : ""}`}>
       <header className={styles.conversationHeader}>
-        <BackHeader title={room.data?.practice_type === "interview" ? "면접" : "대화"} onBack={() => navigate(room.data?.practice_type === "interview" ? "/interview" : "/practice")} />
-        <div><span className={styles.cardTag}>{room.data?.practice_type === "interview" ? "AI 면접" : "대화 연습"}</span><h1>{room.data?.title}</h1><p>{room.data?.goal ?? "상대의 말을 듣고 자연스럽게 답해 보세요."}</p></div>
+        <BackHeader title={isInterview ? "면접" : "대화"} onBack={() => navigate(backDestination)} />
+        {!isInterview && <div><span className={styles.cardTag}>대화 연습</span><h1>{room.data?.title}</h1><p>{room.data?.goal ?? "상대의 말을 듣고 자연스럽게 답해 보세요."}</p></div>}
         <div className={styles.turnBadge}>{room.data?.turn_count ?? 0}턴</div>
       </header>
+      {isInterview && <section className={styles.interviewGoal} aria-live="polite"><strong>면접 시뮬레이션</strong><span>진행 시간 {elapsed}</span></section>}
       <section className={styles.personaStage}>
-        <img src={personaImageForEmotion(currentEmotion)} alt={`대화 상대의 ${currentEmotionLabel} 표정`} />
-        <div><span>AI가 추정한 현재 반응</span><strong>{currentEmotionLabel}</strong></div>
+        <img src={personaImageForEmotion(currentEmotion)} alt={`${isInterview ? "면접 상대" : "대화 상대"}의 ${currentEmotionLabel} 표정`} />
+        <div>{isInterview && <b>현우 면접관</b>}<span>{isInterview ? "기술 면접관" : "AI가 추정한 현재 반응"}</span><strong>{currentEmotionLabel}</strong></div>
       </section>
-      {currentQuestion && <section className={styles.questionBanner}><span>질문 {currentQuestion.sequence} / {questions.data?.questions.length}</span><strong>{currentQuestion.text}</strong></section>}
+      {currentQuestion && !isTerminal && !isInterview && <section className={styles.questionBanner}><span>질문 {currentQuestion.sequence} / {questions.data?.questions.length}</span><strong>{currentQuestion.text}</strong></section>}
       <section className={styles.messages} aria-live="polite" aria-label="대화 내용">
-        {!sortedMessages.length && <div className={styles.empty}>첫 문장을 보내 대화를 시작해 보세요.</div>}
-        {sortedMessages.map((message) => (
+        {!sortedMessages.length && !isInterview && <div className={styles.empty}>첫 문장을 보내 대화를 시작해 보세요.</div>}
+        {isInterview && currentQuestion && !hasInterviewerMessage && <article className={styles.interviewMessage} role="group" aria-label="현우 면접관의 질문">
+          <header><img src="/personas/neutral.png" alt="" /><strong>현우 면접관 · 면접관</strong></header>
+          <div><p>{currentQuestion.text}</p><button type="button" aria-label="면접 질문 음성 재생" disabled>🔊</button></div>
+        </article>}
+        {sortedMessages.map((message) => message.sender_type === "persona" && isInterview ? (
+          <article key={message.id} className={styles.interviewMessage} role="group" aria-label="현우 면접관의 답변">
+            <header><img src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" /><strong>현우 면접관 · 면접관</strong></header>
+            <div><p>{message.content}</p><button type="button" onClick={() => mediaAction.mutate(message)} aria-label="면접관 음성 재생">🔊</button></div>
+          </article>
+        ) : (
           <article key={message.id} className={message.sender_type === "user" ? styles.userMessage : styles.aiMessage}>
             <span>{message.sender_type === "user"
               ? "나"
@@ -216,6 +239,13 @@ export function ConversationPage() {
       {voiceError && <div className={styles.partialError} role="alert">{voiceError}</div>}
       {isTerminal ? (
         <section className={styles.completeCard}><h2>이번 연습이 끝났어요</h2><p>대화 내용은 그대로 유지됩니다. 결과에서 강점과 다음 연습을 확인하세요.</p><Link className={styles.primaryLink} to={`/rooms/${roomId}/result`}>결과 보기</Link></section>
+      ) : isInterview ? (
+        <section className={styles.interviewVoiceComposer} aria-live="polite">
+          {inputMode === "voice" && content.trim() ? <div className={styles.interviewTranscript}>
+            <span>인식된 답변</span><p>{content}</p>
+            <div><button type="button" className={styles.secondaryButton} onClick={() => { setContent(""); setVoiceBlob(null); setInputMode("text"); }}>다시 녹음</button><button type="button" className={styles.primaryButton} disabled={!voiceBlob || send.isPending} onClick={() => send.mutate()}>{send.isPending ? "답변 전송 중…" : "이 답변 전송"}</button></div>
+          </div> : <><button type="button" className={`${styles.interviewMicButton} ${isListening ? styles.micButtonActive : ""}`} onClick={() => { void toggleVoiceInput(); }} disabled={send.isPending} aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"} aria-pressed={isListening}>{isListening ? "■" : "🎙"}</button><p>{isListening ? "답변을 듣고 있어요. 완료되면 버튼을 눌러 주세요." : "마이크로 답변한 뒤 문장을 확인하고 전송해요"}</p></>}
+        </section>
       ) : (
         <form className={styles.composer} onSubmit={(event) => { event.preventDefault(); if (!send.isPending) send.mutate(); }}>
           <label htmlFor="message-input">내 답변</label>

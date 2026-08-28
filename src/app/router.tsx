@@ -5,7 +5,7 @@ import { api } from "../api/service";
 import { AppShell } from "../components/shell/AppShell";
 import { StatusPanel } from "../components/ui/StatusPanel";
 import { useAuth, LoginPage, OnboardingPage, SignupPage } from "../features/auth";
-import { ConversationPage } from "../features/conversation";
+import { ConversationPage, InterviewCompletePage } from "../features/conversation";
 import { HomePage } from "../features/home";
 import { MyAccountPage, ProfileEditPage } from "../features/account";
 import { RoomListPage } from "../features/rooms";
@@ -42,9 +42,14 @@ export const router = createBrowserRouter([
           { path: "/practice", element: <PracticePage /> },
           { path: "/rooms", element: <RoomListPage /> },
           { path: "/rooms/:roomId", element: <ConversationPage /> },
+          { path: "/rooms/:roomId/interview-complete", element: <InterviewCompletePage /> },
           { path: "/interview", element: <InterviewPage /> },
           { path: "/results", element: <ResultListPage /> },
           { path: "/results/:resultId", element: <ResultPage source="result" /> },
+          { path: "/results/:resultId/strengths", element: <ResultPage source="result" view="strengths" /> },
+          { path: "/results/:resultId/strengths/:category", element: <ResultPage source="result" view="strength-detail" /> },
+          { path: "/results/:resultId/improvements", element: <ResultPage source="result" view="improvements" /> },
+          { path: "/results/:resultId/improvements/:category", element: <ResultPage source="result" view="improvement-detail" /> },
           { path: "/rooms/:roomId/result", element: <ResultPage source="room" /> },
           { path: "/me", element: <MyAccountPage /> },
           { path: "/me/edit", element: <ProfileEditPage /> },
