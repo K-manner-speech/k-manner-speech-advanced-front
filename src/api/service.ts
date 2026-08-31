@@ -154,6 +154,13 @@ export const api = {
       }),
     );
   },
+  async retryFeedback(messageId: string) {
+    return unwrap(
+      await http.POST("/api/v1/messages/{message_id}/feedback/retry", {
+        params: { path: { message_id: messageId }, header: { "Idempotency-Key": createIdempotencyKey() } },
+      }),
+    );
+  },
   async audio(messageId: string) {
     return unwrap(
       await http.GET("/api/v1/messages/{message_id}/audio", {

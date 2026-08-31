@@ -6,7 +6,7 @@ import { StatusPanel } from "../../components/ui/StatusPanel";
 import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
 import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
-import { playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
+import { AudioGenerationFailedError, playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
 import { primeStreamingTts } from "./ttsStreaming";
 
 const emotionLabels: Record<string, string> = {
@@ -54,6 +54,7 @@ export function ConversationPage() {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<Message | null>(null);
+  const [failedAudioMessageId, setFailedAudioMessageId] = useState<string | null>(null);
   const autoplayAfterSequenceRef = useRef<number | null>(null);
   const room = useQuery({ queryKey: ["room", roomId], queryFn: () => api.room(roomId) });
   const messages = useQuery({ queryKey: ["messages", roomId], queryFn: () => api.messages(roomId) });
@@ -187,6 +188,19 @@ export function ConversationPage() {
       }
       await playAutomaticMessageAudio(message.id);
     },
+    onMutate: () => setFailedAudioMessageId(null),
+    onError: (error, variables) => {
+      if (error instanceof AudioGenerationFailedError) setFailedAudioMessageId(variables.message.id);
+    },
+    onSuccess: () => setFailedAudioMessageId(null),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
+    },
+  });
+  const ttsRetry = useMutation({
+    mutationFn: (messageId: string) => api.retryTts(messageId),
+    onMutate: () => setFailedAudioMessageId(null),
+    onError: (_error, messageId) => setFailedAudioMessageId(messageId),
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
     },
@@ -259,7 +273,10 @@ export function ConversationPage() {
         ))}
         {send.isPending && <div className={styles.aiTyping} role="status"><span /><span /><span /> AI가 맥락을 살펴보고 있어요</div>}
       </section>
-      {mediaAction.error && <div className={styles.partialError} role="alert">{mediaAction.error.message}</div>}
+      {mediaAction.error && <div className={styles.partialError} role="alert">
+        <span>{mediaAction.error.message}</span>
+        {failedAudioMessageId && <button type="button" className={styles.secondaryButton} disabled={ttsRetry.isPending} onClick={() => ttsRetry.mutate(failedAudioMessageId)}>{ttsRetry.isPending ? "음성 다시 생성 중…" : "음성 다시 생성"}</button>}
+      </div>}
       {send.error && <div className={styles.partialError} role="alert"><strong>AI 응답을 완료하지 못했어요.</strong><span>{send.error.message}</span><small>보낸 메시지는 유지됩니다. 잠시 후 다시 시도해 주세요.</small></div>}
       {voiceError && <div className={styles.partialError} role="alert">{voiceError}</div>}
       {isTerminal ? (
@@ -284,10 +301,15 @@ export function ConversationPage() {
 }
 
 function FeedbackDialog({ message, onClose }: { message: Message; onClose: () => void }) {
+  const queryClient = useQueryClient();
   const feedback = useQuery({
     queryKey: ["feedback", message.id],
     queryFn: () => api.feedback(message.id),
     refetchInterval: (query) => query.state.data?.status === "processing" ? 1_000 : false,
+  });
+  const retryFeedback = useMutation({
+    mutationFn: () => api.retryFeedback(message.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["feedback", message.id] }),
   });
   const isVoice = message.input_mode === "voice";
   const feedbackStatus = feedback.data?.status;
@@ -310,7 +332,8 @@ function FeedbackDialog({ message, onClose }: { message: Message; onClose: () =>
         {feedback.isLoading && <StatusPanel title="피드백을 확인하고 있어요" />}
         {feedback.error && <div className={styles.partialError}><strong>피드백만 준비되지 않았어요.</strong><span>대화는 정상적으로 보존되었습니다.</span></div>}
         {feedbackStatus === "processing" && <StatusPanel title="피드백을 분석하고 있어요" detail="완료되면 이 화면에 자동으로 표시됩니다." />}
-        {feedbackStatus === "failed" && <div className={styles.partialError}><strong>피드백 분석을 완료하지 못했어요.</strong><span>대화는 정상적으로 보존되었습니다. 잠시 후 다시 확인해 주세요.</span></div>}
+        {feedbackStatus === "failed" && <div className={styles.partialError}><strong>피드백 분석을 완료하지 못했어요.</strong><span>대화는 정상적으로 보존되었습니다. 다시 생성을 요청할 수 있습니다.</span><button type="button" className={styles.secondaryButton} disabled={retryFeedback.isPending} onClick={() => retryFeedback.mutate()}>{retryFeedback.isPending ? "피드백 다시 요청 중…" : "피드백 다시 시도"}</button></div>}
+        {retryFeedback.error && <div className={styles.partialError} role="alert"><span>{retryFeedback.error.message}</span></div>}
         {feedback.data && ["ready", "partial"].includes(feedback.data.status) && <div className={styles.feedbackContent}>
           <section className={styles.feedbackOverall} aria-label="종합 점수">
             <span>종합 점수</span>

@@ -3,6 +3,13 @@ import { playCompletedTts, playStreamingTts } from "./ttsStreaming";
 
 type AudioAccess = Awaited<ReturnType<typeof api.audio>>;
 
+export class AudioGenerationFailedError extends Error {
+  constructor() {
+    super("음성 생성에 실패했습니다.");
+    this.name = "AudioGenerationFailedError";
+  }
+}
+
 async function waitForAudio(
   messageId: string,
   predicate: (audio: AudioAccess) => boolean,
@@ -12,10 +19,10 @@ async function waitForAudio(
   while (Date.now() < deadline) {
     try {
       const audio = await api.audio(messageId);
-      if (audio.status === "failed") throw new Error("음성 생성에 실패했습니다.");
+      if (audio.status === "failed") throw new AudioGenerationFailedError();
       if (predicate(audio)) return audio;
     } catch (error) {
-      if (error instanceof Error && error.message === "음성 생성에 실패했습니다.") throw error;
+      if (error instanceof AudioGenerationFailedError) throw error;
     }
     await new Promise((resolve) => window.setTimeout(resolve, 500));
   }

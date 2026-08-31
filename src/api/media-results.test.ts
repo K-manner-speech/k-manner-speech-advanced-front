@@ -16,14 +16,16 @@ beforeEach(() => {
 });
 
 test("media와 results 변경 API는 경로, body, 멱등성 헤더를 전송한다", async () => {
+  await api.retryFeedback("m0");
   await api.retryTts("m1");
   await api.repeatMessage("m1", "추천 표현");
   await api.retryResult("room1");
   await api.deleteResult("result1");
 
-  expect(request.POST).toHaveBeenNthCalledWith(1, "/api/v1/messages/{message_id}/tts/retry", expect.objectContaining({ params: { path: { message_id: "m1" }, header: { "Idempotency-Key": expect.any(String) } } }));
-  expect(request.POST).toHaveBeenNthCalledWith(2, "/api/v1/messages/{message_id}/repeat", expect.objectContaining({ body: { recommended_expression: "추천 표현" }, params: { path: { message_id: "m1" }, header: { "Idempotency-Key": expect.any(String) } } }));
-  expect(request.POST).toHaveBeenNthCalledWith(3, "/api/v1/rooms/{room_id}/result/retry", expect.objectContaining({ params: { path: { room_id: "room1" }, header: { "Idempotency-Key": expect.any(String) } } }));
+  expect(request.POST).toHaveBeenNthCalledWith(1, "/api/v1/messages/{message_id}/feedback/retry", expect.objectContaining({ params: { path: { message_id: "m0" }, header: { "Idempotency-Key": expect.any(String) } } }));
+  expect(request.POST).toHaveBeenNthCalledWith(2, "/api/v1/messages/{message_id}/tts/retry", expect.objectContaining({ params: { path: { message_id: "m1" }, header: { "Idempotency-Key": expect.any(String) } } }));
+  expect(request.POST).toHaveBeenNthCalledWith(3, "/api/v1/messages/{message_id}/repeat", expect.objectContaining({ body: { recommended_expression: "추천 표현" }, params: { path: { message_id: "m1" }, header: { "Idempotency-Key": expect.any(String) } } }));
+  expect(request.POST).toHaveBeenNthCalledWith(4, "/api/v1/rooms/{room_id}/result/retry", expect.objectContaining({ params: { path: { room_id: "room1" }, header: { "Idempotency-Key": expect.any(String) } } }));
   expect(request.DELETE).toHaveBeenCalledWith("/api/v1/results/{result_id}", expect.objectContaining({ params: { path: { result_id: "result1" }, header: { "Idempotency-Key": expect.any(String) } } }));
 });
 

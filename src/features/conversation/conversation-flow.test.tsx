@@ -9,7 +9,7 @@ import { ConversationPage } from "./ConversationPage";
 import { InterviewCompletePage } from "./InterviewCompletePage";
 
 vi.mock("../../api/service", async () => ({
-  api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn(), result: vi.fn() },
+  api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), retryFeedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn(), result: vi.fn() },
   waitForTerminal: vi.fn(),
 }));
 
@@ -279,4 +279,64 @@ test("처리 중인 피드백은 완료될 때까지 자동으로 다시 조회�
   expect(screen.queryByLabelText("종합 점수")).not.toBeInTheDocument();
   expect(await screen.findByText("텍스트 입력 · 분석 완료", {}, { timeout: 2_500 })).toBeInTheDocument();
   expect(api.feedback).toHaveBeenCalledTimes(2);
+});
+
+test("최종 실패한 피드백만 사용자가 다시 생성할 수 있다", async () => {
+  vi.mocked(api.feedback)
+    .mockResolvedValueOnce({
+      status: "failed", overall_score: null, summary: null, scores: [], emotions: [],
+      error: { code: "JOB_DEADLINE_EXCEEDED", retryable: false },
+    })
+    .mockResolvedValue({
+      status: "processing", overall_score: null, summary: null, scores: [], emotions: [], error: null,
+    });
+  vi.mocked(api.retryFeedback).mockResolvedValue({
+    target: { type: "turn_feedback", id: "feedback-1" },
+    job: { job_id: "job-1", type: "turn_feedback", status: "queued" },
+  } as never);
+  renderFeedbackMessage("text");
+  await userEvent.click(await screen.findByRole("button", { name: "피드백 보기" }));
+
+  const retry = await screen.findByRole("button", { name: "피드백 다시 시도" });
+  expect(api.retryFeedback).not.toHaveBeenCalled();
+  await userEvent.click(retry);
+
+  expect(api.retryFeedback).toHaveBeenCalledOnce();
+  expect(api.retryFeedback).toHaveBeenCalledWith("u-feedback");
+  expect(await screen.findByText("텍스트 입력 · 분석 중")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "피드백 다시 시도" })).not.toBeInTheDocument();
+});
+
+test("완료된 피드백에는 재시도 버튼이 없다", async () => {
+  vi.mocked(api.feedback).mockResolvedValue(feedbackResponse);
+  renderFeedbackMessage("text");
+  await userEvent.click(await screen.findByRole("button", { name: "피드백 보기" }));
+
+  expect(await screen.findByText("텍스트 입력 · 분석 완료")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "피드백 다시 시도" })).not.toBeInTheDocument();
+});
+
+test("최종 실패한 AI 음성만 다시 생성할 수 있다", async () => {
+  vi.mocked(api.messages).mockResolvedValue({ items: [{
+    id: "persona-audio", room_id: "r1", sender_type: "persona", content: "점심 같이 먹자", sequence_no: 2,
+    input_mode: "text", delivery_status: "sent", reply_to_message_id: "user-1",
+    created_at: "2026-01-01T00:00:01Z", updated_at: "2026-01-01T00:00:01Z", emotion: null,
+  }], next_cursor: null });
+  vi.mocked(api.audio).mockResolvedValue({
+    status: "failed", signed_url: null, expires_at: null, audio_type: "persona_tts", duration_ms: null,
+  });
+  vi.mocked(api.retryTts).mockResolvedValue({
+    target: { type: "message_audio", id: "audio-1" },
+    job: { job_id: "job-2", type: "tts_generation", status: "queued" },
+  } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+  await userEvent.click(await screen.findByRole("button", { name: "AI 음성 재생" }));
+
+  const retry = await screen.findByRole("button", { name: "음성 다시 생성" });
+  expect(api.retryTts).not.toHaveBeenCalled();
+  await userEvent.click(retry);
+
+  expect(api.retryTts).toHaveBeenCalledOnce();
+  expect(api.retryTts).toHaveBeenCalledWith("persona-audio");
+  expect(screen.queryByRole("button", { name: "음성 다시 생성" })).not.toBeInTheDocument();
 });
