@@ -6,6 +6,8 @@ import { StatusPanel } from "../../components/ui/StatusPanel";
 import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
 import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
+import { playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
+import { primeStreamingTts } from "./ttsStreaming";
 
 const emotionLabels: Record<string, string> = {
   neutral: "차분함",
@@ -52,6 +54,7 @@ export function ConversationPage() {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<Message | null>(null);
+  const autoplayAfterSequenceRef = useRef<number | null>(null);
   const room = useQuery({ queryKey: ["room", roomId], queryFn: () => api.room(roomId) });
   const messages = useQuery({ queryKey: ["messages", roomId], queryFn: () => api.messages(roomId) });
   const configurationId = configurationIdFromUrl ?? room.data?.interview_configuration_id ?? null;
@@ -82,13 +85,21 @@ export function ConversationPage() {
       setInputMode("text");
       setVoiceBlob(null);
       await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
-      return waitForTerminal(() => api.job(accepted.job.job_id), "succeeded", 20_000);
+      return waitForTerminal(() => api.job(accepted.job.job_id), "succeeded", 50_000);
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
       await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
     },
   });
+
+  const beginSend = () => {
+    autoplayAfterSequenceRef.current = sortedMessages
+      .filter((message) => message.sender_type === "persona")
+      .reduce((latest, message) => Math.max(latest, message.sequence_no), -1);
+    primeStreamingTts();
+    send.mutate();
+  };
 
   useEffect(() => () => {
     recognitionRef.current?.stop();
@@ -169,15 +180,28 @@ export function ConversationPage() {
     recognition.start();
   };
   const mediaAction = useMutation({
-    mutationFn: async (message: Message) => {
-      const audio = await api.audio(message.id);
-      if (!audio.signed_url) throw new Error("음성이 아직 준비되지 않았습니다.");
-      await new Audio(audio.signed_url).play();
+    mutationFn: async ({ message, mode }: { message: Message; mode: "automatic" | "manual" }) => {
+      if (mode === "manual") {
+        await playManualMessageAudio(message.id);
+        return;
+      }
+      await playAutomaticMessageAudio(message.id);
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
     },
   });
+
+  useEffect(() => {
+    const threshold = autoplayAfterSequenceRef.current;
+    if (threshold === null || send.isPending) return;
+    const newest = [...sortedMessages]
+      .reverse()
+      .find((message) => message.sender_type === "persona" && message.sequence_no > threshold);
+    if (!newest) return;
+    autoplayAfterSequenceRef.current = null;
+    mediaAction.mutate({ message: newest, mode: "automatic" });
+  }, [mediaAction, send.isPending, sortedMessages]);
 
   if (room.isLoading || messages.isLoading) return <StatusPanel title="대화 내용을 불러오고 있어요" />;
   if (room.error || messages.error) return <StatusPanel title="대화를 불러오지 못했어요" detail={(room.error ?? messages.error)?.message} onRetry={() => { void room.refetch(); void messages.refetch(); }} />;
@@ -213,7 +237,7 @@ export function ConversationPage() {
         {sortedMessages.map((message) => message.sender_type === "persona" && isInterview ? (
           <article key={message.id} className={styles.interviewMessage} role="group" aria-label="현우 면접관의 답변">
             <header><img src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" /><strong>현우 면접관 · 면접관</strong></header>
-            <div><p>{message.content}</p><button type="button" onClick={() => mediaAction.mutate(message)} aria-label="면접관 음성 재생">🔊</button></div>
+            <div><p>{message.content}</p><button type="button" disabled={mediaAction.isPending} onClick={() => mediaAction.mutate({ message, mode: "manual" })} aria-label="면접관 음성 재생">🔊</button></div>
           </article>
         ) : (
           <article key={message.id} className={message.sender_type === "user" ? styles.userMessage : styles.aiMessage}>
@@ -228,7 +252,7 @@ export function ConversationPage() {
               <small>{message.delivery_status === "generating" ? "응답 생성 중" : "전송됨"}</small>
               {message.sender_type === "user" && <button onClick={() => setFeedbackMessage(message)}>피드백 보기</button>}
               {message.sender_type === "persona" && <span className={styles.messageActions}>
-                <button onClick={() => mediaAction.mutate(message)} aria-label="AI 음성 재생">음성 재생</button>
+                <button disabled={mediaAction.isPending} onClick={() => mediaAction.mutate({ message, mode: "manual" })} aria-label="AI 음성 재생">{mediaAction.isPending ? "음성 준비 중…" : "음성 재생"}</button>
               </span>}
             </footer>}
           </article>
@@ -244,11 +268,11 @@ export function ConversationPage() {
         <section className={styles.interviewVoiceComposer} aria-live="polite">
           {inputMode === "voice" && content.trim() ? <div className={styles.interviewTranscript}>
             <span>인식된 답변</span><p>{content}</p>
-            <div><button type="button" className={styles.secondaryButton} onClick={() => { setContent(""); setVoiceBlob(null); setInputMode("text"); }}>다시 녹음</button><button type="button" className={styles.primaryButton} disabled={!voiceBlob || send.isPending} onClick={() => send.mutate()}>{send.isPending ? "답변 전송 중…" : "이 답변 전송"}</button></div>
+            <div><button type="button" className={styles.secondaryButton} onClick={() => { setContent(""); setVoiceBlob(null); setInputMode("text"); }}>다시 녹음</button><button type="button" className={styles.primaryButton} disabled={!voiceBlob || send.isPending} onClick={beginSend}>{send.isPending ? "답변 전송 중…" : "이 답변 전송"}</button></div>
           </div> : <><button type="button" className={`${styles.interviewMicButton} ${isListening ? styles.micButtonActive : ""}`} onClick={() => { void toggleVoiceInput(); }} disabled={send.isPending} aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"} aria-pressed={isListening}>{isListening ? "■" : "🎙"}</button><p>{isListening ? "답변을 듣고 있어요. 완료되면 버튼을 눌러 주세요." : "마이크로 답변한 뒤 문장을 확인하고 전송해요"}</p></>}
         </section>
       ) : (
-        <form className={styles.composer} onSubmit={(event) => { event.preventDefault(); if (!send.isPending) send.mutate(); }}>
+        <form className={styles.composer} onSubmit={(event) => { event.preventDefault(); if (!send.isPending) beginSend(); }}>
           <label htmlFor="message-input">내 답변</label>
           <textarea id="message-input" rows={3} value={content} onChange={(event) => { setContent(event.target.value); setInputMode("text"); }} placeholder={isListening ? "듣고 있어요…" : currentQuestion ? "답변을 입력하세요" : "표현을 입력하세요"} disabled={send.isPending} />
           <div><span>{isListening ? "말씀해 주세요" : content.trim().length ? `${content.trim().length}자 · ${inputMode === "voice" ? voiceBlob ? "음성 녹음 완료" : "녹음 정리 중" : "텍스트 입력"}` : "공백만 있는 내용은 전송되지 않아요"}</span><div className={styles.composerActions}><button type="button" className={`${styles.micButton} ${isListening ? styles.micButtonActive : ""}`} onClick={() => { void toggleVoiceInput(); }} disabled={send.isPending} aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"} aria-pressed={isListening}>{isListening ? "■" : "🎙"}</button><button className={styles.primaryButton} disabled={!content.trim() || send.isPending || isListening || (inputMode === "voice" && !voiceBlob)}>{send.isPending ? "답변 기다리는 중…" : "보내기"}</button></div></div>

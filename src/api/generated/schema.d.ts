@@ -690,6 +690,8 @@ export interface components {
             expires_at: string | null;
             /** Audio Type */
             audio_type: string;
+            /** Duration Ms */
+            duration_ms: number | null;
         };
         /** ConfigurationAccepted */
         ConfigurationAccepted: {

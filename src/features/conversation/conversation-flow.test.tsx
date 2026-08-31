@@ -3,8 +3,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, vi } from "vitest";
-import { api } from "../../api/service";
 import { ApiError } from "../../api/http";
+import { api, waitForTerminal } from "../../api/service";
 import { ConversationPage } from "./ConversationPage";
 import { InterviewCompletePage } from "./InterviewCompletePage";
 
@@ -19,6 +19,20 @@ beforeEach(() => {
   vi.mocked(api.messages).mockResolvedValue({ items: [], next_cursor: null });
 });
 
+test("AI 응답은 백엔드 45초 제한보다 긴 50초 동안 기다린다", async () => {
+  vi.mocked(api.sendMessage).mockResolvedValue({
+    message: { id: "message-1" },
+    job: { job_id: "job-1", type: "conversation_text", status: "queued" },
+  } as never);
+  vi.mocked(waitForTerminal).mockResolvedValue({ status: "succeeded" });
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  await userEvent.type(await screen.findByLabelText("내 답변"), "면접 답변입니다");
+  await userEvent.click(screen.getByRole("button", { name: "보내기" }));
+
+  expect(waitForTerminal).toHaveBeenCalledWith(expect.any(Function), "succeeded", 50_000);
+});
+
 test("AI 메시지에는 음성 재생만 제공한다", async () => {
   const play = vi.fn().mockResolvedValue(undefined);
   vi.stubGlobal("Audio", function AudioMock() { return { play }; });
@@ -27,7 +41,7 @@ test("AI 메시지에는 음성 재생만 제공한다", async () => {
     { id: "m1", room_id: "r1", sender_type: "persona", content: "안녕하세요", sequence_no: 2, input_mode: "text", delivery_status: "sent", reply_to_message_id: "u1", created_at: "2026-01-01T00:00:01Z", updated_at: "2026-01-01T00:00:01Z", emotion: { status: "succeeded", label: "angry", reasoning: null } },
     { id: "s1", room_id: "r1", sender_type: "system", content: "시스템 안내", sequence_no: 3, input_mode: null, delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:02Z", updated_at: "2026-01-01T00:00:02Z", emotion: null },
   ], next_cursor: null });
-  vi.mocked(api.audio).mockResolvedValue({ status: "ready", signed_url: "https://example.test/audio", expires_at: null, audio_type: "persona_tts" });
+  vi.mocked(api.audio).mockResolvedValue({ status: "ready", signed_url: "https://example.test/audio", expires_at: null, audio_type: "persona_tts", duration_ms: 1_000 });
   const user = userEvent.setup();
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
 
