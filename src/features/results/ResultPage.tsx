@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, waitForTerminal, type SessionResult } from "../../api/service";
@@ -19,22 +19,28 @@ export function ResultPage({ source = "room", view = "summary" }: { source?: "ro
   const queryClient = useQueryClient();
   const result = useQuery({ queryKey: ["result", source, resourceId], queryFn: () => source === "room" ? api.result(resourceId) : api.resultById(resourceId) });
   const retry = useMutation({ mutationFn: async () => { const accepted = await api.retryResult(roomId); return waitForTerminal(() => api.job(accepted.job.job_id), "succeeded"); }, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["result", source, resourceId] }); } });
-  const remove = useMutation({ mutationFn: () => api.deleteResult(resultId), onSuccess: () => navigate("/results", { replace: true }) });
+  const remove = useMutation({
+    mutationFn: (id: string) => api.deleteResult(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["results"] });
+      navigate("/results", { replace: true });
+    },
+  });
   if (result.isLoading) return <StatusPanel title="연습 결과를 정리하고 있어요" />;
   if (result.error) return <StatusPanel title="결과가 아직 준비되지 않았어요" detail={result.error.message} onRetry={() => void result.refetch()} />;
   const data = result.data;
   if (!data) return <StatusPanel title="결과가 아직 준비되지 않았어요" />;
-  if (data.interview_evaluation) return <InterviewResult data={data} view={view} category={category} onBack={() => navigate(-1)} />;
+  if (data.interview_evaluation) return <InterviewResult data={data} view={view} category={category} onBack={() => navigate(-1)} remove={remove} />;
   return <div className={styles.page}>
     <header className={styles.pageHeader}><BackHeader title="결과 요약" onBack={() => navigate("/rooms")} /><p className={styles.eyebrow}>R01</p><h1>결과 요약</h1><p className={styles.lead}>{data.summary ?? "답변에서 관찰된 내용을 기준으로 정리했습니다."}</p></header>
     <section className={styles.resultHero}><div><span>종합 점수</span><strong>{data.overall_score ?? "—"}</strong><small>/ 100</small></div></section>
     {!!data.items.length && <section className={styles.panel}><h2>표현별 코칭</h2><div className={styles.feedbackList}>{data.items.map((item) => <article key={`${item.item_type}-${item.order}`}><h3>{item.title}</h3><p>{item.explanation ?? item.evidence}</p></article>)}</div></section>}
     {(retry.error || remove.error) && <div className={styles.partialError} role="alert">{(retry.error ?? remove.error)?.message}</div>}
-    <div className={styles.actionRow}><Link className={styles.secondaryLink} to="/results">결과 목록</Link>{source === "room" && data.status === "failed" && <button className={styles.secondaryButton} onClick={() => retry.mutate()}>결과 생성 재시도</button>}{source === "result" && <button className={styles.dangerButton} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(); }}>결과 삭제</button>}</div>
+    <div className={styles.actionRow}><Link className={styles.secondaryLink} to="/results">결과 목록</Link>{source === "room" && data.status === "failed" && <button className={styles.secondaryButton} onClick={() => retry.mutate()}>결과 생성 재시도</button>}{source === "result" && <button className={styles.dangerButton} disabled={remove.isPending} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(data.id); }}>{remove.isPending ? "삭제 중…" : "결과 삭제"}</button>}</div>
   </div>;
 }
 
-function InterviewResult({ data, view, category, onBack }: { data: SessionResult; view: ResultView; category: string; onBack: () => void }) {
+function InterviewResult({ data, view, category, onBack, remove }: { data: SessionResult; view: ResultView; category: string; onBack: () => void; remove: UseMutationResult<void, Error, string> }) {
   const evaluation = data.interview_evaluation!;
   const base = `/results/${data.id}`;
   const strengths = evaluation.scores.filter((score) => score.strength);
@@ -61,7 +67,8 @@ function InterviewResult({ data, view, category, onBack }: { data: SessionResult
     <section className={styles.interviewScoreStrip}><span>종합 점수</span><strong>{evaluation.overall_score ?? data.overall_score ?? "—"}</strong><small>/100</small></section>
     <Link aria-label="이번 면접에서 잘한 점" className={styles.interviewResultChoice} to={`${base}/strengths`}><h2>이번 면접에서 잘한 점</h2><div>{strengths.slice(0, 3).map((score) => <span key={score.category}>{labels[score.category]}</span>)}</div><p>{strengths[0]?.strength ?? "답변에서 확인된 강점을 살펴보세요."}</p></Link>
     <Link aria-label="다음 면접에서 보완할 점" className={`${styles.interviewResultChoice} ${styles.interviewResultChoiceWarning}`} to={`${base}/improvements`}><h2>다음 면접에서 보완할 점</h2><div>{improvements.slice(0, 3).map((score) => <span key={score.category}>{labels[score.category]}</span>)}</div><p>{improvements[0]?.suggestion ?? "다음 답변에서 보완할 점을 살펴보세요."}</p></Link>
-    <button className={styles.dangerButton} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) void api.deleteResult(data.id); }}>결과 삭제</button>
+    {remove.error && <div className={styles.partialError} role="alert">{remove.error.message}</div>}
+    <button className={styles.dangerButton} disabled={remove.isPending} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(data.id); }}>{remove.isPending ? "삭제 중…" : "결과 삭제"}</button>
   </ResultFrame>;
 }
 

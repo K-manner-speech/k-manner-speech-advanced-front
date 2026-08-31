@@ -17,9 +17,11 @@ const snapshot = { id: "res1", attempt_no: 1, status: "succeeded" as const, miss
 ] } };
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.mocked(api.results).mockResolvedValue({ items: [snapshot], next_cursor: null });
   vi.mocked(api.result).mockResolvedValue(snapshot);
   vi.mocked(api.resultById).mockResolvedValue(snapshot);
+  vi.mocked(api.deleteResult).mockResolvedValue(undefined as never);
 });
 
 function renderAt(path: string, element: React.ReactNode) {
@@ -64,4 +66,25 @@ test("저장 결과 삭제를 취소하면 API를 호출하지 않는다", async
   renderAt("/results/res1", <ResultPage source="result" />);
   await userEvent.click(await screen.findByRole("button", { name: "결과 삭제" }));
   expect(api.deleteResult).not.toHaveBeenCalled();
+});
+
+test("면접 결과 삭제 성공 시 목록으로 이동한다", async () => {
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/results/res1"]}><Routes>
+    <Route path="/results/:resultId" element={<ResultPage source="result" />} />
+    <Route path="/results" element={<h1>결과 목록 화면</h1>} />
+  </Routes></MemoryRouter></QueryClientProvider>);
+
+  await userEvent.click(await screen.findByRole("button", { name: "결과 삭제" }));
+  expect(api.deleteResult).toHaveBeenCalledWith("res1");
+  expect(await screen.findByRole("heading", { name: "결과 목록 화면" })).toBeInTheDocument();
+});
+
+test("면접 결과 삭제 실패를 화면에 표시한다", async () => {
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  vi.mocked(api.deleteResult).mockRejectedValue(new Error("결과를 삭제하지 못했습니다."));
+  renderAt("/results/res1", <ResultPage source="result" />);
+
+  await userEvent.click(await screen.findByRole("button", { name: "결과 삭제" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("결과를 삭제하지 못했습니다.");
 });
