@@ -9,7 +9,7 @@ import { ConversationPage } from "./ConversationPage";
 import { InterviewCompletePage } from "./InterviewCompletePage";
 
 vi.mock("../../api/service", async () => ({
-  api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), retryFeedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn(), result: vi.fn() },
+  api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), completeInterview: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), retryFeedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn(), result: vi.fn() },
   waitForTerminal: vi.fn(),
 }));
 
@@ -139,12 +139,37 @@ test("지원하는 녹음 형식이 없으면 스트림을 닫고 안내한다",
   expect(api.sendVoiceMessage).not.toHaveBeenCalled();
 });
 
-test("종료된 면접방은 채팅 아래 카드 대신 독립 I11 화면으로 이동한다", async () => {
+test("백엔드가 면접을 먼저 완료해도 대화창을 유지하고 종료 버튼으로 I11 화면에 이동한다", async () => {
   vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, persona_name: "현우 면접관", scenario_id: null, status: "completed", turn_count: 3, ended_reason: "question_limit", started_at: "2026-01-01T00:00:00Z", completed_at: "2026-01-01T00:08:42Z", updated_at: "2026-01-01T00:08:42Z", goal: "백엔드 개발자 면접" });
   vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [{ id: "q1", sequence: 1, text: "지원 동기를 말씀해 주세요", type: "motivation", source_document_ids: [] }] } as never);
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1?configuration=c1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /><Route path="/rooms/:roomId/interview-complete" element={<h1>I11 면접 종료 화면</h1>} /></Routes></MemoryRouter></QueryClientProvider>);
+  expect(await screen.findByText("면접 시뮬레이션")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "음성 입력 시작" })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "면접 종료" }));
   expect(await screen.findByRole("heading", { name: "I11 면접 종료 화면" })).toBeInTheDocument();
-  expect(screen.queryByText("면접 시뮬레이션")).not.toBeInTheDocument();
+  expect(api.completeInterview).not.toHaveBeenCalled();
+});
+
+test("대화 목록에서 완료된 면접에 다시 들어오면 I11 종료 화면을 바로 보여준다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, persona_name: "현우 면접관", scenario_id: null, status: "completed", turn_count: 4, ended_reason: "completed", started_at: "2026-01-01T00:00:00Z", completed_at: "2026-01-01T00:05:25Z", updated_at: "2026-01-01T00:05:25Z", goal: "백엔드 개발자 면접" });
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={[{ pathname: "/rooms/r1", state: { from: "/rooms" } }]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /><Route path="/rooms/:roomId/interview-complete" element={<h1>I11 면접 종료 화면</h1>} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  expect(await screen.findByRole("heading", { name: "I11 면접 종료 화면" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "면접 종료" })).not.toBeInTheDocument();
+});
+
+test("마지막 면접관 응답은 자동 종료하지 않고 마이크 대신 수동 종료 버튼을 제공한다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, persona_name: "현우 면접관", scenario_id: null, status: "in_progress", turn_count: 3, ended_reason: "awaiting_user_end", started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:08:42Z", goal: "백엔드 개발자 면접", current_interview_question_id: null } as never);
+  vi.mocked(api.messages).mockResolvedValue({ items: [{ id: "closing", room_id: "r1", sender_type: "persona", content: "면접은 여기까지입니다. 수고하셨습니다.", sequence_no: 7, input_mode: null, delivery_status: "sent", reply_to_message_id: "u3", created_at: "2026-01-01T00:08:42Z", updated_at: "2026-01-01T00:08:42Z", emotion: null }], next_cursor: null } as never);
+  vi.mocked(api.completeInterview).mockResolvedValue({ status: "completed" } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /><Route path="/rooms/:roomId/interview-complete" element={<h1>면접 완료 도착</h1>} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  expect(await screen.findByText("면접은 여기까지입니다. 수고하셨습니다.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "음성 입력 시작" })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "면접 종료" }));
+
+  expect(api.completeInterview).toHaveBeenCalledWith("r1");
+  expect(await screen.findByRole("heading", { name: "면접 완료 도착" })).toBeInTheDocument();
 });
 
 test("I11 독립 화면은 종료 정보와 종합 피드백 이동을 제공한다", async () => {

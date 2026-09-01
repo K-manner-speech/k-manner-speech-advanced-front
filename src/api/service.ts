@@ -86,6 +86,13 @@ export const api = {
       }),
     );
   },
+  async completeInterview(roomId: string) {
+    return unwrap(
+      await http.POST("/api/v1/rooms/{room_id}/interview-complete", {
+        params: { path: { room_id: roomId } },
+      }),
+    );
+  },
   async messages(roomId: string) {
     return unwrap(
       await http.GET("/api/v1/rooms/{room_id}/messages", {

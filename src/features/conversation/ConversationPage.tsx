@@ -93,6 +93,15 @@ export function ConversationPage() {
       await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
     },
   });
+  const completeInterview = useMutation({
+    mutationFn: () => room.data?.status === "in_progress"
+      ? api.completeInterview(roomId)
+      : Promise.resolve(room.data),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+      navigate(`/rooms/${roomId}/interview-complete`, { replace: true });
+    },
+  });
 
   const beginSend = () => {
     autoplayAfterSequenceRef.current = sortedMessages
@@ -221,12 +230,17 @@ export function ConversationPage() {
   if (room.error || messages.error) return <StatusPanel title="대화를 불러오지 못했어요" detail={(room.error ?? messages.error)?.message} onRetry={() => { void room.refetch(); void messages.refetch(); }} />;
   const isTerminal = room.data?.status !== "in_progress";
   const isInterview = room.data?.practice_type === "interview";
-  const backDestination = (location.state as { from?: unknown } | null)?.from === "/rooms"
+  const cameFromRoomList = (location.state as { from?: unknown } | null)?.from === "/rooms";
+  const isAwaitingInterviewEnd = isInterview
+    && (isTerminal || room.data?.ended_reason === "awaiting_user_end");
+  const backDestination = cameFromRoomList
     ? "/rooms"
     : isInterview ? "/interview" : "/practice";
   const elapsedSeconds = Math.max(0, Math.round((new Date(room.data?.completed_at ?? room.data?.updated_at ?? 0).getTime() - new Date(room.data?.started_at ?? 0).getTime()) / 1000));
   const elapsed = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
-  if (isTerminal && isInterview) return <Navigate to={`/rooms/${roomId}/interview-complete`} replace />;
+  if (isTerminal && isInterview && cameFromRoomList) {
+    return <Navigate to={`/rooms/${roomId}/interview-complete`} replace />;
+  }
   const hasInterviewerMessage = sortedMessages.some((message) => message.sender_type === "persona");
 
   return (
@@ -279,7 +293,13 @@ export function ConversationPage() {
       </div>}
       {send.error && <div className={styles.partialError} role="alert"><strong>AI 응답을 완료하지 못했어요.</strong><span>{send.error.message}</span><small>보낸 메시지는 유지됩니다. 잠시 후 다시 시도해 주세요.</small></div>}
       {voiceError && <div className={styles.partialError} role="alert">{voiceError}</div>}
-      {isTerminal ? (
+      {completeInterview.error && <div className={styles.partialError} role="alert"><strong>면접을 종료하지 못했어요.</strong><span>{completeInterview.error.message}</span></div>}
+      {isAwaitingInterviewEnd ? (
+        <section className={styles.interviewVoiceComposer} aria-live="polite">
+          <button type="button" className={styles.primaryButton} disabled={completeInterview.isPending} onClick={() => completeInterview.mutate()}>{completeInterview.isPending ? "면접 종료 중…" : "면접 종료"}</button>
+          <p>마지막 면접관 답변을 확인한 뒤 면접을 종료해 주세요.</p>
+        </section>
+      ) : isTerminal ? (
         <section className={styles.completeCard}><h2>이번 연습이 끝났어요</h2><p>대화 내용은 그대로 유지됩니다. 결과에서 강점과 다음 연습을 확인하세요.</p><Link className={styles.primaryLink} to={`/rooms/${roomId}/result`}>결과 보기</Link></section>
       ) : isInterview ? (
         <section className={styles.interviewVoiceComposer} aria-live="polite">
