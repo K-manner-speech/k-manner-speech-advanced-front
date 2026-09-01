@@ -9,7 +9,7 @@ import { ConversationPage } from "./ConversationPage";
 import { InterviewCompletePage } from "./InterviewCompletePage";
 
 vi.mock("../../api/service", async () => ({
-  api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), completeInterview: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), retryFeedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn(), result: vi.fn() },
+  api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), completeInterview: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), retryFeedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn(), result: vi.fn(), retryResult: vi.fn(), job: vi.fn() },
   waitForTerminal: vi.fn(),
 }));
 
@@ -193,6 +193,21 @@ test("I11 화면은 처리 중인 결과를 자동 재조회하고 준비된 뒤
   expect(api.result).toHaveBeenCalledTimes(2);
 });
 
+test("I11 화면은 삭제되어 결과가 없는 완료 면접의 종합 피드백을 다시 생성한다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, persona_name: "현우 면접관", scenario_id: null, status: "completed", turn_count: 9, ended_reason: "completed", started_at: "2026-01-01T00:00:00Z", completed_at: "2026-01-01T00:27:51Z", updated_at: "2026-01-01T00:27:51Z", goal: "백엔드 개발자 면접" });
+  vi.mocked(api.result)
+    .mockRejectedValueOnce(new ApiError("RESULT_NOT_FOUND", "결과를 찾을 수 없습니다.", false, 404))
+    .mockResolvedValue({ id: "result-restored" } as never);
+  vi.mocked(api.retryResult).mockResolvedValue({ job: { job_id: "job-result" } } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1/interview-complete"]}><Routes><Route path="/rooms/:roomId/interview-complete" element={<InterviewCompletePage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  await userEvent.click(await screen.findByRole("button", { name: "종합 피드백 생성" }));
+
+  expect(api.retryResult).toHaveBeenCalledWith("r1");
+  expect(waitForTerminal).toHaveBeenCalledWith(expect.any(Function), "succeeded", 190_000);
+  expect(await screen.findByRole("link", { name: "종합 피드백 확인" })).toHaveAttribute("href", "/rooms/r1/result");
+});
+
 test("진행 중 면접은 질문을 면접관 말풍선으로 표시하고 마이크만 제공한다", async () => {
   vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, scenario_id: null, status: "in_progress", turn_count: 0, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:08Z", goal: "백엔드 개발자 면접", current_interview_question_id: "q1" } as never);
   vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [{ id: "q1", sequence: 1, text: "지원 동기를 말씀해 주세요", type: "motivation", source_document_ids: [] }] } as never);
@@ -205,6 +220,31 @@ test("진행 중 면접은 질문을 면접관 말풍선으로 표시하고 마�
   expect(screen.queryByLabelText("내 답변")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "보내기" })).not.toBeInTheDocument();
   expect(screen.queryByText("AI 대화 상대")).not.toBeInTheDocument();
+});
+
+test("첫 질문과 맞춤 추가 질문, 고정 보충 확인, 다음 질문 전환을 모두 유지한다", async () => {
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "모의 면접", practice_type: "interview", persona_id: null, scenario_id: null, status: "in_progress", turn_count: 1, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:08Z", goal: "백엔드 개발자 면접", interview_configuration_id: "c1", current_interview_question_id: "q1" } as never);
+  vi.mocked(api.messages).mockResolvedValue({ items: [
+    { id: "q1-message", room_id: "r1", sender_type: "persona", content: "파일 복구를 제한한 이유를 설명해 주세요.", sequence_no: 1, input_mode: null, delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z", emotion: { status: "succeeded", label: "neutral", reasoning: null } },
+    { id: "u1", room_id: "r1", sender_type: "user", content: "딱히 이유는 없습니다.", sequence_no: 2, input_mode: "voice", delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:01Z", updated_at: "2026-01-01T00:00:01Z", emotion: null },
+    { id: "followup", room_id: "r1", sender_type: "persona", content: "파일 복구 과정에서 가장 중요하게 고려한 점은 무엇인가요?", sequence_no: 3, input_mode: null, delivery_status: "sent", reply_to_message_id: "u1", created_at: "2026-01-01T00:00:02Z", updated_at: "2026-01-01T00:00:02Z", emotion: { status: "succeeded", label: "curious", reasoning: null } },
+    { id: "u2", room_id: "r1", sender_type: "user", content: "잘 모르겠습니다.", sequence_no: 4, input_mode: "voice", delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:03Z", updated_at: "2026-01-01T00:00:03Z", emotion: null },
+    { id: "confirm", room_id: "r1", sender_type: "persona", content: "네, 말씀해 주신 내용 확인했습니다. 이 질문에 대해 더 보충하실 내용이 있으신가요?", sequence_no: 5, input_mode: null, delivery_status: "sent", reply_to_message_id: "u2", created_at: "2026-01-01T00:00:04Z", updated_at: "2026-01-01T00:00:04Z", emotion: { status: "succeeded", label: "curious", reasoning: null } },
+    { id: "u3", room_id: "r1", sender_type: "user", content: "더 보충할 내용은 없습니다.", sequence_no: 6, input_mode: "voice", delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:05Z", updated_at: "2026-01-01T00:00:05Z", emotion: null },
+    { id: "transition", room_id: "r1", sender_type: "persona", content: "네, 답변 잘 들었습니다. 다음 질문입니다.", sequence_no: 7, input_mode: null, delivery_status: "sent", reply_to_message_id: "u3", created_at: "2026-01-01T00:00:06Z", updated_at: "2026-01-01T00:00:06Z", emotion: { status: "succeeded", label: "neutral", reasoning: null } },
+  ], next_cursor: null } as never);
+  vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [{ id: "q1", sequence: 1, text: "파일 복구를 제한한 이유를 설명해 주세요.", type: "technical", source_document_ids: [] }] } as never);
+
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  expect(await screen.findByText("파일 복구를 제한한 이유를 설명해 주세요.")).toBeInTheDocument();
+  expect(screen.getByText("딱히 이유는 없습니다.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "피드백 보기" })).not.toBeInTheDocument();
+  expect(screen.getByText("파일 복구 과정에서 가장 중요하게 고려한 점은 무엇인가요?")).toBeInTheDocument();
+  expect(screen.getByText("네, 말씀해 주신 내용 확인했습니다. 이 질문에 대해 더 보충하실 내용이 있으신가요?")).toBeInTheDocument();
+  expect(screen.getByText("네, 답변 잘 들었습니다. 다음 질문입니다.")).toBeInTheDocument();
+  expect(screen.getByRole("group", { name: "현우 면접관의 질문" })).toBeInTheDocument();
+  expect(screen.getAllByRole("group", { name: "현우 면접관의 답변" })).toHaveLength(3);
 });
 
 test("대화 목록에서 query 없이 면접방에 재입장해도 저장된 질문을 복원한다", async () => {

@@ -263,9 +263,9 @@ export function ConversationPage() {
           <div><p>{currentQuestion.text}</p><button type="button" aria-label="면접 질문 음성 재생" disabled>🔊</button></div>
         </article>}
         {sortedMessages.map((message) => message.sender_type === "persona" && isInterview ? (
-          <article key={message.id} className={styles.interviewMessage} role="group" aria-label="현우 면접관의 답변">
+          <article key={message.id} className={styles.interviewMessage} role="group" aria-label={message.sequence_no === 1 ? "현우 면접관의 질문" : "현우 면접관의 답변"}>
             <header><img src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" /><strong>현우 면접관 · 면접관</strong></header>
-            <div><p>{message.content}</p><button type="button" disabled={mediaAction.isPending} onClick={() => mediaAction.mutate({ message, mode: "manual" })} aria-label="면접관 음성 재생">🔊</button></div>
+            <div><p>{message.content}</p><button type="button" disabled={message.sequence_no === 1 || mediaAction.isPending} onClick={() => mediaAction.mutate({ message, mode: "manual" })} aria-label="면접관 음성 재생">🔊</button></div>
           </article>
         ) : (
           <article key={message.id} className={message.sender_type === "user" ? styles.userMessage : styles.aiMessage}>
@@ -278,7 +278,7 @@ export function ConversationPage() {
             {/* 시나리오 인사말은 DB에서 그대로 넣은 문장이라 TTS 음성도 전송 상태도 없다. */}
             {!(message.sender_type === "persona" && message.sequence_no === 1) && <footer className={styles.messageFooter}>
               <small>{message.delivery_status === "generating" ? "응답 생성 중" : "전송됨"}</small>
-              {message.sender_type === "user" && <button onClick={() => setFeedbackMessage(message)}>피드백 보기</button>}
+              {message.sender_type === "user" && !isInterview && <button onClick={() => setFeedbackMessage(message)}>피드백 보기</button>}
               {message.sender_type === "persona" && <span className={styles.messageActions}>
                 <button disabled={mediaAction.isPending} onClick={() => mediaAction.mutate({ message, mode: "manual" })} aria-label="AI 음성 재생">{mediaAction.isPending ? "음성 준비 중…" : "음성 재생"}</button>
               </span>}

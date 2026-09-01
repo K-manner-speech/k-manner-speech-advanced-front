@@ -228,6 +228,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rooms/{room_id}/interview-complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Interview */
+        post: operations["interview_room.complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rooms/{room_id}/messages": {
         parameters: {
             query?: never;
@@ -668,23 +685,6 @@ export interface paths {
         put?: never;
         /** Create Practice Room */
         post: operations["interview_practice_room.create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/rooms/{room_id}/interview-complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Complete Interview */
-        post: operations["interview_room.complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1667,13 +1667,27 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Room Id
+             * Format: uuid
+             */
+            room_id: string;
             /** Attempt No */
             attempt_no: number;
+            /**
+             * Practice Type
+             * @enum {string}
+             */
+            practice_type: "free_chat" | "scenario" | "interview";
+            /** Display Title */
+            display_title: string;
             /**
              * Status
              * @enum {string}
              */
             status: "processing" | "partial" | "succeeded" | "failed";
+            /** Failure Code */
+            failure_code?: string | null;
             /** Missing Categories */
             missing_categories: string[];
             /**
@@ -1698,13 +1712,27 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Room Id
+             * Format: uuid
+             */
+            room_id: string;
             /** Attempt No */
             attempt_no: number;
+            /**
+             * Practice Type
+             * @enum {string}
+             */
+            practice_type: "free_chat" | "scenario" | "interview";
+            /** Display Title */
+            display_title: string;
             /**
              * Status
              * @enum {string}
              */
             status: "processing" | "partial" | "succeeded" | "failed";
+            /** Failure Code */
+            failure_code?: string | null;
             /** Missing Categories */
             missing_categories: string[];
             /**
@@ -2253,6 +2281,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    "interview_room.complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Room"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -3237,37 +3296,6 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Room"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    "interview_room.complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                room_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };

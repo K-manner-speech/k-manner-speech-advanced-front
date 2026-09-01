@@ -12,7 +12,7 @@ vi.mock("../../api/service", () => ({
   waitForTerminal: vi.fn().mockResolvedValue({ status: "succeeded" }),
 }));
 
-const snapshot = { id: "res1", attempt_no: 1, status: "succeeded" as const, missing_categories: [], created_at: "2026-08-27T00:00:00Z", items: [], source_refs: [], overall_score: 80, summary: "좋은 연습", interview_evaluation: { status: "succeeded" as const, overall_score: 84, summary: "질문의 의도를 빠르게 이해했어요.", missing_categories: [], scores: [
+const snapshot = { id: "res1", room_id: "room1", attempt_no: 1, practice_type: "interview" as const, display_title: "면접 자기소개", status: "succeeded" as const, failure_code: null, missing_categories: [], created_at: "2026-08-27T00:00:00Z", items: [], source_refs: [], overall_score: 80, summary: "좋은 연습", interview_evaluation: { status: "succeeded" as const, overall_score: 84, summary: "질문의 의도를 빠르게 이해했어요.", missing_categories: [], scores: [
   { category: "specificity_evidence" as const, score: 18, max_score: 20 as const, strength: "구체적인 근거를 제시했어요.", suggestion: "성과를 수치로 덧붙여 보세요.", evidence: "사용자 조사 결과를 바탕으로 개선했습니다." },
 ] } };
 
@@ -33,6 +33,15 @@ test("결과 목록은 저장된 결과 ID 상세 경로를 제공한다", async
   expect(await screen.findByRole("heading", { name: "피드백 목록" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /피드백 확인/ })).toHaveAttribute("href", "/results/res1");
   expect(api.results).toHaveBeenCalledWith(undefined, 20);
+  expect(screen.getByRole("heading", { name: "면접 자기소개" })).toBeInTheDocument();
+});
+
+test("생성 시간을 초과한 면접 결과는 원인과 재시도를 보여준다", async () => {
+  const failed = { ...snapshot, status: "failed" as const, failure_code: "JOB_DEADLINE_EXCEEDED", overall_score: null, interview_evaluation: { status: "failed" as const, overall_score: null, summary: null, scores: [], missing_categories: ["question_understanding_fit" as const] } };
+  vi.mocked(api.resultById).mockResolvedValue(failed);
+  renderAt("/results/res1", <ResultPage source="result" />);
+  expect(await screen.findByText(/시간이 제한을 초과/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "피드백 다시 생성" })).toBeInTheDocument();
 });
 
 test("면접 결과는 R21에서 R25·R27 목록과 R22·R23 상세로 이동한다", async () => {

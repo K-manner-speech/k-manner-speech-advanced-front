@@ -18,7 +18,16 @@ export function ResultPage({ source = "room", view = "summary" }: { source?: "ro
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const result = useQuery({ queryKey: ["result", source, resourceId], queryFn: () => source === "room" ? api.result(resourceId) : api.resultById(resourceId) });
-  const retry = useMutation({ mutationFn: async () => { const accepted = await api.retryResult(roomId); return waitForTerminal(() => api.job(accepted.job.job_id), "succeeded"); }, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["result", source, resourceId] }); } });
+  const retry = useMutation({
+    mutationFn: async (targetRoomId: string) => {
+      const accepted = await api.retryResult(targetRoomId);
+      return waitForTerminal(() => api.job(accepted.job.job_id), "succeeded", 190_000);
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["result", source, resourceId] });
+      await queryClient.invalidateQueries({ queryKey: ["results"] });
+    },
+  });
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteResult(id),
     onSuccess: async () => {
@@ -30,13 +39,27 @@ export function ResultPage({ source = "room", view = "summary" }: { source?: "ro
   if (result.error) return <StatusPanel title="결과가 아직 준비되지 않았어요" detail={result.error.message} onRetry={() => void result.refetch()} />;
   const data = result.data;
   if (!data) return <StatusPanel title="결과가 아직 준비되지 않았어요" />;
+  if (data.status === "failed") return <FailedResult data={data} retry={retry} remove={remove} onBack={() => navigate(-1)} />;
   if (data.interview_evaluation) return <InterviewResult data={data} view={view} category={category} onBack={() => navigate(-1)} remove={remove} />;
   return <div className={styles.page}>
     <header className={styles.pageHeader}><BackHeader title="결과 요약" onBack={() => navigate("/rooms")} /><p className={styles.eyebrow}>R01</p><h1>결과 요약</h1><p className={styles.lead}>{data.summary ?? "답변에서 관찰된 내용을 기준으로 정리했습니다."}</p></header>
     <section className={styles.resultHero}><div><span>종합 점수</span><strong>{data.overall_score ?? "—"}</strong><small>/ 100</small></div></section>
     {!!data.items.length && <section className={styles.panel}><h2>표현별 코칭</h2><div className={styles.feedbackList}>{data.items.map((item) => <article key={`${item.item_type}-${item.order}`}><h3>{item.title}</h3><p>{item.explanation ?? item.evidence}</p></article>)}</div></section>}
     {(retry.error || remove.error) && <div className={styles.partialError} role="alert">{(retry.error ?? remove.error)?.message}</div>}
-    <div className={styles.actionRow}><Link className={styles.secondaryLink} to="/results">결과 목록</Link>{source === "room" && data.status === "failed" && <button className={styles.secondaryButton} onClick={() => retry.mutate()}>결과 생성 재시도</button>}{source === "result" && <button className={styles.dangerButton} disabled={remove.isPending} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(data.id); }}>{remove.isPending ? "삭제 중…" : "결과 삭제"}</button>}</div>
+    <div className={styles.actionRow}><Link className={styles.secondaryLink} to="/results">결과 목록</Link>{source === "result" && <button className={styles.dangerButton} disabled={remove.isPending} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(data.id); }}>{remove.isPending ? "삭제 중…" : "결과 삭제"}</button>}</div>
+  </div>;
+}
+
+function FailedResult({ data, retry, remove, onBack }: { data: SessionResult; retry: UseMutationResult<unknown, Error, string>; remove: UseMutationResult<void, Error, string>; onBack: () => void }) {
+  const detail = data.failure_code === "JOB_DEADLINE_EXCEEDED"
+    ? "종합 피드백을 만드는 시간이 제한을 초과했습니다. 대화 내용은 정상적으로 저장되었습니다."
+    : data.failure_code === "AI_PROVIDER_SCHEMA_INVALID"
+      ? "AI가 만든 피드백이 서버가 요구한 형식을 만족하지 못했습니다. 대화 내용은 정상적으로 저장되었습니다."
+      : "종합 피드백 생성을 완료하지 못했습니다. 대화 내용은 정상적으로 저장되었습니다.";
+  return <div className={styles.page}>
+    <header className={styles.pageHeader}><BackHeader title={data.practice_type === "interview" ? "면접 결과" : "결과 요약"} onBack={onBack} /><h1>피드백 생성을 완료하지 못했어요</h1><p className={styles.lead}>{detail}</p></header>
+    {(retry.error || remove.error) && <div className={styles.partialError} role="alert">{(retry.error ?? remove.error)?.message}</div>}
+    <div className={styles.actionRow}><Link className={styles.secondaryLink} to="/results">결과 목록</Link><button className={styles.secondaryButton} disabled={retry.isPending} onClick={() => retry.mutate(data.room_id)}>{retry.isPending ? "다시 생성 중…" : "피드백 다시 생성"}</button><button className={styles.dangerButton} disabled={remove.isPending} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(data.id); }}>{remove.isPending ? "삭제 중…" : "결과 삭제"}</button></div>
   </div>;
 }
 
