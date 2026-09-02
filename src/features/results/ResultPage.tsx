@@ -74,7 +74,7 @@ function InterviewResult({ data, view, category, onBack, remove }: { data: Sessi
     return <ResultFrame title={isStrength ? "잘한 점 상세" : "부족한 점 상세"} onBack={onBack} className={styles.interviewResultListPage}>
       <h1>{isStrength ? "면접에서 잘한 점" : "다음 면접에서 보완할 점"}</h1>
       <div className={styles.interviewResultItems}>{entries.map((score) => <Link key={score.category} to={`${base}/${isStrength ? "strengths" : "improvements"}/${score.category}`}><strong>{labels[score.category]}</strong><span>{isStrength ? score.strength : score.suggestion}</span><b>›</b></Link>)}</div>
-      {!entries.length && <div className={styles.empty}>표시할 항목이 아직 없습니다.</div>}
+      {!entries.length && <div className={styles.empty}>{isStrength ? "이번 면접에서는 뚜렷하게 확인된 강점이 없어요." : "표시할 보완 항목이 없습니다."}</div>}
     </ResultFrame>;
   }
   if (view === "strength-detail" || view === "improvement-detail") {
@@ -88,8 +88,8 @@ function InterviewResult({ data, view, category, onBack, remove }: { data: Sessi
   return <ResultFrame title="면접 결과" onBack={onBack} className={styles.interviewResultSummary}>
     <section className={styles.interviewOverall}><h1>면접 총평</h1><p>{evaluation.summary ?? data.summary ?? "답변을 바탕으로 면접 결과를 정리했어요."}</p>{data.summary && data.summary !== evaluation.summary && <small>{data.summary}</small>}</section>
     <section className={styles.interviewScoreStrip}><span>종합 점수</span><strong>{evaluation.overall_score ?? data.overall_score ?? "—"}</strong><small>/100</small></section>
-    <Link aria-label="이번 면접에서 잘한 점" className={styles.interviewResultChoice} to={`${base}/strengths`}><h2>이번 면접에서 잘한 점</h2><div>{strengths.slice(0, 3).map((score) => <span key={score.category}>{labels[score.category]}</span>)}</div><p>{strengths[0]?.strength ?? "답변에서 확인된 강점을 살펴보세요."}</p></Link>
-    <Link aria-label="다음 면접에서 보완할 점" className={`${styles.interviewResultChoice} ${styles.interviewResultChoiceWarning}`} to={`${base}/improvements`}><h2>다음 면접에서 보완할 점</h2><div>{improvements.slice(0, 3).map((score) => <span key={score.category}>{labels[score.category]}</span>)}</div><p>{improvements[0]?.suggestion ?? "다음 답변에서 보완할 점을 살펴보세요."}</p></Link>
+    <Link aria-label="이번 면접에서 잘한 점" className={styles.interviewResultChoice} to={`${base}/strengths`}><h2>이번 면접에서 잘한 점</h2><div>{strengths.slice(0, 3).map((score) => <span key={score.category}>{labels[score.category]}</span>)}</div><p>{strengths[0]?.strength ?? "이번 면접에서는 뚜렷하게 확인된 강점이 없어요."}</p></Link>
+    <Link aria-label="다음 면접에서 보완할 점" className={`${styles.interviewResultChoice} ${styles.interviewResultChoiceWarning}`} to={`${base}/improvements`}><h2>다음 면접에서 보완할 점</h2><div>{improvements.map((score) => <span key={score.category}>{labels[score.category]}</span>)}</div><p>{improvements[0]?.suggestion ?? "다음 답변에서 보완할 점을 살펴보세요."}</p></Link>
     {remove.error && <div className={styles.partialError} role="alert">{remove.error.message}</div>}
     <button className={styles.dangerButton} disabled={remove.isPending} onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(data.id); }}>{remove.isPending ? "삭제 중…" : "결과 삭제"}</button>
   </ResultFrame>;

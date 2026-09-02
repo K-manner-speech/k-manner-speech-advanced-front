@@ -60,6 +60,39 @@ test("면접 결과는 R21에서 R25·R27 목록과 R22·R23 상세로 이동한
   expect(screen.getByText("사용자 조사 결과를 바탕으로 개선했습니다.")).toBeInTheDocument();
 });
 
+test("강점이 없으면 사실을 명확히 안내하고 보완 항목 5개를 모두 보여준다", async () => {
+  const categories = [
+    "question_understanding_fit",
+    "answer_structure",
+    "specificity_evidence",
+    "job_fit_problem_solving",
+    "delivery_attitude",
+  ] as const;
+  const noStrengths = {
+    ...snapshot,
+    interview_evaluation: {
+      ...snapshot.interview_evaluation,
+      overall_score: 40,
+      scores: categories.map((category) => ({
+        category,
+        score: 8,
+        max_score: 20 as const,
+        strength: null,
+        suggestion: `${labelsForTest[category]} 보완 제안`,
+        evidence: `${labelsForTest[category]} 근거`,
+      })),
+    },
+  };
+  vi.mocked(api.resultById).mockResolvedValue(noStrengths);
+
+  renderAt("/results/res1", <ResultPage source="result" />);
+
+  expect(await screen.findByText("이번 면접에서는 뚜렷하게 확인된 강점이 없어요.")).toBeInTheDocument();
+  for (const label of Object.values(labelsForTest)) {
+    expect(screen.getByText(label)).toBeInTheDocument();
+  }
+});
+
 test("방 경로와 결과 ID 경로가 서로 다른 조회 API를 사용한다", async () => {
   const roomView = renderAt("/rooms/r1/result", <ResultPage source="room" />);
   expect(await screen.findByText("좋은 연습")).toBeInTheDocument();
@@ -97,3 +130,11 @@ test("면접 결과 삭제 실패를 화면에 표시한다", async () => {
   await userEvent.click(await screen.findByRole("button", { name: "결과 삭제" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("결과를 삭제하지 못했습니다.");
 });
+
+const labelsForTest = {
+  question_understanding_fit: "질문 이해·적합성",
+  answer_structure: "답변 구조",
+  specificity_evidence: "구체성·근거",
+  job_fit_problem_solving: "직무 적합성·문제 해결력",
+  delivery_attitude: "전달력·태도",
+} as const;
