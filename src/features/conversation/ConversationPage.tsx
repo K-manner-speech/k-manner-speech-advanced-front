@@ -103,6 +103,18 @@ export function ConversationPage() {
     },
   });
 
+  const completeScenario = useMutation({
+    mutationFn: () => api.completeScenario(roomId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+      navigate(`/rooms/${roomId}/result`, { replace: true });
+    },
+  });
+  const continueAfterGoal = useMutation({
+    mutationFn: () => api.continueAfterGoal(roomId),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["room", roomId] }); },
+  });
+
   const beginSend = () => {
     autoplayAfterSequenceRef.current = sortedMessages
       .filter((message) => message.sender_type === "persona")
@@ -235,6 +247,11 @@ export function ConversationPage() {
   const cameFromRoomList = (location.state as { from?: unknown } | null)?.from === "/rooms";
   const isAwaitingInterviewEnd = isInterview
     && (isTerminal || room.data?.ended_reason === "awaiting_user_end");
+  // 조기 종료는 제안이지 강제가 아니다. 입력창은 열어두고 보내기만 잠근다.
+  const isGoalAchieved = !isInterview && !isTerminal
+    && room.data?.ended_reason === "goal_achieved";
+  const goalChoicePending = isGoalAchieved
+    && !completeScenario.isPending && !continueAfterGoal.isPending;
   const backDestination = cameFromRoomList
     ? "/rooms"
     : isInterview ? "/interview" : "/practice";
@@ -296,6 +313,15 @@ export function ConversationPage() {
       {send.error && <div className={styles.partialError} role="alert"><strong>AI 응답을 완료하지 못했어요.</strong><span>{send.error.message}</span><small>보낸 메시지는 유지됩니다. 잠시 후 다시 시도해 주세요.</small></div>}
       {voiceError && <div className={styles.partialError} role="alert">{voiceError}</div>}
       {completeInterview.error && <div className={styles.partialError} role="alert"><strong>면접을 종료하지 못했어요.</strong><span>{completeInterview.error.message}</span></div>}
+      {isGoalAchieved && <section className={styles.goalAchievedCard} role="status" aria-live="polite">
+        <strong>목표를 모두 달성했어요</strong>
+        <p>연습을 마치고 피드백을 확인하거나, 대화를 더 이어갈 수 있어요.</p>
+        <div>
+          <button type="button" className={styles.primaryButton} disabled={completeScenario.isPending || continueAfterGoal.isPending} onClick={() => completeScenario.mutate()}>{completeScenario.isPending ? "마무리하는 중…" : "연습 종료"}</button>
+          <button type="button" className={styles.secondaryButton} disabled={completeScenario.isPending || continueAfterGoal.isPending} onClick={() => continueAfterGoal.mutate()}>{continueAfterGoal.isPending ? "이어가는 중…" : "계속하기"}</button>
+        </div>
+        {(completeScenario.error || continueAfterGoal.error) && <span className={styles.partialError}>{(completeScenario.error ?? continueAfterGoal.error)?.message}</span>}
+      </section>}
       {isAwaitingInterviewEnd ? (
         <section className={styles.interviewVoiceComposer} aria-live="polite">
           <button type="button" className={styles.primaryButton} disabled={completeInterview.isPending} onClick={() => completeInterview.mutate()}>{completeInterview.isPending ? "면접 종료 중…" : "면접 종료"}</button>
@@ -314,7 +340,7 @@ export function ConversationPage() {
         <form className={styles.composer} onSubmit={(event) => { event.preventDefault(); if (!send.isPending) beginSend(); }}>
           <label htmlFor="message-input">내 답변</label>
           <textarea id="message-input" rows={3} value={content} onChange={(event) => { setContent(event.target.value); setInputMode("text"); }} placeholder={isListening ? "듣고 있어요…" : currentQuestion ? "답변을 입력하세요" : "표현을 입력하세요"} disabled={send.isPending} />
-          <div><span>{isListening ? "말씀해 주세요" : content.trim().length ? `${content.trim().length}자 · ${inputMode === "voice" ? voiceBlob ? "음성 녹음 완료" : "녹음 정리 중" : "텍스트 입력"}` : "공백만 있는 내용은 전송되지 않아요"}</span><div className={styles.composerActions}><button type="button" className={`${styles.micButton} ${isListening ? styles.micButtonActive : ""}`} onClick={() => { void toggleVoiceInput(); }} disabled={send.isPending} aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"} aria-pressed={isListening}>{isListening ? "■" : "🎙"}</button><button className={styles.primaryButton} disabled={!content.trim() || send.isPending || isListening || (inputMode === "voice" && !voiceBlob)}>{send.isPending ? "답변 기다리는 중…" : "보내기"}</button></div></div>
+          <div><span>{isListening ? "말씀해 주세요" : content.trim().length ? `${content.trim().length}자 · ${inputMode === "voice" ? voiceBlob ? "음성 녹음 완료" : "녹음 정리 중" : "텍스트 입력"}` : "공백만 있는 내용은 전송되지 않아요"}</span><div className={styles.composerActions}><button type="button" className={`${styles.micButton} ${isListening ? styles.micButtonActive : ""}`} onClick={() => { void toggleVoiceInput(); }} disabled={send.isPending || goalChoicePending} aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"} aria-pressed={isListening}>{isListening ? "■" : "🎙"}</button><button className={styles.primaryButton} disabled={!content.trim() || send.isPending || isListening || goalChoicePending || (inputMode === "voice" && !voiceBlob)}>{send.isPending ? "답변 기다리는 중…" : "보내기"}</button></div></div>
         </form>
       )}
       {feedbackMessage && <FeedbackDialog message={feedbackMessage} onClose={() => setFeedbackMessage(null)} />}

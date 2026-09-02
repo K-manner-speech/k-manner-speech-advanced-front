@@ -93,6 +93,20 @@ export const api = {
       }),
     );
   },
+  async completeScenario(roomId: string) {
+    return unwrap(
+      await http.POST("/api/v1/rooms/{room_id}/complete", {
+        params: { path: { room_id: roomId } },
+      }),
+    );
+  },
+  async continueAfterGoal(roomId: string) {
+    return unwrap(
+      await http.POST("/api/v1/rooms/{room_id}/continue", {
+        params: { path: { room_id: roomId } },
+      }),
+    );
+  },
   async messages(roomId: string) {
     return unwrap(
       await http.GET("/api/v1/rooms/{room_id}/messages", {
