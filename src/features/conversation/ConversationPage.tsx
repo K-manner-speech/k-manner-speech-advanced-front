@@ -7,7 +7,7 @@ import { BackHeader } from "../../components/ui/BackHeader";
 import styles from "../../components/ui/Pages.module.css";
 import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
 import { AudioGenerationFailedError, playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
-import { primeStreamingTts } from "./ttsStreaming";
+import { primeStreamingTts, stopActiveTtsPlayback } from "./ttsStreaming";
 
 const emotionLabels: Record<string, string> = {
   neutral: "차분함",
@@ -115,6 +115,8 @@ export function ConversationPage() {
     recognitionRef.current?.stop();
     if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     streamRef.current?.getTracks().forEach((track) => track.stop());
+    // 화면을 떠나도 스트리밍 재생과 fetch가 살아 있어 음성이 계속 들린다.
+    stopActiveTtsPlayback();
   }, []);
 
   const toggleVoiceInput = async () => {

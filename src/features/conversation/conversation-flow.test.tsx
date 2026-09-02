@@ -33,9 +33,29 @@ test("AI 응답은 백엔드 45초 제한보다 긴 50초 동안 기다린다", 
   expect(waitForTerminal).toHaveBeenCalledWith(expect.any(Function), "succeeded", 50_000);
 });
 
+test("대화 화면을 벗어나면 재생 중이던 음성을 멈춘다", async () => {
+  const pause = vi.fn();
+  vi.stubGlobal("Audio", function AudioMock() {
+    return { play: vi.fn().mockResolvedValue(undefined), pause, removeAttribute: vi.fn(), load: vi.fn() };
+  });
+  vi.mocked(api.messages).mockResolvedValue({ items: [
+    { id: "m1", room_id: "r1", sender_type: "persona", content: "안녕하세요", sequence_no: 2, input_mode: "text", delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:01Z", updated_at: "2026-01-01T00:00:01Z", emotion: { status: "succeeded", label: "neutral", reasoning: null } },
+  ], next_cursor: null });
+  vi.mocked(api.audio).mockResolvedValue({ status: "ready", signed_url: "https://example.test/audio", expires_at: null, audio_type: "persona_tts", duration_ms: 1_000 });
+  const user = userEvent.setup();
+  const view = render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  await user.click(await screen.findByRole("button", { name: "AI 음성 재생" }));
+  expect(pause).not.toHaveBeenCalled();
+
+  view.unmount();
+
+  expect(pause).toHaveBeenCalled();
+});
+
 test("AI 메시지에는 음성 재생만 제공한다", async () => {
   const play = vi.fn().mockResolvedValue(undefined);
-  vi.stubGlobal("Audio", function AudioMock() { return { play }; });
+  vi.stubGlobal("Audio", function AudioMock() { return { play, pause: vi.fn(), removeAttribute: vi.fn(), load: vi.fn() }; });
   vi.mocked(api.messages).mockResolvedValue({ items: [
     { id: "u1", room_id: "r1", sender_type: "user", content: "일정을 바꿔 주세요", sequence_no: 1, input_mode: "text", delivery_status: "sent", reply_to_message_id: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z", emotion: { status: "succeeded", label: "happy", reasoning: null } },
     { id: "m1", room_id: "r1", sender_type: "persona", content: "안녕하세요", sequence_no: 2, input_mode: "text", delivery_status: "sent", reply_to_message_id: "u1", created_at: "2026-01-01T00:00:01Z", updated_at: "2026-01-01T00:00:01Z", emotion: { status: "succeeded", label: "angry", reasoning: null } },
