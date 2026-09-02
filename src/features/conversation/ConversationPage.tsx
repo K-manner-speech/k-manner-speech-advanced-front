@@ -9,6 +9,9 @@ import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
 import { AudioGenerationFailedError, playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
 import { primeStreamingTts, stopActiveTtsPlayback } from "./ttsStreaming";
 
+// 판정 job 의 제한 시간은 20초다. 재시도까지 감안해 조금 더 길게 지켜본다.
+export const GOAL_POLL_WINDOW_MS = 40_000;
+
 const emotionLabels: Record<string, string> = {
   neutral: "차분함",
   happy: "기쁨",
@@ -56,7 +59,20 @@ export function ConversationPage() {
   const [feedbackMessage, setFeedbackMessage] = useState<Message | null>(null);
   const [failedAudioMessageId, setFailedAudioMessageId] = useState<string | null>(null);
   const autoplayAfterSequenceRef = useRef<number | null>(null);
-  const room = useQuery({ queryKey: ["room", roomId], queryFn: () => api.room(roomId) });
+  // 목표 판정은 답장이 뜬 뒤 몇 초 지나 끝난다. 전송 직후 한 번만 읽으면
+  // goal_achieved 가 화면에 영영 도달하지 않으므로, 전송 뒤 잠시 폴링한다.
+  const [goalPollUntil, setGoalPollUntil] = useState(0);
+  const room = useQuery({
+    queryKey: ["room", roomId],
+    queryFn: () => api.room(roomId),
+    refetchInterval: (query) => {
+      const current = query.state.data;
+      if (!current || current.practice_type === "interview") return false;
+      if (current.status !== "in_progress") return false;
+      if (current.ended_reason === "goal_achieved") return false;
+      return Date.now() < goalPollUntil ? 2_000 : false;
+    },
+  });
   const messages = useQuery({ queryKey: ["messages", roomId], queryFn: () => api.messages(roomId) });
   const configurationId = configurationIdFromUrl ?? room.data?.interview_configuration_id ?? null;
   const questions = useQuery({
@@ -89,6 +105,7 @@ export function ConversationPage() {
       return waitForTerminal(() => api.job(accepted.job.job_id), "succeeded", 50_000);
     },
     onSettled: async () => {
+      setGoalPollUntil(Date.now() + GOAL_POLL_WINDOW_MS);
       await queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
       await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
     },
@@ -112,7 +129,10 @@ export function ConversationPage() {
   });
   const continueAfterGoal = useMutation({
     mutationFn: () => api.continueAfterGoal(roomId),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["room", roomId] }); },
+    onSuccess: async () => {
+      setGoalPollUntil(0);
+      await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+    },
   });
 
   const beginSend = () => {

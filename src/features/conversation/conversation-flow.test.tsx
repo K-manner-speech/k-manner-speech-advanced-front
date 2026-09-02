@@ -57,6 +57,30 @@ function goalAchievedRoom() {
   return { id: "r1", title: "학교 식당 위치 묻기", practice_type: "scenario" as const, persona_id: "p1", persona_name: "선배", scenario_id: "s1", status: "in_progress" as const, turn_count: 2, ended_reason: "goal_achieved", started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:00Z", goal: "존댓말로 식당 위치를 묻고 감사를 표현한다" };
 }
 
+test("전송 뒤 늦게 도착한 목표 달성을 폴링으로 받아온다", async () => {
+  // 판정은 답장보다 몇 초 늦게 끝난다. 전송 직후 한 번만 읽으면 영영 못 받는다.
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const inProgress = goalAchievedRoom();
+  vi.mocked(api.room).mockResolvedValue({ ...inProgress, ended_reason: null });
+  vi.mocked(api.sendMessage).mockResolvedValue({
+    message: { id: "m9" }, job: { job_id: "job-9", type: "conversation_text", status: "queued" },
+  } as never);
+  vi.mocked(waitForTerminal).mockResolvedValue({ status: "succeeded" });
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  await user.type(await screen.findByLabelText("내 답변"), "알려주셔서 감사합니다");
+  await user.click(screen.getByRole("button", { name: "보내기" }));
+  expect(screen.queryByText("목표를 모두 달성했어요")).not.toBeInTheDocument();
+
+  // 판정이 끝나 백엔드가 goal_achieved 를 세운 상황
+  vi.mocked(api.room).mockResolvedValue(inProgress);
+  await act(async () => { await vi.advanceTimersByTimeAsync(2_500); });
+
+  expect(await screen.findByText("목표를 모두 달성했어요")).toBeInTheDocument();
+  vi.useRealTimers();
+});
+
 test("목표를 달성하면 선택지를 띄우고 보내기만 잠근다", async () => {
   vi.mocked(api.room).mockResolvedValue(goalAchievedRoom());
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
