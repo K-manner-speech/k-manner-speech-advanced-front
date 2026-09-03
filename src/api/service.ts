@@ -319,14 +319,26 @@ export async function waitForTerminal<T extends { status: string }>(
   successStatus: string,
   timeoutMilliseconds = 65_000,
 ): Promise<T> {
-  const deadline = Date.now() + timeoutMilliseconds;
+  const startedAt = Date.now();
+  const deadline = startedAt + timeoutMilliseconds;
   while (Date.now() < deadline) {
     const value = await load();
     if (value.status === successStatus) return value;
     if (["failed", "cancelled", "invalidated"].includes(value.status)) {
       throw new Error("비동기 작업이 완료되지 않았습니다. 다시 시도해 주세요.");
     }
-    await new Promise((resolve) => window.setTimeout(resolve, 2_000));
+    const elapsedMilliseconds = Date.now() - startedAt;
+    const pollingIntervalMilliseconds = elapsedMilliseconds < 5_000
+      ? 500
+      : elapsedMilliseconds < 15_000
+        ? 1_000
+        : 2_000;
+    const remainingMilliseconds = deadline - Date.now();
+    if (remainingMilliseconds <= 0) break;
+    await new Promise((resolve) => window.setTimeout(
+      resolve,
+      Math.min(pollingIntervalMilliseconds, remainingMilliseconds),
+    ));
   }
   throw new Error("처리 시간이 길어지고 있습니다. 잠시 후 다시 확인해 주세요.");
 }

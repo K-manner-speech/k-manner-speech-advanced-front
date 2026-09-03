@@ -6,6 +6,10 @@ React + TypeScript + Vite 기반 로컬 시연용 프론트엔드입니다. 애�
 - API 계약: FastAPI OpenAPI + openapi-typescript/openapi-fetch
 - 시연 범위: 로그인, 최소 온보딩, Catalog, 텍스트 대화, 이력서 기반 면접, 결과
 
+비동기 Job은 시작 후 5초까지 0.5초, 5~15초는 1초, 이후에는 2초 간격으로
+polling합니다. terminal 상태에서는 즉시 종료하고 전체 timeout은 호출별 기존 설정을
+유지합니다.
+
 ## 환경 변수
 
 `.env.example`을 `.env.local`로 복사하고 아래 공개 값만 입력합니다.
