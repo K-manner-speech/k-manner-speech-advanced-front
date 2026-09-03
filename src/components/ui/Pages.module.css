@@ -96,6 +96,17 @@
 .micButton { width:48px; min-height:48px; display:grid; place-items:center; padding:0; border:1px solid var(--color-brand); border-radius:50%; color:var(--color-brand); background:white; font-size:14px; }
 .micButtonActive { color:white; border-color:var(--color-danger); background:var(--color-danger); animation:pulse 1.2s ease-in-out infinite; }
 .completeCard { padding:var(--space-8); border-radius:var(--radius-xl); text-align:center; background:var(--color-brand-soft); }
+.briefing { padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-surface-muted); }
+.briefing summary { cursor:pointer; color:var(--color-brand-strong); font-size:var(--font-size-sm); font-weight:750; list-style:none; }
+.briefing summary::-webkit-details-marker { display:none; }
+.briefing summary::after { content:" ▾"; }
+.briefing[open] summary::after { content:" ▴"; }
+.briefing p { margin:var(--space-2) 0 0; color:var(--color-text-body); font-size:14px; line-height:1.6; }
+.goalAchievedCard { display:grid; gap:var(--space-2); padding:var(--space-5); border-radius:var(--radius-lg); border:1px solid var(--color-brand); background:var(--color-brand-soft); }
+.goalAchievedCard strong { font-size:16px; }
+.goalAchievedCard p { margin:0; color:var(--color-text-muted); font-size:14px; line-height:1.5; }
+.goalAchievedCard>div { display:flex; gap:var(--space-2); flex-wrap:wrap; }
+.goalAchievedCard>div button { flex:1 1 140px; }
 .dialogBackdrop { position:fixed; inset:0; z-index:30; display:grid; place-items:center; padding:var(--space-5); background:rgba(35,33,30,.46); }
 .dialog { width:min(720px,100%); max-height:88vh; overflow:auto; position:relative; padding:var(--space-8); border-radius:var(--radius-xl); background:var(--color-surface); box-shadow:var(--shadow-lg); }
 .dialogClose { position:absolute; top:var(--space-4); right:var(--space-4); width:44px; height:44px; border:0; border-radius:50%; background:var(--color-surface-muted); font-size:24px; }
@@ -349,7 +360,7 @@
 .stickyAction .primaryButton { width:100%; }
 .conversationPage { gap:10px; }
 .conversationHeader { min-height:34px; display:block; }
-.conversationHeader .cardTag,.conversationHeader p,.turnBadge { display:none; }
+.conversationHeader .cardTag,.turnBadge { display:none; }
 .personaStage { min-height:168px; border-radius:16px; background:#ddd; }
 .personaStage img { width:100%; height:168px; border-radius:16px; object-fit:cover; object-position:center 32%; }
 .personaStage>div { right:12px; bottom:12px; padding:5px 14px; border-radius:12px; }
