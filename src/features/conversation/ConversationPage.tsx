@@ -286,10 +286,14 @@ export function ConversationPage() {
     <div className={`${styles.page} ${styles.conversationPage} ${isInterview ? styles.interviewConversation : ""}`}>
       <header className={styles.conversationHeader}>
         <BackHeader title={isInterview ? "면접" : "대화"} onBack={() => navigate(backDestination)} />
-        {!isInterview && <div><span className={styles.cardTag}>대화 연습</span><h1>{room.data?.title}</h1><p>{room.data?.goal ?? "상대의 말을 듣고 자연스럽게 답해 보세요."}</p></div>}
+        {!isInterview && <div><span className={styles.cardTag}>대화 연습</span><h1>{room.data?.title}</h1></div>}
         <div className={styles.turnBadge}>{room.data?.turn_count ?? 0}턴</div>
       </header>
       {isInterview && <section className={styles.interviewGoal} aria-live="polite"><strong>면접 시뮬레이션</strong><span>진행 시간 {elapsed}</span></section>}
+      {!isInterview && room.data?.goal && <details className={styles.briefing} open={!sortedMessages.some((message) => message.sender_type === "user")}>
+        <summary>이번 연습 상황</summary>
+        <p>{room.data.goal}</p>
+      </details>}
       <section className={styles.personaStage}>
         <img src={personaImageForEmotion(currentEmotion)} alt={`${isInterview ? "면접 상대" : "대화 상대"}의 ${currentEmotionLabel} 표정`} />
         <div>{isInterview && <b>현우 면접관</b>}<span>{isInterview ? "기술 면접관" : "AI가 추정한 현재 반응"}</span><strong>{currentEmotionLabel}</strong></div>

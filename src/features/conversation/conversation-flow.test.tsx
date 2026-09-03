@@ -81,6 +81,30 @@ test("전송 뒤 늦게 도착한 목표 달성을 폴링으로 받아온다", a
   vi.useRealTimers();
 });
 
+test("시나리오 상황 브리핑을 대화 화면에 보여준다", async () => {
+  // 헤더의 goal 문단은 모바일 CSS 가 숨긴다. 브리핑은 전용 영역이어야 한다.
+  const briefing = "점심시간인데 학생 식당이 어디인지 모른다. 선배에게 물어보자.";
+  vi.mocked(api.room).mockResolvedValue({ ...goalAchievedRoom(), ended_reason: null, goal: briefing });
+  vi.mocked(api.messages).mockResolvedValue({ items: [], next_cursor: null });
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  expect(await screen.findByText(briefing)).toBeInTheDocument();
+  const panel = screen.getByText("이번 연습 상황").closest("details");
+  expect(panel).toHaveAttribute("open");   // 첫 발화 전에는 펼쳐서 보여준다
+});
+
+test("면접 화면에는 상황 브리핑을 띄우지 않는다", async () => {
+  vi.mocked(api.room).mockResolvedValue({
+    ...goalAchievedRoom(), practice_type: "interview", ended_reason: null,
+    interview_configuration_id: "cfg1", goal: "면접 목표",
+  });
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  expect(await screen.findByText("면접 시뮬레이션")).toBeInTheDocument();
+  expect(screen.queryByText("이번 연습 상황")).not.toBeInTheDocument();
+  expect(screen.queryByText("면접 목표")).not.toBeInTheDocument();
+});
+
 test("목표를 달성하면 선택지를 띄우고 보내기만 잠근다", async () => {
   vi.mocked(api.room).mockResolvedValue(goalAchievedRoom());
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
