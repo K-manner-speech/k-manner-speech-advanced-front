@@ -120,11 +120,14 @@ export function ConversationPage() {
     },
   });
 
-  const completeScenario = useMutation({
-    mutationFn: () => api.completeScenario(roomId),
-    onSuccess: async () => {
+  // 목표 달성 카드와 헤더의 종료 버튼이 같은 API를 쓴다. 면접도 중간에 그만둘 수
+  // 있어야 하므로 연습 종류로 갈라지는 것은 끝난 뒤 이동할 화면뿐이다.
+  const completePractice = useMutation({
+    mutationFn: () => api.completePractice(roomId),
+    onSuccess: async (completed) => {
       await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
-      navigate(`/rooms/${roomId}/result`, { replace: true });
+      const next = completed?.practice_type === "interview" ? "interview-complete" : "result";
+      navigate(`/rooms/${roomId}/${next}`, { replace: true });
     },
   });
   const continueAfterGoal = useMutation({
@@ -271,7 +274,10 @@ export function ConversationPage() {
   const isGoalAchieved = !isInterview && !isTerminal
     && room.data?.ended_reason === "goal_achieved";
   const goalChoicePending = isGoalAchieved
-    && !completeScenario.isPending && !continueAfterGoal.isPending;
+    && !completePractice.isPending && !continueAfterGoal.isPending;
+  // 목표를 이루지 못했거나 질문이 남았어도 그만둘 수 있어야 한다. 목표 달성 카드나
+  // 면접 종료 카드가 떠 있을 때는 거기에 이미 종료 버튼이 있으므로 겹쳐 내지 않는다.
+  const canEndAnytime = !isTerminal && !isGoalAchieved && !isAwaitingInterviewEnd;
   const backDestination = cameFromRoomList
     ? "/rooms"
     : isInterview ? "/interview" : "/practice";
@@ -285,7 +291,23 @@ export function ConversationPage() {
   return (
     <div className={`${styles.page} ${styles.conversationPage} ${isInterview ? styles.interviewConversation : ""}`}>
       <header className={styles.conversationHeader}>
-        <BackHeader title={isInterview ? "면접" : "대화"} onBack={() => navigate(backDestination)} />
+        <BackHeader
+          title={isInterview ? "면접" : "대화"}
+          onBack={() => navigate(backDestination)}
+          action={canEndAnytime && (
+            <button
+              type="button"
+              disabled={completePractice.isPending}
+              onClick={() => {
+                if (window.confirm(`${isInterview ? "면접" : "대화"}를 끝내고 결과를 확인할까요?`)) {
+                  completePractice.mutate();
+                }
+              }}
+            >
+              {completePractice.isPending ? "종료 중…" : "종료"}
+            </button>
+          )}
+        />
         {!isInterview && <div><span className={styles.cardTag}>대화 연습</span><h1>{room.data?.title}</h1></div>}
         <div className={styles.turnBadge}>{room.data?.turn_count ?? 0}턴</div>
       </header>
@@ -341,10 +363,10 @@ export function ConversationPage() {
         <strong>목표를 모두 달성했어요</strong>
         <p>연습을 마치고 피드백을 확인하거나, 대화를 더 이어갈 수 있어요.</p>
         <div>
-          <button type="button" className={styles.primaryButton} disabled={completeScenario.isPending || continueAfterGoal.isPending} onClick={() => completeScenario.mutate()}>{completeScenario.isPending ? "마무리하는 중…" : "연습 종료"}</button>
-          <button type="button" className={styles.secondaryButton} disabled={completeScenario.isPending || continueAfterGoal.isPending} onClick={() => continueAfterGoal.mutate()}>{continueAfterGoal.isPending ? "이어가는 중…" : "계속하기"}</button>
+          <button type="button" className={styles.primaryButton} disabled={completePractice.isPending || continueAfterGoal.isPending} onClick={() => completePractice.mutate()}>{completePractice.isPending ? "마무리하는 중…" : "연습 종료"}</button>
+          <button type="button" className={styles.secondaryButton} disabled={completePractice.isPending || continueAfterGoal.isPending} onClick={() => continueAfterGoal.mutate()}>{continueAfterGoal.isPending ? "이어가는 중…" : "계속하기"}</button>
         </div>
-        {(completeScenario.error || continueAfterGoal.error) && <span className={styles.partialError}>{(completeScenario.error ?? continueAfterGoal.error)?.message}</span>}
+        {(completePractice.error || continueAfterGoal.error) && <span className={styles.partialError}>{(completePractice.error ?? continueAfterGoal.error)?.message}</span>}
       </section>}
       {isAwaitingInterviewEnd ? (
         <section className={styles.interviewVoiceComposer} aria-live="polite">

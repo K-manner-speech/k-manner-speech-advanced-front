@@ -9,7 +9,7 @@ import { ConversationPage } from "./ConversationPage";
 import { InterviewCompletePage } from "./InterviewCompletePage";
 
 vi.mock("../../api/service", async () => ({
-  api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), completeInterview: vi.fn(), completeScenario: vi.fn(), continueAfterGoal: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), retryFeedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn(), result: vi.fn(), retryResult: vi.fn(), job: vi.fn() },
+  api: { room: vi.fn(), messages: vi.fn(), sendMessage: vi.fn(), sendVoiceMessage: vi.fn(), completeInterview: vi.fn(), completePractice: vi.fn(), continueAfterGoal: vi.fn(), interviewQuestions: vi.fn(), feedback: vi.fn(), retryFeedback: vi.fn(), audio: vi.fn(), retryTts: vi.fn(), repeatMessage: vi.fn(), result: vi.fn(), retryResult: vi.fn(), job: vi.fn() },
   waitForTerminal: vi.fn(),
 }));
 
@@ -141,7 +141,7 @@ test("계속하기를 누르면 잠금이 풀린다", async () => {
 
 test("연습 종료를 누르면 결과 화면으로 이동한다", async () => {
   vi.mocked(api.room).mockResolvedValue(goalAchievedRoom());
-  vi.mocked(api.completeScenario).mockResolvedValue({ ...goalAchievedRoom(), status: "completed", ended_reason: "completed" } as never);
+  vi.mocked(api.completePractice).mockResolvedValue({ ...goalAchievedRoom(), status: "completed", ended_reason: "completed" } as never);
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes>
     <Route path="/rooms/:roomId" element={<ConversationPage />} />
     <Route path="/rooms/:roomId/result" element={<h1>결과 화면</h1>} />
@@ -149,7 +149,7 @@ test("연습 종료를 누르면 결과 화면으로 이동한다", async () => 
 
   await userEvent.click(await screen.findByRole("button", { name: "연습 종료" }));
 
-  expect(api.completeScenario).toHaveBeenCalledWith("r1");
+  expect(api.completePractice).toHaveBeenCalledWith("r1");
   expect(await screen.findByRole("heading", { name: "결과 화면" })).toBeInTheDocument();
 });
 
@@ -524,4 +524,30 @@ test("최종 실패한 AI 음성만 다시 생성할 수 있다", async () => {
   expect(api.retryTts).toHaveBeenCalledOnce();
   expect(api.retryTts).toHaveBeenCalledWith("persona-audio");
   expect(screen.queryByRole("button", { name: "음성 다시 생성" })).not.toBeInTheDocument();
+});
+
+test("면접 방도 헤더의 종료 버튼으로 중간에 끝낼 수 있다", async () => {
+  const interviewRoom = { id: "r1", title: "면접", practice_type: "interview" as const, persona_id: "p1", persona_name: "현우 면접관", scenario_id: null, status: "in_progress" as const, turn_count: 1, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:00Z", goal: null };
+  vi.mocked(api.room).mockResolvedValue(interviewRoom as never);
+  vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [] } as never);
+  vi.mocked(api.completePractice).mockResolvedValue({ ...interviewRoom, status: "completed", ended_reason: "completed" } as never);
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes>
+    <Route path="/rooms/:roomId" element={<ConversationPage />} />
+    <Route path="/rooms/:roomId/interview-complete" element={<h1>면접 종료 화면</h1>} />
+  </Routes></MemoryRouter></QueryClientProvider>);
+
+  await userEvent.click(await screen.findByRole("button", { name: "종료" }));
+
+  expect(api.completePractice).toHaveBeenCalledWith("r1");
+  expect(await screen.findByRole("heading", { name: "면접 종료 화면" })).toBeInTheDocument();
+});
+
+test("종료를 취소하면 방을 끝내지 않는다", async () => {
+  vi.spyOn(window, "confirm").mockReturnValue(false);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
+
+  await userEvent.click(await screen.findByRole("button", { name: "종료" }));
+
+  expect(api.completePractice).not.toHaveBeenCalled();
 });
