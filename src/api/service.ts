@@ -93,7 +93,7 @@ export const api = {
       }),
     );
   },
-  async completeScenario(roomId: string) {
+  async completePractice(roomId: string) {
     return unwrap(
       await http.POST("/api/v1/rooms/{room_id}/complete", {
         params: { path: { room_id: roomId } },

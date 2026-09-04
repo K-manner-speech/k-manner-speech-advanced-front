@@ -4,6 +4,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } 
 import { api, waitForTerminal, type Message } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
 import { BackHeader } from "../../components/ui/BackHeader";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import styles from "../../components/ui/Pages.module.css";
 import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
 import { AudioGenerationFailedError, playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
@@ -62,6 +63,7 @@ export function ConversationPage() {
   // 목표 판정은 답장이 뜬 뒤 몇 초 지나 끝난다. 전송 직후 한 번만 읽으면
   // goal_achieved 가 화면에 영영 도달하지 않으므로, 전송 뒤 잠시 폴링한다.
   const [goalPollUntil, setGoalPollUntil] = useState(0);
+  const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   const room = useQuery({
     queryKey: ["room", roomId],
     queryFn: () => api.room(roomId),
@@ -120,11 +122,14 @@ export function ConversationPage() {
     },
   });
 
-  const completeScenario = useMutation({
-    mutationFn: () => api.completeScenario(roomId),
-    onSuccess: async () => {
+  // 목표 달성 카드와 헤더의 종료 버튼이 같은 API를 쓴다. 면접도 중간에 그만둘 수
+  // 있어야 하므로 연습 종류로 갈라지는 것은 끝난 뒤 이동할 화면뿐이다.
+  const completePractice = useMutation({
+    mutationFn: () => api.completePractice(roomId),
+    onSuccess: async (completed) => {
       await queryClient.invalidateQueries({ queryKey: ["room", roomId] });
-      navigate(`/rooms/${roomId}/result`, { replace: true });
+      const next = completed?.practice_type === "interview" ? "interview-complete" : "result";
+      navigate(`/rooms/${roomId}/${next}`, { replace: true });
     },
   });
   const continueAfterGoal = useMutation({
@@ -271,7 +276,10 @@ export function ConversationPage() {
   const isGoalAchieved = !isInterview && !isTerminal
     && room.data?.ended_reason === "goal_achieved";
   const goalChoicePending = isGoalAchieved
-    && !completeScenario.isPending && !continueAfterGoal.isPending;
+    && !completePractice.isPending && !continueAfterGoal.isPending;
+  // 목표를 이루지 못했거나 질문이 남았어도 그만둘 수 있어야 한다. 목표 달성 카드나
+  // 면접 종료 카드가 떠 있을 때는 거기에 이미 종료 버튼이 있으므로 겹쳐 내지 않는다.
+  const canEndAnytime = !isTerminal && !isGoalAchieved && !isAwaitingInterviewEnd;
   const backDestination = cameFromRoomList
     ? "/rooms"
     : isInterview ? "/interview" : "/practice";
@@ -285,7 +293,19 @@ export function ConversationPage() {
   return (
     <div className={`${styles.page} ${styles.conversationPage} ${isInterview ? styles.interviewConversation : ""}`}>
       <header className={styles.conversationHeader}>
-        <BackHeader title={isInterview ? "면접" : "대화"} onBack={() => navigate(backDestination)} />
+        <BackHeader
+          title={isInterview ? "면접" : "대화"}
+          onBack={() => navigate(backDestination)}
+          action={canEndAnytime && (
+            <button
+              type="button"
+              disabled={completePractice.isPending}
+              onClick={() => setEndConfirmOpen(true)}
+            >
+              종료
+            </button>
+          )}
+        />
         {!isInterview && <div><span className={styles.cardTag}>대화 연습</span><h1>{room.data?.title}</h1></div>}
         <div className={styles.turnBadge}>{room.data?.turn_count ?? 0}턴</div>
       </header>
@@ -341,10 +361,10 @@ export function ConversationPage() {
         <strong>목표를 모두 달성했어요</strong>
         <p>연습을 마치고 피드백을 확인하거나, 대화를 더 이어갈 수 있어요.</p>
         <div>
-          <button type="button" className={styles.primaryButton} disabled={completeScenario.isPending || continueAfterGoal.isPending} onClick={() => completeScenario.mutate()}>{completeScenario.isPending ? "마무리하는 중…" : "연습 종료"}</button>
-          <button type="button" className={styles.secondaryButton} disabled={completeScenario.isPending || continueAfterGoal.isPending} onClick={() => continueAfterGoal.mutate()}>{continueAfterGoal.isPending ? "이어가는 중…" : "계속하기"}</button>
+          <button type="button" className={styles.primaryButton} disabled={completePractice.isPending || continueAfterGoal.isPending} onClick={() => completePractice.mutate()}>{completePractice.isPending ? "마무리하는 중…" : "연습 종료"}</button>
+          <button type="button" className={styles.secondaryButton} disabled={completePractice.isPending || continueAfterGoal.isPending} onClick={() => continueAfterGoal.mutate()}>{continueAfterGoal.isPending ? "이어가는 중…" : "계속하기"}</button>
         </div>
-        {(completeScenario.error || continueAfterGoal.error) && <span className={styles.partialError}>{(completeScenario.error ?? continueAfterGoal.error)?.message}</span>}
+        {(completePractice.error || continueAfterGoal.error) && <span className={styles.partialError}>{(completePractice.error ?? continueAfterGoal.error)?.message}</span>}
       </section>}
       {isAwaitingInterviewEnd ? (
         <section className={styles.interviewVoiceComposer} aria-live="polite">
@@ -368,6 +388,21 @@ export function ConversationPage() {
         </form>
       )}
       {feedbackMessage && <FeedbackDialog message={feedbackMessage} onClose={() => setFeedbackMessage(null)} />}
+      {endConfirmOpen && (
+        <ConfirmDialog
+          title={isInterview ? "면접을 종료할까요?" : "대화를 종료할까요?"}
+          description={isInterview
+            ? "종료하면 남은 질문은 진행할 수 없고, 지금까지의 답변으로 결과를 만듭니다."
+            : "종료하면 이 방에서는 더 이야기할 수 없고, 지금까지의 대화로 결과를 만듭니다."}
+          subject={room.data?.title ? { name: room.data.title } : undefined}
+          confirmLabel="종료"
+          pendingLabel="종료하는 중…"
+          pending={completePractice.isPending}
+          error={completePractice.error?.message}
+          onConfirm={() => completePractice.mutate()}
+          onCancel={() => setEndConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 }
