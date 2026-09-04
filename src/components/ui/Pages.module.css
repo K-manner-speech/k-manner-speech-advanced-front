@@ -271,7 +271,7 @@
 .resultChoice { display:grid; gap:10px; min-height:164px; padding:22px 18px; color:var(--color-text); text-decoration:none; }
 .resultChoice h2 { margin:0; font-size:17px; }
 .resultChoice>div { display:flex; flex-wrap:wrap; gap:8px; }
-.resultChoice>div span { padding:6px 10px; border-radius:15px; color:var(--color-success); background:var(--color-surface-muted); font-size:11px; font-weight:800; }
+.resultChoice>div span { display:inline-flex; align-items:center; min-height:28px; padding:0 12px; border-radius:15px; color:var(--color-success); background:var(--color-surface-muted); font-size:11px; font-weight:800; line-height:1; }
 .resultChoiceWarning>div span { color:var(--color-warning); }
 .resultChoice p { margin:0; color:var(--color-text-muted); font-size:12px; }
 .resultListPage h1,.resultDetailPage>main>h1 { margin:0 0 16px; font-size:21px; }
@@ -284,7 +284,7 @@
 .resultEvidenceCard { padding:18px; }
 .resultEvidenceCard header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
 .resultEvidenceCard h2 { margin:0; font-size:16px; line-height:1.4; }
-.resultEvidenceCard header span { flex:0 0 auto; padding:5px 10px; border-radius:13px; color:var(--color-success); background:var(--color-surface-muted); font-size:11px; font-weight:800; white-space:nowrap; }
+.resultEvidenceCard header span { flex:0 0 auto; display:inline-flex; align-items:center; min-height:26px; padding:0 10px; border-radius:13px; color:var(--color-success); background:var(--color-surface-muted); font-size:11px; font-weight:800; line-height:1; white-space:nowrap; }
 .resultEvidenceCard h3 { margin:22px 0 8px; color:#2563eb; font-size:12px; }
 .resultEvidenceCard>p { font-size:13px; line-height:1.5; }
 .resultEvidenceCard>div { margin-top:18px; padding:12px; border-radius:10px; background:var(--color-brand-soft); }
