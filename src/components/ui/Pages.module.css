@@ -1,9 +1,10 @@
 .page { display:grid; gap:var(--space-10); max-width:860px; }
 :global(.figmaBackHeader) { min-height:34px; display:flex; align-items:center; gap:13px; font-size:16px; font-weight:800; }
-:global(.figmaBackHeaderAction) { margin-left:auto; }
-:global(.figmaBackHeaderAction) button { width:auto; min-height:32px; padding:0 4px; color:var(--color-danger,#c0392b); font-size:16px; font-weight:800; }
-:global(.figmaBackHeaderAction) button:disabled { opacity:.5; }
 :global(.figmaBackHeader) button { width:16px; min-height:32px; padding:0; border:0; color:var(--color-text); background:transparent; font-size:28px; line-height:1; }
+/* 뒤로가기 버튼 규칙보다 뒤에 와야 width:16px 에 눌려 글자가 세로로 접히지 않는다. */
+:global(.figmaBackHeader) :global(.figmaBackHeaderAction) { margin-left:auto; }
+:global(.figmaBackHeader) :global(.figmaBackHeaderAction) button { width:auto; min-height:auto; padding:0; color:var(--color-danger,#c0392b); font-size:15px; font-weight:800; line-height:1; white-space:nowrap; }
+:global(.figmaBackHeader) :global(.figmaBackHeaderAction) button:disabled { opacity:.5; }
 .pageHeader h1,.hero h1 { margin:var(--space-2) 0 var(--space-4); font-size:clamp(28px,4vw,40px); line-height:1.22; letter-spacing:-.025em; }
 .eyebrow { margin:0; color:var(--color-brand-strong); font-size:var(--font-size-sm); font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
 .lead { max-width:620px; margin:0; color:var(--color-text-body); font-size:17px; line-height:1.7; }
