@@ -258,37 +258,37 @@
 .feedbackResultCard h2 { margin:0; font-size:12px; }
 .feedbackResultCard strong { color:var(--color-brand-strong); font-size:12px; }
 .feedbackResultCard p { margin:0; color:var(--color-text-muted); font-size:9px; }
-.interviewResultPage>main { display:grid; gap:12px; margin-top:22px; }
-.interviewOverall,.interviewResultChoice,.interviewScoreStrip,.interviewEvidenceCard { border:1px solid var(--color-border); border-radius:14px; background:white; }
-.interviewOverall { padding:20px 18px; }
-.interviewOverall h1 { margin:0 0 14px; font-size:17px; }
-.interviewOverall p { margin:0; color:var(--color-text-muted); font-size:13px; line-height:1.55; }
-.interviewOverall small { display:block; margin-top:8px; color:var(--color-text-muted); }
-.interviewResultSummary { min-height:620px; }
-.interviewScoreStrip { display:flex; align-items:baseline; padding:14px 18px; }
-.interviewScoreStrip span { margin-right:auto; font-size:12px; }
-.interviewScoreStrip strong { color:var(--color-brand-strong); font-size:32px; }
-.interviewResultChoice { display:grid; gap:10px; min-height:164px; padding:22px 18px; color:var(--color-text); text-decoration:none; }
-.interviewResultChoice h2 { margin:0; font-size:17px; }
-.interviewResultChoice>div { display:flex; flex-wrap:wrap; gap:8px; }
-.interviewResultChoice>div span { padding:6px 10px; border-radius:15px; color:var(--color-success); background:var(--color-surface-muted); font-size:11px; font-weight:800; }
-.interviewResultChoiceWarning>div span { color:var(--color-warning); }
-.interviewResultChoice p { margin:0; color:var(--color-text-muted); font-size:12px; }
-.interviewResultListPage h1,.interviewResultDetailPage>main>h1 { margin:0 0 16px; font-size:21px; }
-.interviewResultItems { display:grid; gap:12px; }
-.interviewResultItems a { min-height:64px; display:grid; grid-template-columns:1fr auto; padding:12px 18px; border:1px solid var(--color-border); border-radius:14px; color:var(--color-text); background:white; text-decoration:none; }
-.interviewResultItems strong { font-size:16px; }
-.interviewResultItems span { grid-column:1; color:var(--color-text-muted); font-size:12px; }
-.interviewResultItems b { grid-column:2; grid-row:1/3; align-self:center; color:var(--color-text-muted); font-size:22px; }
-.interviewEvidenceCard { padding:18px; }
-.interviewEvidenceCard header { display:flex; justify-content:space-between; align-items:center; }
-.interviewEvidenceCard h2 { margin:0; font-size:17px; }
-.interviewEvidenceCard header span { padding:5px 10px; border-radius:13px; color:var(--color-success); background:var(--color-surface-muted); font-size:11px; font-weight:800; }
-.interviewEvidenceCard h3 { margin:22px 0 8px; color:#2563eb; font-size:12px; }
-.interviewEvidenceCard>p { font-size:13px; line-height:1.5; }
-.interviewEvidenceCard>div { margin-top:18px; padding:12px; border-radius:10px; background:var(--color-brand-soft); }
-.interviewEvidenceCard>div strong { color:#2563eb; font-size:11px; }
-.interviewEvidenceCard>div p { margin:5px 0 0; color:var(--color-text-muted); font-size:12px; }
+.resultPage>main { display:grid; gap:12px; margin-top:22px; }
+.resultOverall,.resultChoice,.resultScoreStrip,.resultEvidenceCard { border:1px solid var(--color-border); border-radius:14px; background:white; }
+.resultOverall { padding:20px 18px; }
+.resultOverall h1 { margin:0 0 14px; font-size:17px; }
+.resultOverall p { margin:0; color:var(--color-text-muted); font-size:13px; line-height:1.55; }
+.resultOverall small { display:block; margin-top:8px; color:var(--color-text-muted); }
+.resultSummary { min-height:620px; }
+.resultScoreStrip { display:flex; align-items:baseline; padding:14px 18px; }
+.resultScoreStrip span { margin-right:auto; font-size:12px; }
+.resultScoreStrip strong { color:var(--color-brand-strong); font-size:32px; }
+.resultChoice { display:grid; gap:10px; min-height:164px; padding:22px 18px; color:var(--color-text); text-decoration:none; }
+.resultChoice h2 { margin:0; font-size:17px; }
+.resultChoice>div { display:flex; flex-wrap:wrap; gap:8px; }
+.resultChoice>div span { padding:6px 10px; border-radius:15px; color:var(--color-success); background:var(--color-surface-muted); font-size:11px; font-weight:800; }
+.resultChoiceWarning>div span { color:var(--color-warning); }
+.resultChoice p { margin:0; color:var(--color-text-muted); font-size:12px; }
+.resultListPage h1,.resultDetailPage>main>h1 { margin:0 0 16px; font-size:21px; }
+.resultItems { display:grid; gap:12px; }
+.resultItems a { min-height:64px; display:grid; grid-template-columns:1fr auto; padding:12px 18px; border:1px solid var(--color-border); border-radius:14px; color:var(--color-text); background:white; text-decoration:none; }
+.resultItems strong { font-size:16px; }
+.resultItems span { grid-column:1; color:var(--color-text-muted); font-size:12px; }
+.resultItems b { grid-column:2; grid-row:1/3; align-self:center; color:var(--color-text-muted); font-size:22px; }
+.resultEvidenceCard { padding:18px; }
+.resultEvidenceCard header { display:flex; justify-content:space-between; align-items:center; }
+.resultEvidenceCard h2 { margin:0; font-size:17px; }
+.resultEvidenceCard header span { padding:5px 10px; border-radius:13px; color:var(--color-success); background:var(--color-surface-muted); font-size:11px; font-weight:800; }
+.resultEvidenceCard h3 { margin:22px 0 8px; color:#2563eb; font-size:12px; }
+.resultEvidenceCard>p { font-size:13px; line-height:1.5; }
+.resultEvidenceCard>div { margin-top:18px; padding:12px; border-radius:10px; background:var(--color-brand-soft); }
+.resultEvidenceCard>div strong { color:#2563eb; font-size:11px; }
+.resultEvidenceCard>div p { margin:5px 0 0; color:var(--color-text-muted); font-size:12px; }
 @media (max-width:767px) { .page{gap:var(--space-8)} .hero{min-height:auto;padding:var(--space-6)} .heroAccent{display:none} .choiceGrid,.scoreGrid,.interviewLayout,.formGrid{grid-template-columns:1fr} .infoStrip,.stickyAction,.resultHero{align-items:stretch;flex-direction:column} .stickyAction{bottom:76px} .selectCard{min-height:210px} .personaStage>div{right:var(--space-3);bottom:var(--space-3)} .aiMessage,.userMessage{width:92%} .composer{bottom:74px} .dialog{padding:var(--space-6) var(--space-4)} .feedbackSheet{width:min(100%,360px)} }
 
 /* Figma 01 Screen Plan 1.0 · Prototype — 360×800 mobile web shell */

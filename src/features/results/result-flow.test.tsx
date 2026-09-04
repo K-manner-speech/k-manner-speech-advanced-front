@@ -48,9 +48,9 @@ test("면접 결과는 R21에서 R25·R27 목록과 R22·R23 상세로 이동한
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/results/res1"]}><Routes>
     <Route path="/results/:resultId" element={<ResultPage source="result" />} />
     <Route path="/results/:resultId/strengths" element={<ResultPage source="result" view="strengths" />} />
-    <Route path="/results/:resultId/strengths/:category" element={<ResultPage source="result" view="strength-detail" />} />
+    <Route path="/results/:resultId/strengths/:key" element={<ResultPage source="result" view="strength-detail" />} />
     <Route path="/results/:resultId/improvements" element={<ResultPage source="result" view="improvements" />} />
-    <Route path="/results/:resultId/improvements/:category" element={<ResultPage source="result" view="improvement-detail" />} />
+    <Route path="/results/:resultId/improvements/:key" element={<ResultPage source="result" view="improvement-detail" />} />
   </Routes></MemoryRouter></QueryClientProvider>);
   expect(await screen.findByRole("heading", { name: "면접 총평" })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("link", { name: "이번 면접에서 잘한 점" }));
@@ -138,3 +138,55 @@ const labelsForTest = {
   job_fit_problem_solving: "직무 적합성·문제 해결력",
   delivery_attitude: "전달력·태도",
 } as const;
+
+const generalSnapshot = {
+  ...snapshot,
+  practice_type: "scenario" as const,
+  display_title: "학교 식당 위치 묻기",
+  overall_score: 75,
+  summary: "핵심 목적은 달성했지만 첫 인사에서 존댓말이 아니었습니다.",
+  interview_evaluation: null,
+  items: [
+    { item_type: "strength", category: "context_fit", title: "학생 식당 위치를 구체적으로 질문함", original_expression: "식당이 어딨어요 선배?", recommended_expression: null, explanation: "구체적인 안내를 받았습니다.", evidence: "“식당이 어딨어요 선배?”", source_document_id: null, order: 1 },
+    { item_type: "improvement", category: "honorifics", title: "첫 인사의 존댓말과 호칭을 일관되게 사용하기", original_expression: "안녕?", recommended_expression: "안녕하세요, 선배님!", explanation: "첫 인사는 반말형이었습니다.", evidence: "“안녕?”", source_document_id: null, order: 2 },
+  ],
+};
+
+function renderGeneralRoutes(entry: string) {
+  return render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={[entry]}><Routes>
+    <Route path="/results/:resultId" element={<ResultPage source="result" />} />
+    <Route path="/results/:resultId/strengths" element={<ResultPage source="result" view="strengths" />} />
+    <Route path="/results/:resultId/strengths/:key" element={<ResultPage source="result" view="strength-detail" />} />
+    <Route path="/results/:resultId/improvements" element={<ResultPage source="result" view="improvements" />} />
+    <Route path="/results/:resultId/improvements/:key" element={<ResultPage source="result" view="improvement-detail" />} />
+  </Routes></MemoryRouter></QueryClientProvider>);
+}
+
+test("시나리오 결과도 면접처럼 요약에서 잘한 점 상세까지 파고든다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue(generalSnapshot as never);
+  renderGeneralRoutes("/results/res1");
+
+  expect(await screen.findByRole("heading", { name: "연습 총평" })).toBeInTheDocument();
+  expect(screen.getByText("75")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("link", { name: "이번 연습에서 잘한 점" }));
+  expect(await screen.findByRole("heading", { name: "이번 연습에서 잘한 점" })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("link", { name: /학생 식당 위치를 구체적으로 질문함/ }));
+  expect(await screen.findByRole("heading", { name: "잘한 점 상세" })).toBeInTheDocument();
+  expect(screen.getByText("식당이 어딨어요 선배?")).toBeInTheDocument();
+  expect(screen.getByText("구체적인 안내를 받았습니다.")).toBeInTheDocument();
+});
+
+test("시나리오 결과의 다듬을 점 상세는 추천 표현을 보여준다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue(generalSnapshot as never);
+  renderGeneralRoutes("/results/res1");
+
+  await userEvent.click(await screen.findByRole("link", { name: "다음 연습에서 다듬을 점" }));
+  await userEvent.click(await screen.findByRole("link", { name: /첫 인사의 존댓말/ }));
+
+  expect(await screen.findByRole("heading", { name: "다듬을 점 상세" })).toBeInTheDocument();
+  expect(screen.getByText("안녕?")).toBeInTheDocument();
+  expect(screen.getByText("안녕하세요, 선배님!")).toBeInTheDocument();
+  expect(screen.getByText("높임법")).toBeInTheDocument();
+});
