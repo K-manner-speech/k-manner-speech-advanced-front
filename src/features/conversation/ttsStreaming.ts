@@ -43,6 +43,7 @@ class TtsPcmProcessor extends AudioWorkletProcessor {
 registerProcessor('tts-pcm-processor',TtsPcmProcessor);`;
 
 export interface StreamingPlaybackResult {
+  firstByteMs: number;
   firstRenderMs: number;
   completeMs: number;
   underrunMs: number;
@@ -111,6 +112,7 @@ export async function playStreamingTts(messageId: string): Promise<StreamingPlay
   };
   activePlayback = playback;
   const started = performance.now();
+  let firstByte = 0;
   let firstRender = 0;
   let underruns = 0;
   let resolveEnd!: () => void;
@@ -133,6 +135,7 @@ export async function playStreamingTts(messageId: string): Promise<StreamingPlay
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+      if (!bytes) firstByte = performance.now();
       bytes += value.byteLength;
       const pcm = value.byteOffset === 0 && value.byteLength === value.buffer.byteLength
         ? value.buffer
@@ -151,6 +154,7 @@ export async function playStreamingTts(messageId: string): Promise<StreamingPlay
   if (activePlayback === playback) activePlayback = null;
   window.setTimeout(() => { void closePlayer(); }, 100);
   return {
+    firstByteMs: firstByte - started,
     firstRenderMs: firstRender - started,
     completeMs: completed - started,
     underrunMs: underruns * 128 / SAMPLE_RATE * 1000,

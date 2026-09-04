@@ -60,6 +60,7 @@ export function ConversationPage() {
   const [feedbackMessage, setFeedbackMessage] = useState<Message | null>(null);
   const [failedAudioMessageId, setFailedAudioMessageId] = useState<string | null>(null);
   const autoplayAfterSequenceRef = useRef<number | null>(null);
+  const conversationStartedAtRef = useRef<number | null>(null);
   // 목표 판정은 답장이 뜬 뒤 몇 초 지나 끝난다. 전송 직후 한 번만 읽으면
   // goal_achieved 가 화면에 영영 도달하지 않으므로, 전송 뒤 잠시 폴링한다.
   const [goalPollUntil, setGoalPollUntil] = useState(0);
@@ -141,6 +142,7 @@ export function ConversationPage() {
   });
 
   const beginSend = () => {
+    conversationStartedAtRef.current = performance.now();
     autoplayAfterSequenceRef.current = sortedMessages
       .filter((message) => message.sender_type === "persona")
       .reduce((latest, message) => Math.max(latest, message.sequence_no), -1);
@@ -234,7 +236,9 @@ export function ConversationPage() {
         await playManualMessageAudio(message.id);
         return;
       }
-      await playAutomaticMessageAudio(message.id);
+      const conversationStartedAt = conversationStartedAtRef.current ?? undefined;
+      conversationStartedAtRef.current = null;
+      await playAutomaticMessageAudio(message.id, conversationStartedAt);
     },
     onMutate: () => setFailedAudioMessageId(null),
     onError: (error, variables) => {

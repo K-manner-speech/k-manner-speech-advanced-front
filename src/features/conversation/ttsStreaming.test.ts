@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { playCompletedTts, playStreamingTts, STREAMING_TTS_BUFFER_POLICY, ttsProcessorSource } from "./ttsStreaming";
+import { playCompletedTts, playStreamingTts, STREAMING_TTS_BUFFER_POLICY, ttsProcessorSource, type StreamingPlaybackResult } from "./ttsStreaming";
 
 vi.mock("../../api/supabase", () => ({
   supabase: { auth: { getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: "token" } } }) } },
@@ -56,6 +56,18 @@ describe("streaming TTS buffering policy", () => {
 
     await expect(playStreamingTts("m1")).rejects.toThrow("network down");
     expect(close).toHaveBeenCalled();
+  });
+
+  test("첫 네트워크 바이트와 첫 오디오 렌더를 별도 지표로 정의한다", () => {
+    const result: StreamingPlaybackResult = {
+      firstByteMs: 100,
+      firstRenderMs: 1_000,
+      completeMs: 2_000,
+      underrunMs: 0,
+      pcmDurationMs: 2_500,
+    };
+
+    expect(result.firstByteMs).toBeLessThan(result.firstRenderMs);
   });
 
   test("새 WAV 재생은 기존 플레이어를 중지해 음성이 겹치지 않는다", async () => {
