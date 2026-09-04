@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, type Room } from "../../api/service";
 import { BackHeader } from "../../components/ui/BackHeader";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import styles from "./RoomListPage.module.css";
 
 const LONG_PRESS_MILLISECONDS = 500;
@@ -90,50 +91,17 @@ export function RoomListPage() {
         <p className={styles.empty}>아직 대화 내역이 없어요.</p>
       )}
       {target && (
-        <div
-          className={styles.backdrop}
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target && !remove.isPending) setTarget(null);
-          }}
-        >
-          <section
-            className={styles.dialog}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-room-title"
-          >
-            <h2 id="delete-room-title">대화방을 삭제할까요?</h2>
-            <p>삭제한 대화방과 대화 기록은 복구할 수 없습니다.</p>
-            <div className={styles.targetName}>
-              {target.title}
-              <small>{practiceLabel(target.practice_type)}</small>
-            </div>
-            {remove.error && (
-              <p className={styles.error} role="alert">
-                {remove.error.message}
-              </p>
-            )}
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.cancel}
-                disabled={remove.isPending}
-                onClick={() => setTarget(null)}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                className={styles.delete}
-                disabled={remove.isPending}
-                onClick={() => remove.mutate(target.id)}
-              >
-                {remove.isPending ? "삭제 중…" : "삭제"}
-              </button>
-            </div>
-          </section>
-        </div>
+        <ConfirmDialog
+          title="대화방을 삭제할까요?"
+          description="삭제한 대화방과 대화 기록은 복구할 수 없습니다."
+          subject={{ name: target.title, caption: practiceLabel(target.practice_type) }}
+          confirmLabel="삭제"
+          pendingLabel="삭제 중…"
+          pending={remove.isPending}
+          error={remove.error?.message}
+          onConfirm={() => remove.mutate(target.id)}
+          onCancel={() => setTarget(null)}
+        />
       )}
     </div>
   );

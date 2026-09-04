@@ -4,6 +4,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } 
 import { api, waitForTerminal, type Message } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
 import { BackHeader } from "../../components/ui/BackHeader";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import styles from "../../components/ui/Pages.module.css";
 import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
 import { AudioGenerationFailedError, playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
@@ -62,6 +63,7 @@ export function ConversationPage() {
   // 목표 판정은 답장이 뜬 뒤 몇 초 지나 끝난다. 전송 직후 한 번만 읽으면
   // goal_achieved 가 화면에 영영 도달하지 않으므로, 전송 뒤 잠시 폴링한다.
   const [goalPollUntil, setGoalPollUntil] = useState(0);
+  const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   const room = useQuery({
     queryKey: ["room", roomId],
     queryFn: () => api.room(roomId),
@@ -298,13 +300,9 @@ export function ConversationPage() {
             <button
               type="button"
               disabled={completePractice.isPending}
-              onClick={() => {
-                if (window.confirm(`${isInterview ? "면접" : "대화"}를 끝내고 결과를 확인할까요?`)) {
-                  completePractice.mutate();
-                }
-              }}
+              onClick={() => setEndConfirmOpen(true)}
             >
-              {completePractice.isPending ? "종료 중…" : "종료"}
+              종료
             </button>
           )}
         />
@@ -390,6 +388,21 @@ export function ConversationPage() {
         </form>
       )}
       {feedbackMessage && <FeedbackDialog message={feedbackMessage} onClose={() => setFeedbackMessage(null)} />}
+      {endConfirmOpen && (
+        <ConfirmDialog
+          title={isInterview ? "면접을 종료할까요?" : "대화를 종료할까요?"}
+          description={isInterview
+            ? "종료하면 남은 질문은 진행할 수 없고, 지금까지의 답변으로 결과를 만듭니다."
+            : "종료하면 이 방에서는 더 이야기할 수 없고, 지금까지의 대화로 결과를 만듭니다."}
+          subject={room.data?.title ? { name: room.data.title } : undefined}
+          confirmLabel="종료"
+          pendingLabel="종료하는 중…"
+          pending={completePractice.isPending}
+          error={completePractice.error?.message}
+          onConfirm={() => completePractice.mutate()}
+          onCancel={() => setEndConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 }

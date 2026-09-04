@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, vi } from "vitest";
@@ -531,23 +531,27 @@ test("면접 방도 헤더의 종료 버튼으로 중간에 끝낼 수 있다", 
   vi.mocked(api.room).mockResolvedValue(interviewRoom as never);
   vi.mocked(api.interviewQuestions).mockResolvedValue({ questions: [] } as never);
   vi.mocked(api.completePractice).mockResolvedValue({ ...interviewRoom, status: "completed", ended_reason: "completed" } as never);
-  vi.spyOn(window, "confirm").mockReturnValue(true);
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes>
     <Route path="/rooms/:roomId" element={<ConversationPage />} />
     <Route path="/rooms/:roomId/interview-complete" element={<h1>면접 종료 화면</h1>} />
   </Routes></MemoryRouter></QueryClientProvider>);
 
   await userEvent.click(await screen.findByRole("button", { name: "종료" }));
+  expect(api.completePractice).not.toHaveBeenCalled();
+  const dialog = await screen.findByRole("dialog", { name: "면접을 종료할까요?" });
+  await userEvent.click(within(dialog).getByRole("button", { name: "종료" }));
 
   expect(api.completePractice).toHaveBeenCalledWith("r1");
   expect(await screen.findByRole("heading", { name: "면접 종료 화면" })).toBeInTheDocument();
 });
 
 test("종료를 취소하면 방을 끝내지 않는다", async () => {
-  vi.spyOn(window, "confirm").mockReturnValue(false);
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
 
   await userEvent.click(await screen.findByRole("button", { name: "종료" }));
+  const dialog = await screen.findByRole("dialog", { name: "대화를 종료할까요?" });
+  await userEvent.click(within(dialog).getByRole("button", { name: "취소" }));
 
   expect(api.completePractice).not.toHaveBeenCalled();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
