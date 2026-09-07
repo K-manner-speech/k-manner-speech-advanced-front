@@ -254,7 +254,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete Scenario */
+        /** Complete Practice */
         post: operations["practice_room.complete"];
         delete?: never;
         options?: never;
@@ -1037,19 +1037,11 @@ export interface components {
             setup_id: string;
             /** Analysis Ids */
             analysis_ids: string[];
-            /** Conditions */
-            conditions: {
-                [key: string]: unknown;
-            };
             /** Question Count */
             question_count: number;
         };
         /** InterviewConfigurationRegenerateRequest */
         InterviewConfigurationRegenerateRequest: {
-            /** Conditions */
-            conditions?: {
-                [key: string]: unknown;
-            } | null;
             /** Question Count */
             question_count?: number | null;
         };

@@ -293,7 +293,6 @@ export const api = {
         body: {
           setup_id: setupId,
           analysis_ids: Array.isArray(analysisIds) ? analysisIds : [analysisIds],
-          conditions: { difficulty: "junior", language: "ko" },
           question_count: 3,
         },
       }),
