@@ -1176,7 +1176,7 @@ export interface components {
             /** Desired Role */
             desired_role: string;
             /** Application Type */
-            application_type?: string | null;
+            application_type?: ("신입" | "경력" | "인턴") | null;
         };
         /** Job */
         Job: {
