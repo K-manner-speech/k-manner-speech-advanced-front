@@ -5,6 +5,10 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { api } from "../../api/service";
+import { Button } from "../../components/ui/Button";
+import { Field } from "../../components/ui/Field";
+import { ScreenHeader } from "../../components/ui/ScreenHeader";
+import { SelectField } from "../../components/ui/SelectField";
 import { useAuth } from "../auth";
 import styles from "./ProfileEditPage.module.css";
 
@@ -49,20 +53,55 @@ export function ProfileEditPage() {
       navigate("/me", { replace: true });
     },
   });
-  return <form className={styles.page} onSubmit={form.handleSubmit((values) => save.mutate(values))}>
-    <div className={styles.topRow}><button type="button" onClick={() => navigate(-1)} aria-label="뒤로 가기">‹</button><strong>프로필 수정</strong></div>
-    <p className={styles.code}>M02</p><h1>프로필 수정</h1><p className={styles.subtitle}>Edit profile</p>
-    <div className={styles.fields}>
-      <label>이름 · Name<input {...form.register("display_name")} /></label>
-      <label>생년월일 · Date of birth<input type="date" {...form.register("birth_date")} /></label>
-      <label>성별 · Gender<select {...form.register("gender")}><option value="">선택</option><option value="female">여성</option><option value="male">남성</option><option value="other">기타/응답하지 않음</option></select></label>
-      <label>이메일 · Email<input value={session?.user.email ?? ""} readOnly /></label>
-      <label>모국어 · Native language<select {...form.register("native_language")}><option value="English">영어</option><option value="Japanese">일본어</option><option value="Chinese">중국어</option></select></label>
-      <label>표시 언어 · Display language<select {...form.register("display_language")}><option value="ko">한국어</option><option value="en">English</option></select></label>
-    </div>
-    {Object.values(form.formState.errors)[0]?.message && <p role="alert" className={styles.error}>{Object.values(form.formState.errors)[0]?.message}</p>}
-    {save.error && <p role="alert" className={styles.error}>{save.error.message}</p>}
-    <button type="button" className={styles.passwordButton} onClick={() => window.alert("비밀번호 변경 기능은 추후 연결됩니다.")}>비밀번호 변경 · Change password</button>
-    <button className={styles.saveButton} disabled={save.isPending}>변경사항 저장 · Save</button>
-  </form>;
+  return (
+    <form className={styles.page} onSubmit={form.handleSubmit((values) => save.mutate(values))}>
+      <ScreenHeader title="프로필 수정" onBack={() => navigate(-1)} />
+      <div className={styles.card}>
+        <Field label="이름 · Name" placeholder="이름 입력" {...form.register("display_name")} />
+        <Field label="생년월일 · Date of birth" type="date" {...form.register("birth_date")} />
+        <SelectField
+          label="성별 · Gender"
+          placeholder="성별 선택"
+          options={[
+            { value: "female", label: "여성 · Female" },
+            { value: "male", label: "남성 · Male" },
+            { value: "other", label: "기타 · Prefer not to say" },
+          ]}
+          {...form.register("gender")}
+        />
+        {/* 이메일 변경은 아직 서버에 방법이 없다. 보여 주되 고칠 수 없음을 알린다. */}
+        <Field label="이메일 · Email" value={session?.user.email ?? ""} readOnly />
+        <SelectField
+          label="모국어 · Native language"
+          placeholder="모국어 선택"
+          options={[
+            { value: "English", label: "영어 · English" },
+            { value: "Japanese", label: "일본어 · Japanese" },
+            { value: "Chinese", label: "중국어 · Chinese" },
+          ]}
+          {...form.register("native_language")}
+        />
+        <SelectField
+          label="표시 언어 · Display language"
+          placeholder="표시 언어 선택"
+          options={[
+            { value: "ko", label: "한국어" },
+            { value: "en", label: "English" },
+          ]}
+          {...form.register("display_language")}
+        />
+      </div>
+
+      {Object.values(form.formState.errors)[0]?.message && (
+        <p role="alert" className={styles.error}>{Object.values(form.formState.errors)[0]?.message}</p>
+      )}
+      {save.error && <p role="alert" className={styles.error}>{save.error.message}</p>}
+
+      <div className={styles.action}>
+        <Button type="submit" disabled={save.isPending}>
+          {save.isPending ? "저장 중…" : "변경사항 저장"}
+        </Button>
+      </div>
+    </form>
+  );
 }

@@ -19,6 +19,14 @@ export const api = {
   async me() {
     return unwrap(await http.GET("/api/v1/me"));
   },
+  /** 되돌릴 수 없다. 성공하면 세션도 함께 사라진다. */
+  async deleteAccount() {
+    return unwrap(
+      await http.DELETE("/api/v1/me", {
+        params: { header: { "Idempotency-Key": createIdempotencyKey() } },
+      }),
+    );
+  },
   async home() {
     return unwrap(await http.GET("/api/v1/home"));
   },

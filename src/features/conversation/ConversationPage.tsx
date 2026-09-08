@@ -4,7 +4,6 @@ import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } 
 import { api, waitForTerminal, type Message } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
-import styles from "../../components/ui/Pages.module.css";
 import chat from "./ConversationPage.module.css";
 import { Button } from "../../components/ui/Button";
 import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
@@ -307,7 +306,7 @@ export function ConversationPage() {
   const personaLabel = room.data?.persona_name ?? "대화 상대";
 
   return (
-    <div className={`${chat.screen} ${isInterview ? styles.interviewConversation : ""}`}>
+    <div className={chat.screen}>
       <div className={chat.header}>
         <button type="button" className={chat.back} onClick={() => navigate(backDestination)} aria-label="뒤로 가기">‹</button>
         <h1>{isInterview ? "면접 시뮬레이션" : personaLabel}</h1>
@@ -447,8 +446,10 @@ export function ConversationPage() {
         </section>}
 
         {isAwaitingInterviewEnd ? (
-          <section className={styles.interviewVoiceComposer} aria-live="polite">
-            <button type="button" className={styles.primaryButton} disabled={completeInterview.isPending} onClick={() => completeInterview.mutate()}>{completeInterview.isPending ? "면접 종료 중…" : "면접 종료"}</button>
+          <section className={chat.micOnly} aria-live="polite">
+            <Button disabled={completeInterview.isPending} onClick={() => completeInterview.mutate()}>
+              {completeInterview.isPending ? "면접 종료 중…" : "면접 종료"}
+            </Button>
             <p>마지막 면접관 답변을 확인한 뒤 면접을 종료해 주세요.</p>
           </section>
         ) : isTerminal ? (
@@ -570,7 +571,7 @@ function FeedbackDialog({ message, onClose }: { message: Message; onClose: () =>
         {feedback.isLoading && <StatusPanel title="피드백을 확인하고 있어요" />}
         {feedback.error && <div className={chat.notice}><strong>피드백만 준비되지 않았어요.</strong><span>대화는 정상적으로 보존되었습니다.</span></div>}
         {feedbackStatus === "processing" && <StatusPanel title="피드백을 분석하고 있어요" detail="완료되면 이 화면에 자동으로 표시됩니다." />}
-        {feedbackStatus === "failed" && <div className={chat.notice}><strong>피드백 분석을 완료하지 못했어요.</strong><span>대화는 정상적으로 보존되었습니다. 다시 생성을 요청할 수 있습니다.</span><button type="button" className={styles.secondaryButton} disabled={retryFeedback.isPending} onClick={() => retryFeedback.mutate()}>{retryFeedback.isPending ? "피드백 다시 요청 중…" : "피드백 다시 시도"}</button></div>}
+        {feedbackStatus === "failed" && <div className={chat.notice}><strong>피드백 분석을 완료하지 못했어요.</strong><span>대화는 정상적으로 보존되었습니다. 다시 생성을 요청할 수 있습니다.</span><Button variant="secondary" compact disabled={retryFeedback.isPending} onClick={() => retryFeedback.mutate()}>{retryFeedback.isPending ? "피드백 다시 요청 중…" : "피드백 다시 시도"}</Button></div>}
         {retryFeedback.error && <div className={chat.notice} role="alert"><span>{retryFeedback.error.message}</span></div>}
         {feedback.data && ["ready", "partial"].includes(feedback.data.status) && <div className={chat.content}>
           <section className={chat.overall} aria-label="종합 점수">

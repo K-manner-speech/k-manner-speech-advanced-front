@@ -87,3 +87,19 @@
 .empty { padding: var(--space-6); border-radius: var(--radius-lg); color: var(--color-text-body); background: var(--color-surface-muted); font-size: var(--font-size-body); }
 .actions { margin-top: auto; padding-top: var(--space-5); display: grid; gap: var(--space-2); }
 .error { color: var(--color-danger); font-size: var(--font-size-body); }
+
+.choiceWarning h2 { color: var(--color-accent); }
+.scoreRows { display: grid; gap: var(--space-2); }
+.scoreRows span { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: var(--space-3); }
+.scoreRows b { color: var(--color-text-body); font-size: var(--font-size-body-sm); font-weight: 400; }
+.scoreRows i { height: 6px; border-radius: var(--radius-pill); background: var(--color-accent); justify-self: stretch; }
+.scoreRows em { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; font-style: normal; font-variant-numeric: tabular-nums; }
+.choice blockquote { margin: var(--space-2) 0 0; color: var(--color-text); font-size: var(--font-size-body); }
+
+.secondaryLink {
+  min-height: var(--control-height); display: grid; place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--color-accent); background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: var(--font-size-label); font-weight: 700; text-decoration: none;
+}
