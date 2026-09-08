@@ -101,6 +101,11 @@ export function HomePage() {
           {recommendation.opening_message && (
             <div className={styles.preview}>
               <div className={styles.previewWho}>
+                <img
+                  className={styles.avatar}
+                  src="/personas/neutral.png"
+                  alt={`${recommendation.relationship_label ?? "대화 상대"} ${recommendation.persona_name ?? ""}의 차분한 표정`}
+                />
                 <b>
                   {recommendation.persona_name}
                   {recommendation.relationship_label && ` · ${recommendation.relationship_label}`}

@@ -222,3 +222,46 @@ test("점수를 매기지 못한 면접 결과는 빈 자리 대신 없음을 �
   expect(await screen.findByText("종합 점수")).toBeInTheDocument();
   expect(screen.getByText("—")).toBeInTheDocument();
 });
+
+const listRows = [
+  { ...snapshot, id: "r-a", practice_type: "interview" as const, display_title: "백엔드 신입 면접", overall_score: 91, summary: "존댓말과 답변 흐름이 안정적이었어요.", created_at: "2026-08-19T00:00:00Z" },
+  { ...snapshot, id: "r-b", practice_type: "scenario" as const, display_title: "캠퍼스에서 길 묻기", overall_score: 82, summary: "정중하고 자연스럽게 필요한 정보를 물었어요.", created_at: "2026-08-21T00:00:00Z" },
+  { ...snapshot, id: "r-c", practice_type: "free_chat" as const, display_title: "자유채팅", overall_score: null, summary: null, status: "processing" as const, created_at: "2026-08-20T00:00:00Z" },
+];
+
+test("피드백 목록은 행마다 점수와 한 줄 요약을 보여 준다", async () => {
+  vi.mocked(api.results).mockResolvedValue({ items: listRows, next_cursor: null } as never);
+  renderAt("/results", <ResultListPage />);
+
+  expect(await screen.findByText("91점")).toBeInTheDocument();
+  expect(screen.getByText("정중하고 자연스럽게 필요한 정보를 물었어요.")).toBeInTheDocument();
+  // 자리를 채운 날짜여야 줄끼리 세로로 맞는다.
+  expect(screen.getByText("2026/08/21")).toBeInTheDocument();
+});
+
+test("점수를 아직 못 매긴 결과는 빈 자리 대신 진행 상태를 보여 준다", async () => {
+  vi.mocked(api.results).mockResolvedValue({ items: listRows, next_cursor: null } as never);
+  renderAt("/results", <ResultListPage />);
+
+  expect(await screen.findByText("정리 중")).toBeInTheDocument();
+});
+
+test("연습 종류로 거르면 그 종류만 남는다", async () => {
+  vi.mocked(api.results).mockResolvedValue({ items: listRows, next_cursor: null } as never);
+  renderAt("/results", <ResultListPage />);
+
+  await userEvent.selectOptions(await screen.findByLabelText("연습 종류"), "interview");
+
+  expect(screen.getByText("백엔드 신입 면접")).toBeInTheDocument();
+  expect(screen.queryByText("캠퍼스에서 길 묻기")).not.toBeInTheDocument();
+});
+
+test("점수순으로 세우면 점수 없는 결과가 뒤로 간다", async () => {
+  vi.mocked(api.results).mockResolvedValue({ items: listRows, next_cursor: null } as never);
+  renderAt("/results", <ResultListPage />);
+
+  await userEvent.selectOptions(await screen.findByLabelText("정렬"), "score");
+
+  const titles = screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent);
+  expect(titles).toEqual(["백엔드 신입 면접", "캠퍼스에서 길 묻기", "자유채팅"]);
+});

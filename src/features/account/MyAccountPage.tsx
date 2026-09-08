@@ -56,7 +56,7 @@ export function MyAccountPage() {
         <h2 className={styles.sectionTitle}>계정</h2>
         <div className={styles.rows}>
           <Link className={styles.row} to="/me/edit">
-            <span aria-hidden="true">👤</span>
+            <span className={`${styles.icon} ${styles.profileIcon}`} aria-hidden="true" />
             <b>프로필 수정</b>
             <small>이름과 생년월일을 수정해요</small>
             <span className={styles.chevron} aria-hidden="true">›</span>
@@ -68,13 +68,13 @@ export function MyAccountPage() {
         <h2 className={styles.sectionTitle}>환경 설정</h2>
         <div className={styles.rows}>
           <Link className={styles.row} to="/me/edit">
-            <span aria-hidden="true">🌐</span>
+            <span className={`${styles.icon} ${styles.globeIcon}`} aria-hidden="true" />
             <b>모국어</b>
             <span className={styles.value}>{languageName(profile?.native_language)}</span>
             <span className={styles.chevron} aria-hidden="true">›</span>
           </Link>
           <Link className={styles.row} to="/me/edit">
-            <span aria-hidden="true">🌐</span>
+            <span className={`${styles.icon} ${styles.globeIcon}`} aria-hidden="true" />
             <b>표시 언어</b>
             <span className={styles.value}>{languageName(me.data?.display_language)}</span>
             <span className={styles.chevron} aria-hidden="true">›</span>
@@ -86,7 +86,7 @@ export function MyAccountPage() {
         <h2 className={styles.sectionTitle}>도움말</h2>
         <div className={styles.rows}>
           <a className={styles.row} href="mailto:support@example.com">
-            <span aria-hidden="true">?</span>
+            <span className={`${styles.icon} ${styles.helpIcon}`} aria-hidden="true" />
             <b>문의하기</b>
             <small>서비스 이용 중 궁금한 점이 있나요?</small>
             <span className={styles.chevron} aria-hidden="true">›</span>

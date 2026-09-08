@@ -4,16 +4,16 @@
 .card {
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-card-border);
+  background: var(--color-card);
 }
 .score {
   display: flex; align-items: baseline; gap: var(--space-2);
   margin: 0 0 var(--space-3);
 }
-.score span { color: var(--color-text-muted); font-size: var(--font-size-label); font-weight: 700; }
+.score span { color: var(--color-accent); font-size: var(--font-size-h3); font-weight: 700; }
 .score strong {
-  color: var(--color-accent); font-size: 34px; line-height: 1; font-weight: 800;
+  color: var(--color-accent); font-size: var(--font-size-h2); line-height: 1.1; font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .score i { color: var(--color-text-muted); font-size: var(--font-size-body-sm); font-style: normal; }
@@ -38,11 +38,14 @@
   padding: var(--space-5);
   border-radius: var(--radius-lg);
   color: var(--color-text);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-card-border);
+  background: var(--color-card);
   text-decoration: none;
 }
 .choice h2 { margin: 0; font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+/* 시안은 이름표와 제목을 한 줄에 둔다. 이름표만 굵게 남긴다. */
+.choice h2 i { font-style: normal; }
+.choice h2 em { color: var(--color-text-body); font-style: normal; font-weight: 400; }
 .choice p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
@@ -67,15 +70,18 @@
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-lg);
   color: var(--color-text);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-card-border);
+  background: var(--color-card);
   text-decoration: none;
 }
 .item strong { font-size: var(--font-size-h3); line-height: var(--line-height-h3); }
 .item span { grid-column: 1; color: var(--color-text-muted); font-size: var(--font-size-body-sm); line-height: 17px; }
 .item b { grid-row: 1 / 3; grid-column: 2; color: var(--color-text-muted); font-size: var(--font-size-h2); font-weight: 400; }
 
-.evidence { padding: var(--space-5); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.evidence {
+  padding: var(--space-5); border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border); background: var(--color-card);
+}
 .evidenceHead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
 .evidenceHead h2 { margin: 0; color: var(--color-text); font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
 .badge {
@@ -103,8 +109,20 @@
 .scoreRows { display: grid; gap: var(--space-2); }
 .scoreRows span { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: var(--space-3); }
 .scoreRows b { color: var(--color-text-body); font-size: var(--font-size-body-sm); font-weight: 400; }
-.scoreRows i { height: 6px; border-radius: var(--radius-pill); background: var(--color-accent); justify-self: stretch; }
-.scoreRows em { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; font-style: normal; font-variant-numeric: tabular-nums; }
+/* 빈 칸이 보여야 20/25 와 15/25 가 한눈에 갈린다. 채운 길이만 그리면
+   막대끼리 견줄 기준이 사라진다. */
+.scoreRows i { height: 6px; border-radius: var(--radius-pill); background: var(--color-brand-100); justify-self: stretch; }
+.scoreRows s { display: block; height: 100%; border-radius: inherit; background: var(--color-accent); }
+
+/* 항목마다 색을 달리한다. 네 항목을 같은 색으로 그리면 어느 줄이 어느
+   항목인지 값을 읽어야만 알 수 있다. */
+.honorifics s, .honorifics em { --bar: #c85f4a; }
+.courtesy s, .courtesy em { --bar: #d7838a; }
+.context_fit s, .context_fit em { --bar: #b9853f; }
+.naturalness s, .naturalness em { --bar: #6f8a72; }
+.scoreRows s { background: var(--bar, var(--color-accent)); }
+.scoreRows em { color: var(--bar, var(--color-text)); }
+.scoreRows em { font-size: var(--font-size-body-sm); font-weight: 700; font-style: normal; font-variant-numeric: tabular-nums; }
 .choice blockquote { margin: var(--space-2) 0 0; color: var(--color-text); font-size: var(--font-size-body); }
 
 .secondaryLink {

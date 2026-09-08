@@ -129,7 +129,6 @@ function GeneralResult({ data, view, source, onBack, retry, remove }: {
     <ResultFrame title="결과 요약" onBack={onBack}>
       <section className={sheet.card}>
         <ScoreBadge score={data.overall_score} />
-        <h2>종합 평가</h2>
         <p>{data.summary ?? "대화에서 관찰된 내용을 기준으로 정리했습니다."}</p>
       </section>
 
@@ -143,9 +142,9 @@ function GeneralResult({ data, view, source, onBack, retry, remove }: {
         <h2>항목별 점수</h2>
         <div className={sheet.scoreRows}>
           {scores.map((score) => (
-            <span key={score.category}>
+            <span key={score.category} className={sheet[score.category] ?? ""}>
               <b>{generalLabels[score.category] ?? score.category}</b>
-              <i style={{ width: `${(score.score / score.max_score) * 100}%` }} />
+              <i><s style={{ width: `${(score.score / score.max_score) * 100}%` }} /></i>
               <em>{score.score}/{score.max_score}</em>
             </span>
           ))}
@@ -154,20 +153,18 @@ function GeneralResult({ data, view, source, onBack, retry, remove }: {
       </Link>
 
       <Link className={sheet.choice} to={`${base}/strengths`} aria-label="잘한 점">
-        <h2>✓ 잘한 점</h2>
+        <h2><i aria-hidden="true">✓</i> 잘한 점 <em>{strengths[0]?.title ?? ""}</em></h2>
         {strengths[0] ? (
           <>
-            <p>{strengths[0].title}</p>
             {strengths[0].original_expression && <blockquote>“{strengths[0].original_expression}”</blockquote>}
           </>
         ) : <p>이번 연습에서는 뚜렷하게 확인된 강점이 없어요.</p>}
       </Link>
 
       <Link className={`${sheet.choice} ${sheet.choiceWarning}`} to={`${base}/improvements`} aria-label="개선할 점">
-        <h2>! 개선할 점</h2>
+        <h2><i aria-hidden="true">!</i> 개선할 점 <em>{improvements[0]?.title ?? ""}</em></h2>
         {improvements[0] ? (
           <>
-            <p>{improvements[0].title}</p>
             {improvements[0].recommended_expression && <blockquote>추천 “{improvements[0].recommended_expression}”</blockquote>}
           </>
         ) : <p>다듬을 점으로 정리된 표현이 없어요.</p>}

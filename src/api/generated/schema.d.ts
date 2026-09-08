@@ -1833,6 +1833,10 @@ export interface components {
             failure_code?: string | null;
             /** Missing Categories */
             missing_categories: string[];
+            /** Overall Score */
+            overall_score?: number | null;
+            /** Summary */
+            summary?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1847,10 +1851,6 @@ export interface components {
             scores: components["schemas"]["GeneralScore"][];
             /** Source Refs */
             source_refs: components["schemas"]["DomainRef"][];
-            /** Overall Score */
-            overall_score?: number | null;
-            /** Summary */
-            summary?: string | null;
             interview_evaluation?: components["schemas"]["InterviewEvaluationResponse"] | null;
         };
         /** SessionResultSummary */
@@ -1883,6 +1883,10 @@ export interface components {
             failure_code?: string | null;
             /** Missing Categories */
             missing_categories: string[];
+            /** Overall Score */
+            overall_score?: number | null;
+            /** Summary */
+            summary?: string | null;
             /**
              * Created At
              * Format: date-time

@@ -13,6 +13,7 @@
   --color-brand-700: #a84737;
   --color-neutral-50: #fff8f0;
   --color-neutral-100: #f1e5d6;
+  --color-neutral-150: #ddcbb8;
   --color-neutral-200: #e4d4c8;
   --color-neutral-300: #d4bfb5;
   --color-neutral-400: #b29485;
@@ -27,6 +28,10 @@
   --color-surface-app: var(--color-neutral-50);
   --color-surface-muted: var(--color-neutral-100);
   --color-border: var(--color-neutral-300);
+  /* 목록과 요약의 카드. 시안은 흰 판을 띄우지 않고 배경 위에 선만 긋는다.
+     따뜻한 바탕을 카드가 덮어 버리면 화면이 차가워진다. */
+  --color-card: var(--color-surface-app);
+  --color-card-border: var(--color-neutral-150);
   --color-border-filled: var(--color-neutral-400);
   --color-text: var(--color-neutral-900);
   --color-text-body: var(--color-neutral-600);

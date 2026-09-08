@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { formatListDate } from "../../lib/date";
 import { api, type Room } from "../../api/service";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
@@ -82,7 +83,7 @@ export function RoomListPage() {
                 {partnerName(room).slice(0, 1)}
               </span>
               <span className={styles.date}>
-                {new Date(room.updated_at).toLocaleDateString("ko-KR").replaceAll(". ", "/").replace(".", "")}
+                {formatListDate(room.updated_at)}
               </span>
               <span className={styles.name}>{partnerName(room)}</span>
               <span className={styles.topic}>{room.title}</span>

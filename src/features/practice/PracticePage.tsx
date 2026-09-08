@@ -73,7 +73,7 @@ export function PracticePage() {
               className={styles.card}
               onClick={() => { setPracticeType("free_chat"); setScenarioId(""); setStep("persona"); }}
             >
-              <span className={styles.icon} aria-hidden="true">💬</span>
+              <span className={`${styles.icon} ${styles.chatIcon}`} aria-hidden="true" />
               <span className={styles.text}>
                 <b>자유채팅</b>
                 <small>주제 없이 편하게 대화를 이어가요</small>
@@ -83,7 +83,7 @@ export function PracticePage() {
               className={`${styles.card} ${styles.highlighted}`}
               onClick={() => { setPracticeType("scenario"); setStep("scenario"); }}
             >
-              <span className={styles.icon} aria-hidden="true">📋</span>
+              <span className={`${styles.icon} ${styles.scenarioIcon}`} aria-hidden="true" />
               <span className={styles.text}>
                 <b>시나리오</b>
                 <small>실제 상황에 맞춰 표현을 연습해요</small>
@@ -91,7 +91,7 @@ export function PracticePage() {
               <span className={styles.badge}>오늘 추천</span>
             </button>
             <button className={styles.card} onClick={() => navigate("/interview")}>
-              <span className={styles.icon} aria-hidden="true">🧑‍💼</span>
+              <span className={`${styles.icon} ${styles.interviewIcon}`} aria-hidden="true" />
               <span className={styles.text}>
                 <b>면접 시뮬레이션</b>
                 <small>질문에 답하며 실전 감각을 익혀요</small>
