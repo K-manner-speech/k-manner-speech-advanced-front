@@ -955,6 +955,24 @@ export interface components {
             /** Code */
             code: string;
         };
+        /**
+         * GeneralScore
+         * @description 자유채팅·시나리오 결과의 항목별 점수. 연습 전체를 기준으로 매긴다.
+         */
+        GeneralScore: {
+            /** Category */
+            category: string;
+            /** Score */
+            score: number;
+            /** Max Score */
+            max_score: number;
+            /** Strength */
+            strength: string | null;
+            /** Suggestion */
+            suggestion: string | null;
+            /** Evidence */
+            evidence: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1822,6 +1840,11 @@ export interface components {
             created_at: string;
             /** Items */
             items: components["schemas"]["ResultItem"][];
+            /**
+             * Scores
+             * @default []
+             */
+            scores: components["schemas"]["GeneralScore"][];
             /** Source Refs */
             source_refs: components["schemas"]["DomainRef"][];
             /** Overall Score */

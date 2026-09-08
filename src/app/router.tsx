@@ -47,6 +47,7 @@ export const router = createBrowserRouter([
           { path: "/interview", element: <InterviewPage /> },
           { path: "/results", element: <ResultListPage /> },
           { path: "/results/:resultId", element: <ResultPage source="result" /> },
+          { path: "/results/:resultId/scores", element: <ResultPage source="result" view="scores" /> },
           { path: "/results/:resultId/strengths", element: <ResultPage source="result" view="strengths" /> },
           { path: "/results/:resultId/strengths/:key", element: <ResultPage source="result" view="strength-detail" /> },
           { path: "/results/:resultId/improvements", element: <ResultPage source="result" view="improvements" /> },

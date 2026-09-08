@@ -10,7 +10,7 @@ const labels: Record<string, string> = {
   question_understanding_fit: "질문 이해·적합성", answer_structure: "답변 구조", specificity_evidence: "구체성·근거",
   job_fit_problem_solving: "직무 적합성·문제 해결력", delivery_attitude: "전달력·태도",
 };
-type ResultView = "summary" | "strengths" | "improvements" | "strength-detail" | "improvement-detail";
+type ResultView = "summary" | "scores" | "strengths" | "improvements" | "strength-detail" | "improvement-detail";
 
 export function ResultPage({ source = "room", view = "summary" }: { source?: "room" | "result"; view?: ResultView }) {
   const { roomId = "", resultId = "", key: itemKey = "" } = useParams();
@@ -43,7 +43,7 @@ export function ResultPage({ source = "room", view = "summary" }: { source?: "ro
   if (data.interview_evaluation) return <InterviewResult data={data} view={view} category={itemKey} onBack={() => navigate(-1)} remove={remove} />;
   // 요약은 대화가 끝난 직후 replace 로 들어오는 화면이라 뒤로가기가 방으로 돌아가면 안 된다.
   const backFromSummary = () => navigate(source === "result" ? "/results" : "/rooms");
-  return <GeneralResult data={data} view={view} itemKey={itemKey} source={source}
+  return <GeneralResult data={data} view={view} source={source}
     onBack={view === "summary" ? backFromSummary : () => navigate(-1)} retry={retry} remove={remove} />;
 }
 
@@ -52,55 +52,140 @@ const generalLabels: Record<string, string> = {
 };
 
 /** 자유 대화와 상황 연습 결과. 면접과 같은 요약 → 목록 → 상세 3단으로 보여 준다. */
-function GeneralResult({ data, view, itemKey, source, onBack, retry, remove }: {
-  data: SessionResult; view: ResultView; itemKey: string; source: "room" | "result"; onBack: () => void;
+function GeneralResult({ data, view, source, onBack, retry, remove }: {
+  data: SessionResult; view: ResultView; source: "room" | "result"; onBack: () => void;
   retry: UseMutationResult<unknown, Error, string>; remove: UseMutationResult<void, Error, string>;
 }) {
   const base = `/results/${data.id}`;
-  const noun = data.practice_type === "scenario" ? "연습" : "대화";
+  // 항목별 점수가 생기기 전에 만들어진 결과에는 이 값이 없다.
+  const scores = data.scores ?? [];
   const strengths = data.items.filter((item) => item.item_type === "strength");
   const improvements = data.items.filter((item) => item.item_type !== "strength");
-  const categoryChips = (items: typeof data.items) =>
-    [...new Set(items.map((item) => item.category).filter((category): category is string => !!category))];
+
+  if (view === "scores") {
+    return (
+      <ResultFrame title="항목별 상세 평가" onBack={onBack} className={styles.resultDetailPage}>
+        <h1>항목별 상세 평가</h1>
+        <div className={styles.resultItems}>
+          {scores.map((score) => (
+            <article key={score.category} className={styles.resultEvidenceCard}>
+              <header>
+                <h2>{generalLabels[score.category] ?? score.category}</h2>
+                <span>{score.score}/{score.max_score}</span>
+              </header>
+              {score.evidence && <><h3>내가 한 말</h3><p>{score.evidence}</p></>}
+              {(score.strength || score.suggestion) && (
+                <div>
+                  <strong>{score.strength ? "잘한 점" : "다듬을 점"}</strong>
+                  <p>{score.strength ?? score.suggestion}</p>
+                </div>
+              )}
+            </article>
+          ))}
+          {!scores.length && (
+            <div className={styles.empty}>이번 연습에서는 항목별 점수를 매기지 못했어요.</div>
+          )}
+        </div>
+      </ResultFrame>
+    );
+  }
 
   if (view === "strengths" || view === "improvements") {
     const isStrength = view === "strengths";
     const entries = isStrength ? strengths : improvements;
-    return <ResultFrame title={isStrength ? "잘한 점 상세" : "다듬을 점 상세"} onBack={onBack} className={styles.resultListPage}>
-      <h1>{isStrength ? `이번 ${noun}에서 잘한 점` : `다음 ${noun}에서 다듬을 점`}</h1>
-      <div className={styles.resultItems}>{entries.map((item) => <Link key={item.order} to={`${base}/${isStrength ? "strengths" : "improvements"}/${item.order}`}><strong>{item.title}</strong><span>{item.explanation ?? item.evidence}</span><b>›</b></Link>)}</div>
-      {!entries.length && <div className={styles.empty}>{isStrength ? `이번 ${noun}에서는 뚜렷하게 확인된 강점이 없어요.` : "다듬을 점으로 정리된 표현이 없어요."}</div>}
-    </ResultFrame>;
-  }
-
-  if (view === "strength-detail" || view === "improvement-detail") {
-    const isStrength = view === "strength-detail";
-    const item = data.items.find((candidate) =>
-      String(candidate.order) === itemKey && (candidate.item_type === "strength") === isStrength);
-    return <ResultFrame title={isStrength ? "잘한 점 상세" : "다듬을 점 상세"} onBack={onBack} className={styles.resultDetailPage}>
-      <h1>{isStrength ? "잘한 점 상세" : "다듬을 점 상세"}</h1>
-      {item ? <article className={styles.resultEvidenceCard}>
-        <header><h2>{item.title}</h2><span>{item.category ? generalLabels[item.category] ?? item.category : isStrength ? "잘한 표현" : "다듬을 표현"}</span></header>
-        <h3>내가 한 말</h3>
-        <p>{item.original_expression ?? item.evidence ?? "인용할 표현이 기록되지 않았어요."}</p>
-        <div>
-          <strong>{isStrength ? "왜 좋았나요" : "이렇게 바꿔 보세요"}</strong>
-          {!isStrength && item.recommended_expression && <p>{item.recommended_expression}</p>}
-          {item.explanation && <p>{item.explanation}</p>}
+    return (
+      <ResultFrame
+        title={isStrength ? "잘한 표현" : "개선할 표현"}
+        onBack={onBack}
+        className={styles.resultDetailPage}
+      >
+        <h1>{isStrength ? "잘한 표현" : "개선할 표현"}</h1>
+        <div className={styles.resultItems}>
+          {entries.map((item) => (
+            <article key={item.order} className={styles.resultEvidenceCard}>
+              <header>
+                <h2>{item.title}</h2>
+                {item.category && <span>{generalLabels[item.category] ?? item.category}</span>}
+              </header>
+              <h3>내가 한 말</h3>
+              <p>{item.original_expression ?? item.evidence ?? "인용할 표현이 기록되지 않았어요."}</p>
+              <div>
+                <strong>{isStrength ? "왜 좋았나요" : "이렇게 바꿔 보세요"}</strong>
+                {!isStrength && item.recommended_expression && <p>{item.recommended_expression}</p>}
+                {item.explanation && <p>{item.explanation}</p>}
+              </div>
+            </article>
+          ))}
+          {!entries.length && (
+            <div className={styles.empty}>
+              {isStrength ? "이번 연습에서는 뚜렷하게 확인된 강점이 없어요." : "다듬을 점으로 정리된 표현이 없어요."}
+            </div>
+          )}
         </div>
-      </article> : <div className={styles.empty}>해당 피드백을 찾을 수 없습니다.</div>}
-    </ResultFrame>;
+      </ResultFrame>
+    );
   }
 
-  return <ResultFrame title="결과 요약" onBack={onBack} className={styles.resultSummary}>
-    <section className={styles.resultOverall}><h1>{noun} 총평</h1><p>{data.summary ?? "대화에서 관찰된 내용을 기준으로 정리했습니다."}</p></section>
-    <section className={styles.resultScoreStrip}><span>종합 점수</span><strong>{data.overall_score ?? "—"}</strong><small>/100</small></section>
-    <Link aria-label={`이번 ${noun}에서 잘한 점`} className={styles.resultChoice} to={`${base}/strengths`}><h2>{`이번 ${noun}에서 잘한 점`}</h2><div>{categoryChips(strengths).map((category) => <span key={category}>{generalLabels[category] ?? category}</span>)}</div><p>{strengths[0]?.title ?? `이번 ${noun}에서는 뚜렷하게 확인된 강점이 없어요.`}</p></Link>
-    <Link aria-label={`다음 ${noun}에서 다듬을 점`} className={`${styles.resultChoice} ${styles.resultChoiceWarning}`} to={`${base}/improvements`}><h2>{`다음 ${noun}에서 다듬을 점`}</h2><div>{categoryChips(improvements).map((category) => <span key={category}>{generalLabels[category] ?? category}</span>)}</div><p>{improvements[0]?.title ?? "다듬을 점으로 정리된 표현이 없어요."}</p></Link>
-    {(retry.error || remove.error) && <div className={styles.partialError} role="alert">{(retry.error ?? remove.error)?.message}</div>}
-    <div className={styles.actionRow}><Link className={styles.secondaryLink} to="/results">결과 목록</Link>{source === "result" && <button className={styles.dangerButton} disabled={remove.isPending} onClick={() => remove.mutate(data.id)}>{remove.isPending ? "삭제 중…" : "결과 삭제"}</button>}</div>
-  </ResultFrame>;
+  return (
+    <ResultFrame title="결과 요약" onBack={onBack} className={styles.resultSummary}>
+      <section className={styles.resultOverall}>
+        <h1>종합 점수 {data.overall_score ?? "—"}/100</h1>
+        <p>{data.summary ?? "대화에서 관찰된 내용을 기준으로 정리했습니다."}</p>
+      </section>
+
+      <p className={styles.resultHint}>
+        항목별 점수, 잘한 점, 개선할 점을 누르면 상세 피드백을 확인할 수 있어요.
+      </p>
+
+      {/* 요약에서 이미 내용을 읽을 수 있게 한다. 제목만 보여 주고 누르게 하면
+          한 번 더 들어가야 무엇을 잘했는지 알 수 있다. */}
+      <Link className={styles.resultChoice} to={`${base}/scores`} aria-label="항목별 점수">
+        <h2>항목별 점수</h2>
+        <div className={styles.resultScoreRows}>
+          {scores.map((score) => (
+            <span key={score.category}>
+              <b>{generalLabels[score.category] ?? score.category}</b>
+              <i style={{ width: `${(score.score / score.max_score) * 100}%` }} />
+              <em>{score.score}/{score.max_score}</em>
+            </span>
+          ))}
+          {!scores.length && <p>항목별 점수를 매기지 못했어요.</p>}
+        </div>
+      </Link>
+
+      <Link className={styles.resultChoice} to={`${base}/strengths`} aria-label="잘한 점">
+        <h2>✓ 잘한 점</h2>
+        {strengths[0] ? (
+          <>
+            <p>{strengths[0].title}</p>
+            {strengths[0].original_expression && <blockquote>“{strengths[0].original_expression}”</blockquote>}
+          </>
+        ) : <p>이번 연습에서는 뚜렷하게 확인된 강점이 없어요.</p>}
+      </Link>
+
+      <Link className={`${styles.resultChoice} ${styles.resultChoiceWarning}`} to={`${base}/improvements`} aria-label="개선할 점">
+        <h2>! 개선할 점</h2>
+        {improvements[0] ? (
+          <>
+            <p>{improvements[0].title}</p>
+            {improvements[0].recommended_expression && <blockquote>추천 “{improvements[0].recommended_expression}”</blockquote>}
+          </>
+        ) : <p>다듬을 점으로 정리된 표현이 없어요.</p>}
+      </Link>
+
+      {(retry.error || remove.error) && <div className={styles.partialError} role="alert">{(retry.error ?? remove.error)?.message}</div>}
+      <div className={styles.actionRow}>
+        <Link className={styles.secondaryLink} to="/results">결과 목록</Link>
+        {source === "result" && (
+          <button className={styles.dangerButton} disabled={remove.isPending} onClick={() => remove.mutate(data.id)}>
+            {remove.isPending ? "삭제 중…" : "결과 삭제"}
+          </button>
+        )}
+      </div>
+    </ResultFrame>
+  );
 }
+
 
 function FailedResult({ data, retry, remove, onBack }: { data: SessionResult; retry: UseMutationResult<unknown, Error, string>; remove: UseMutationResult<void, Error, string>; onBack: () => void }) {
   const detail = data.failure_code === "JOB_DEADLINE_EXCEEDED"

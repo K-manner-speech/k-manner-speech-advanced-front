@@ -402,3 +402,25 @@
 .actionRow { margin-top:16px; }
 .actionRow>* { flex:1; }
 @media (max-width:380px) { .authPage,.centerPage { width:100%; min-height:100vh; border-radius:0; box-shadow:none; } }
+
+/* R01 결과 요약: 요약에서 이미 내용을 읽을 수 있게 한다. */
+.resultHint {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-text-body);
+  background: var(--color-brand-50);
+  font-size: var(--font-size-body-sm);
+  line-height: 17px;
+}
+.resultScoreRows { display: grid; gap: var(--space-2); }
+.resultScoreRows span { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: var(--space-3); }
+.resultScoreRows b { color: var(--color-text-body); font-size: var(--font-size-body-sm); font-weight: 400; }
+.resultScoreRows i {
+  height: 6px; border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  justify-self: stretch; max-width: 100%;
+}
+.resultScoreRows em { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; font-style: normal; font-variant-numeric: tabular-nums; }
+.resultChoice blockquote { margin: var(--space-2) 0 0; color: var(--color-text); font-size: var(--font-size-body); }
+.resultEvidenceCard header span { white-space: nowrap; }

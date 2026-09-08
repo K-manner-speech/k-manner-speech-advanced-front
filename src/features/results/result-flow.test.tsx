@@ -12,7 +12,7 @@ vi.mock("../../api/service", () => ({
   waitForTerminal: vi.fn().mockResolvedValue({ status: "succeeded" }),
 }));
 
-const snapshot = { id: "res1", room_id: "room1", attempt_no: 1, practice_type: "interview" as const, display_title: "면접 자기소개", status: "succeeded" as const, failure_code: null, missing_categories: [], created_at: "2026-08-27T00:00:00Z", items: [], source_refs: [], overall_score: 80, summary: "좋은 연습", interview_evaluation: { status: "succeeded" as const, overall_score: 84, summary: "질문의 의도를 빠르게 이해했어요.", missing_categories: [], scores: [
+const snapshot = { id: "res1", room_id: "room1", attempt_no: 1, practice_type: "interview" as const, display_title: "면접 자기소개", status: "succeeded" as const, failure_code: null, missing_categories: [], created_at: "2026-08-27T00:00:00Z", items: [], scores: [], source_refs: [], overall_score: 80, summary: "좋은 연습", interview_evaluation: { status: "succeeded" as const, overall_score: 84, summary: "질문의 의도를 빠르게 이해했어요.", missing_categories: [], scores: [
   { category: "specificity_evidence" as const, score: 18, max_score: 20 as const, strength: "구체적인 근거를 제시했어요.", suggestion: "성과를 수치로 덧붙여 보세요.", evidence: "사용자 조사 결과를 바탕으로 개선했습니다." },
 ] } };
 
@@ -146,6 +146,10 @@ const generalSnapshot = {
   overall_score: 75,
   summary: "핵심 목적은 달성했지만 첫 인사에서 존댓말이 아니었습니다.",
   interview_evaluation: null,
+  scores: [
+    { category: "honorifics", score: 15, max_score: 25, strength: null, suggestion: "존댓말을 지켜 보세요.", evidence: "안녕?" },
+    { category: "courtesy", score: 20, max_score: 25, strength: "감사 인사를 남겼어요.", suggestion: null, evidence: "감사합니다" },
+  ],
   items: [
     { item_type: "strength", category: "context_fit", title: "학생 식당 위치를 구체적으로 질문함", original_expression: "식당이 어딨어요 선배?", recommended_expression: null, explanation: "구체적인 안내를 받았습니다.", evidence: "“식당이 어딨어요 선배?”", source_document_id: null, order: 1 },
     { item_type: "improvement", category: "honorifics", title: "첫 인사의 존댓말과 호칭을 일관되게 사용하기", original_expression: "안녕?", recommended_expression: "안녕하세요, 선배님!", explanation: "첫 인사는 반말형이었습니다.", evidence: "“안녕?”", source_document_id: null, order: 2 },
@@ -159,34 +163,39 @@ function renderGeneralRoutes(entry: string) {
     <Route path="/results/:resultId/strengths/:key" element={<ResultPage source="result" view="strength-detail" />} />
     <Route path="/results/:resultId/improvements" element={<ResultPage source="result" view="improvements" />} />
     <Route path="/results/:resultId/improvements/:key" element={<ResultPage source="result" view="improvement-detail" />} />
+    <Route path="/results/:resultId/scores" element={<ResultPage source="result" view="scores" />} />
   </Routes></MemoryRouter></QueryClientProvider>);
 }
 
-test("시나리오 결과도 면접처럼 요약에서 잘한 점 상세까지 파고든다", async () => {
+test("결과 요약은 항목별 점수와 잘한 점·개선할 점을 미리 보여 준다", async () => {
   vi.mocked(api.resultById).mockResolvedValue(generalSnapshot as never);
   renderGeneralRoutes("/results/res1");
 
-  expect(await screen.findByRole("heading", { name: "연습 총평" })).toBeInTheDocument();
-  expect(screen.getByText("75")).toBeInTheDocument();
-
-  await userEvent.click(screen.getByRole("link", { name: "이번 연습에서 잘한 점" }));
-  expect(await screen.findByRole("heading", { name: "이번 연습에서 잘한 점" })).toBeInTheDocument();
-
-  await userEvent.click(screen.getByRole("link", { name: /학생 식당 위치를 구체적으로 질문함/ }));
-  expect(await screen.findByRole("heading", { name: "잘한 점 상세" })).toBeInTheDocument();
-  expect(screen.getByText("식당이 어딨어요 선배?")).toBeInTheDocument();
-  expect(screen.getByText("구체적인 안내를 받았습니다.")).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: /종합 점수 75/ })).toBeInTheDocument();
+  // 누르지 않아도 무엇을 잘했고 무엇을 고칠지 읽을 수 있어야 한다.
+  expect(screen.getByText("학생 식당 위치를 구체적으로 질문함")).toBeInTheDocument();
+  expect(screen.getByText("첫 인사의 존댓말과 호칭을 일관되게 사용하기")).toBeInTheDocument();
+  expect(screen.getByText("높임법")).toBeInTheDocument();
 });
 
-test("시나리오 결과의 다듬을 점 상세는 추천 표현을 보여준다", async () => {
+test("항목별 점수를 누르면 R02 상세 평가로 간다", async () => {
   vi.mocked(api.resultById).mockResolvedValue(generalSnapshot as never);
   renderGeneralRoutes("/results/res1");
 
-  await userEvent.click(await screen.findByRole("link", { name: "다음 연습에서 다듬을 점" }));
-  await userEvent.click(await screen.findByRole("link", { name: /첫 인사의 존댓말/ }));
+  await userEvent.click(await screen.findByRole("link", { name: "항목별 점수" }));
 
-  expect(await screen.findByRole("heading", { name: "다듬을 점 상세" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "항목별 상세 평가" })).toBeInTheDocument();
+  expect(screen.getByText("15/25")).toBeInTheDocument();
+  expect(screen.getByText("존댓말을 지켜 보세요.")).toBeInTheDocument();
+});
+
+test("잘한 점과 개선할 점은 각각 한 화면에 표현을 모아 보여 준다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue(generalSnapshot as never);
+  renderGeneralRoutes("/results/res1");
+
+  await userEvent.click(await screen.findByRole("link", { name: "개선할 점" }));
+
+  expect(await screen.findByRole("heading", { name: "개선할 표현" })).toBeInTheDocument();
   expect(screen.getByText("안녕?")).toBeInTheDocument();
   expect(screen.getByText("안녕하세요, 선배님!")).toBeInTheDocument();
-  expect(screen.getByText("높임법")).toBeInTheDocument();
 });
