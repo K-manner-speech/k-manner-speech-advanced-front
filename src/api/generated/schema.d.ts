@@ -192,6 +192,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Home */
+        get: operations["home.get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/home/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attend
+         * @description 출석을 기록하고 갱신된 상태를 돌려준다.
+         *
+         *     하루에 한 번만 기록되므로 같은 날 여러 번 눌러도 결과가 같다. 멱등키를
+         *     받지 않는 이유다.
+         */
+        post: operations["home.attend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rooms": {
         parameters: {
             query?: never;
@@ -978,6 +1018,11 @@ export interface components {
             status: "ready";
             checks: components["schemas"]["HealthChecks"];
         };
+        /** HomeSummary */
+        HomeSummary: {
+            streak: components["schemas"]["LearningStreak"];
+            recommendation: components["schemas"]["RecommendedPractice"] | null;
+        };
         /** InterviewAnalysis */
         InterviewAnalysis: {
             /**
@@ -1249,6 +1294,31 @@ export interface components {
              */
             display_language: "ko" | "en";
         };
+        /**
+         * LearningStreak
+         * @description 홈 상단의 연속 학습 상태.
+         *
+         *     `streak_days` 는 오늘까지 이어진 연속 출석 일수다. 오늘 아직 출석하지
+         *     않았어도 어제까지 이어졌다면 그 값을 유지한다. 하루가 다 가기 전에는
+         *     기록이 끊긴 것으로 보지 않는다.
+         *     `goal_days` 중 `recent_days` 는 최근 7일 안에서 출석한 날 수이며, 하루를
+         *     빠뜨렸다고 0 으로 되돌리지 않는다.
+         */
+        LearningStreak: {
+            /** Attended Today */
+            attended_today: boolean;
+            /** Streak Days */
+            streak_days: number;
+            /** Recent Days */
+            recent_days: number;
+            /** Goal Days */
+            goal_days: number;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+        };
         /** MeResponse */
         MeResponse: {
             profile: components["schemas"]["ProfileData"];
@@ -1442,6 +1512,35 @@ export interface components {
             gender: string;
             /** Native Language */
             native_language: string;
+        };
+        /**
+         * RecommendedPractice
+         * @description 오늘의 추천 대화. 하루 동안 같은 것을 보여 준다.
+         */
+        RecommendedPractice: {
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /** Title */
+            title: string;
+            /** Goal */
+            goal: string | null;
+            /** Difficulty */
+            difficulty: string | null;
+            /** Estimated Minutes */
+            estimated_minutes: number | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Relationship Label */
+            relationship_label: string | null;
+            /** Opening Message */
+            opening_message: string | null;
+            /** Completed Before */
+            completed_before: boolean;
         };
         /** RepeatRequest */
         RepeatRequest: {
@@ -2184,6 +2283,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    "home.get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeSummary"];
+                };
+            };
+        };
+    };
+    "home.attend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeSummary"];
                 };
             };
         };

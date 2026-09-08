@@ -19,6 +19,13 @@ export const api = {
   async me() {
     return unwrap(await http.GET("/api/v1/me"));
   },
+  async home() {
+    return unwrap(await http.GET("/api/v1/home"));
+  },
+  /** 출석은 하루에 한 번만 기록되므로 다시 눌러도 결과가 같다. */
+  async attend() {
+    return unwrap(await http.POST("/api/v1/home/attendance", {}));
+  },
   async saveProfile(body: components["schemas"]["ProfileReplaceRequest"]) {
     return unwrap(await http.PUT("/api/v1/me/profile", { body }));
   },

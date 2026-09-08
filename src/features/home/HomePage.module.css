@@ -1,0 +1,85 @@
+.page { display: grid; gap: var(--space-4); padding-bottom: var(--space-4); }
+
+.brand { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+.mark {
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--color-neutral-50); background: var(--color-accent);
+  font-size: var(--font-size-body-lg); font-weight: 700;
+}
+.name { color: var(--color-text); font-size: var(--font-size-body); font-weight: 700; letter-spacing: .02em; }
+
+/* 연속 학습 */
+.streak { padding: var(--space-4); border-radius: var(--radius-lg); background: var(--color-surface-muted); }
+.streakHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.streakTitle { color: var(--color-text); font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+.streakGoal { color: var(--color-text-muted); font-size: var(--font-size-caption); font-weight: 700; }
+
+.track { display: flex; gap: var(--space-1); margin: var(--space-3) 0 var(--space-4); }
+.segment { height: 6px; flex: 1; border-radius: var(--radius-pill); background: var(--color-neutral-200); }
+.segmentFilled { background: var(--color-accent); }
+
+/* 출석 완료는 눌리지 않는 상태 표시다. 버튼처럼 보이면 다시 누르게 된다. */
+.attended {
+  min-height: var(--control-height-compact);
+  display: grid; place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-body); background: var(--color-neutral-200);
+  font-size: var(--font-size-label); font-weight: 700;
+}
+
+/* 오늘의 추천 */
+.recommend { padding: var(--space-5); border-radius: var(--radius-lg); background: var(--color-accent); }
+.recommendHead { display: flex; align-items: center; justify-content: space-between; }
+.recommendHead span { color: var(--color-brand-50); font-size: var(--font-size-caption); font-weight: 700; }
+.recommendTitle {
+  margin: var(--space-3) 0 var(--space-4);
+  color: var(--color-neutral-50);
+  font-size: var(--font-size-h1); line-height: var(--line-height-h1); font-weight: 700;
+}
+
+.preview { padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); }
+.previewWho { display: flex; align-items: center; gap: var(--space-2); }
+.avatar { width: 26px; height: 26px; border-radius: var(--radius-pill); object-fit: cover; }
+.previewWho b { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; }
+.previewHint { margin: var(--space-2) 0 var(--space-1); color: var(--color-text-muted); font-size: var(--font-size-caption); }
+.previewLine { margin: 0; color: var(--color-text); font-size: var(--font-size-body-lg); line-height: 21px; font-weight: 700; }
+
+.meta { margin: var(--space-4) 0 var(--space-3); color: var(--color-brand-50); font-size: var(--font-size-caption); }
+
+.start {
+  width: 100%; min-height: var(--control-height-compact);
+  display: grid; place-items: center;
+  border: 0; border-radius: var(--radius-md);
+  color: var(--color-accent); background: var(--color-surface);
+  font-size: var(--font-size-label); font-weight: 700;
+  text-decoration: none;
+}
+
+/* 피드백 모아보기 */
+.feedback {
+  display: grid; gap: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-muted);
+}
+.feedback h2 { margin: 0; color: var(--color-text); font-size: var(--font-size-h3); font-weight: 700; }
+.feedbackRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.feedbackRow p { margin: 0; color: var(--color-text-body); font-size: var(--font-size-body-sm); }
+.feedbackLink {
+  min-height: 34px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text); background: var(--color-surface);
+  font-size: var(--font-size-body-sm); font-weight: 700; text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.empty {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-body);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-body);
+}
