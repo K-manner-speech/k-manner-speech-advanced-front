@@ -1,0 +1,120 @@
+.brand { display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-4); }
+
+/* 가입 단계 화면은 브랜드 대신 뒤로가기와 단계 표시를 쓴다. */
+.topRow {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: var(--space-4); min-height: 34px;
+}
+
+.back {
+  width: 34px; height: 34px; min-height: 34px;
+  display: grid; place-items: center;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-h2);
+  line-height: 1;
+}
+
+.stepPill {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-body);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.mark {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--color-neutral-50);
+  background: var(--color-accent);
+  font-size: var(--font-size-h2);
+  font-weight: 700;
+}
+
+.name {
+  color: var(--color-text);
+  font-size: var(--font-size-body-lg);
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.headline {
+  margin: var(--space-6) 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-h1);
+  line-height: var(--line-height-h1);
+  font-weight: 700;
+  /* 제목 줄바꿈을 문자열로 넘긴다. 시안의 두 줄 구성을 그대로 지킨다. */
+  white-space: pre-line;
+}
+
+.consent {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.consent input {
+  width: 20px; height: 20px; margin-top: 2px; flex: 0 0 auto;
+  accent-color: var(--color-accent);
+}
+
+.consent span { color: var(--color-text-body); font-size: var(--font-size-body); line-height: 19px; }
+.consent b { color: var(--color-text); font-weight: 700; }
+
+/* 입력을 흰 카드로 묶어 배경과 분리한다. 시안의 모든 인증 화면이 같은 형태다. */
+.card {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.links { display: grid; gap: var(--space-2); justify-items: center; text-align: center; }
+
+.link {
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  text-decoration: none;
+}
+.link:hover { text-decoration: underline; }
+
+.help {
+  color: var(--color-text-body);
+  font-size: var(--font-size-body);
+  line-height: 19px;
+}
+.help b { display: block; color: var(--color-text); }
+
+.notice {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-text-body);
+  background: var(--color-brand-50);
+  font-size: var(--font-size-body);
+}
+
+.error {
+  margin-top: var(--space-4);
+  color: var(--color-danger);
+  font-size: var(--font-size-body);
+}
+
+/* CTA 를 화면 아래에 붙인다. 폼이 남은 높이를 차지해야 auto 여백이 동작한다. */
+.form { flex: 1; display: flex; flex-direction: column; }
+.action { margin: auto 0 var(--space-10); display: grid; gap: var(--space-3); }

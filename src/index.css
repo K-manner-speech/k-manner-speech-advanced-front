@@ -1,26 +1,95 @@
+/* 값의 단일 기준은 Figma `K-manner-speech-advanced` 파일의 01 Screen Plan 1.2.0
+   페이지이고, docs/DESIGN_SYSTEM.md 가 그것을 옮겨 적은 것이다. 화면에서 HEX 를
+   직접 쓰지 않고 여기 이름만 쓴다. */
 :root {
-  font-family: "Pretendard Variable", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #23211e; background: #f4f1ea; font-synthesis: none; text-rendering: optimizeLegibility;
-  --color-brand: #4169d8; --color-brand-strong: #3157bb; --color-brand-soft: #f2f5ff;
-  --color-surface: #ffffff; --color-surface-app: #fbfaf7; --color-surface-muted: #f4f1ea;
-  --color-border: #e5e0d6; --color-text: #23211e; --color-text-body: #4a453e; --color-text-muted: #837a6d;
-  --color-success: #059669; --color-warning: #d97706; --color-danger: #dc2626; --color-info: #2563eb;
-  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px; --space-16: 64px;
+  /* 영문 전용 버튼에만 Inter 를 쓰라는 규정이 있으나, 화면 대부분이 한국어와
+     영문을 함께 쓰므로 한 벌로 통일한다. 섞이면 자간이 어긋난다. */
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #35231f; background: #fff8f0; font-synthesis: none; text-rendering: optimizeLegibility;
+
+  --color-brand-50: #f7ece3;
+  --color-brand-100: #f5d6cc;
+  --color-brand-600: #c85f4a;
+  --color-brand-700: #a84737;
+  --color-neutral-50: #fff8f0;
+  --color-neutral-100: #f1e5d6;
+  --color-neutral-200: #e4d4c8;
+  --color-neutral-300: #d4bfb5;
+  --color-neutral-400: #b29485;
+  --color-neutral-500: #81675f;
+  --color-neutral-600: #5d4942;
+  --color-neutral-700: #503b30;
+  --color-neutral-900: #35231f;
+  --color-danger-600: #b82e26;
+
+  /* 역할 이름. 화면은 되도록 이쪽을 쓴다. */
+  --color-surface: #ffffff;
+  --color-surface-app: var(--color-neutral-50);
+  --color-surface-muted: var(--color-neutral-100);
+  --color-border: var(--color-neutral-300);
+  --color-border-filled: var(--color-neutral-400);
+  --color-text: var(--color-neutral-900);
+  --color-text-body: var(--color-neutral-600);
+  --color-text-muted: var(--color-neutral-500);
+  --color-accent: var(--color-brand-600);
+  --color-accent-pressed: var(--color-brand-700);
+  --color-danger: var(--color-danger-600);
+  --color-disabled-surface: #f1dfd8;
+  --color-disabled-text: #75665e;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
   --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px; --radius-pill: 9999px;
-  --shadow-sm: 0 1px 2px rgba(35,33,30,.06); --shadow-md: 0 8px 24px rgba(35,33,30,.10); --shadow-lg: 0 20px 48px rgba(35,33,30,.14);
-  --font-size-sm: 13px; --font-size-md: 15px; --font-size-lg: 18px; --font-size-xl: 22px; --font-size-2xl: 28px; --font-size-display: 32px;
+  --radius-cta: 14px;
+
+  --shadow-sm: 0 1px 2px rgba(53, 35, 31, .06);
+  --shadow-button: 0 6px 14px rgba(89, 31, 20, .22);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, .16);
+  --shadow-hero: 0 8px 9px rgba(89, 31, 20, .28);
+
+  /* 크기/행간 쌍. 학습 문장과 채팅 메시지는 15px 밑으로 줄이지 않는다. */
+  --font-size-display: 32px; --line-height-display: 42px;
+  --font-size-h1: 22px; --line-height-h1: 30px;
+  --font-size-h2: 18px; --line-height-h2: 27px;
+  --font-size-h3: 15px; --line-height-h3: 23px;
+  --font-size-body-lg: 15px; --line-height-body-lg: 21px;
+  --font-size-body: 13px; --line-height-body: 18.2px;
+  --font-size-body-sm: 12px; --line-height-body-sm: 18px;
+  --font-size-label: 14px; --line-height-label: 20px;
+  --font-size-caption: 11px; --line-height-caption: 16px;
+  --font-size-micro: 10px; --line-height-micro: 15px;
+
+  --control-height: 52px;      /* 공용 Primary/Secondary 최소 터치 높이 */
+  --control-height-compact: 44px; /* 다이얼로그·카드 내부 압축형만 */
+  --field-height: 48px;
 }
+
 * { box-sizing: border-box; }
-html { min-width: 320px; background: #e9e6df; }
-body { margin:0; min-width:320px; height:100vh; overflow:hidden; color:var(--color-text); background:#e9e6df; font-size:var(--font-size-md); line-height:1.5; }
-#root { height:100vh; padding:24px 0; }
+html { min-width: 320px; background: var(--color-neutral-200); }
+body {
+  margin: 0; min-width: 320px; height: 100vh; overflow: hidden;
+  color: var(--color-text); background: var(--color-neutral-200);
+  font-size: var(--font-size-body); line-height: var(--line-height-body);
+}
+#root { height: 100vh; padding: var(--space-6) 0; }
+
 button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
-button:disabled { cursor: not-allowed; opacity: .5; }
-input, select, textarea { width: 100%; min-height: 48px; margin-top: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); color: var(--color-text); background: var(--color-surface); }
+button:disabled { cursor: not-allowed; }
 textarea { resize: vertical; }
-:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-brand) 35%, transparent); outline-offset: 2px; }
-::selection { background: var(--color-brand-soft); color: var(--color-brand-strong); }
-@media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
-@media (max-width:380px) { body,#root { height:100dvh; } #root { padding:0; } }
+
+/* 포커스는 테라코타 2px. 상태 가이드의 Focus 와 같은 표현이다. */
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: var(--color-brand-100); color: var(--color-neutral-900); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important; animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+  }
+}
+@media (max-width: 380px) {
+  body, #root { height: 100dvh; }
+  #root { padding: 0; }
+}

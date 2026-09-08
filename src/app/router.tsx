@@ -4,7 +4,7 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { api } from "../api/service";
 import { AppShell } from "../components/shell/AppShell";
 import { StatusPanel } from "../components/ui/StatusPanel";
-import { useAuth, LoginPage, OnboardingPage, SignupPage } from "../features/auth";
+import { useAuth, LoginPage, OnboardingPage, SignupPage, StartPage } from "../features/auth";
 import { ConversationPage, InterviewCompletePage } from "../features/conversation";
 import { HomePage } from "../features/home";
 import { MyAccountPage, ProfileEditPage } from "../features/account";
@@ -16,7 +16,7 @@ import { ResultListPage, ResultPage } from "../features/results";
 export function RequireAuth() {
   const { session, isLoading } = useAuth();
   if (isLoading) return <StatusPanel title="세션을 확인하고 있어요" />;
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session) return <Navigate to="/start" replace />;
   return <Outlet />;
 }
 
@@ -29,6 +29,7 @@ function RequireOnboarding() {
 }
 
 export const router = createBrowserRouter([
+  { path: "/start", element: <StartPage /> },
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
   {

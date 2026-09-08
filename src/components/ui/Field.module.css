@@ -1,0 +1,37 @@
+.field { display: grid; gap: var(--space-2); }
+
+.label {
+  color: var(--color-text);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  font-weight: 700;
+}
+
+.input {
+  width: 100%;
+  min-height: var(--field-height);
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: var(--font-size-body);
+}
+.input::placeholder { color: var(--color-text-muted); }
+
+/* 상태 가이드: 기본 1px, 포커스 2px 테라코타, 입력 완료 1px 진한 테두리,
+   오류 2px 빨강. 값이 들어찬 것과 오류를 테두리 굵기로도 구분한다. */
+.input:focus { outline: none; border: 2px solid var(--color-accent); padding: 0 13px; }
+/* 값이 들어차면 테두리를 진하게 한다. 비제어 입력에서도 동작하도록 CSS 로 판단한다. */
+.input:not(:placeholder-shown) { border-color: var(--color-border-filled); }
+.invalid, .invalid:focus { border: 2px solid var(--color-danger); padding: 0 13px; }
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+}
+
+/* 고르지 않았을 때는 placeholder 처럼 흐리게 둔다. */
+.select { appearance: none; background-image: none; }
+.select:has(option[value=""]:checked) { color: var(--color-text-muted); }
