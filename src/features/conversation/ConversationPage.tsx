@@ -310,57 +310,73 @@ export function ConversationPage() {
     <div className={`${chat.screen} ${isInterview ? styles.interviewConversation : ""}`}>
       <div className={chat.header}>
         <button type="button" className={chat.back} onClick={() => navigate(backDestination)} aria-label="뒤로 가기">‹</button>
-        <h1>{isInterview ? "면접" : personaLabel}</h1>
-        {canEndAnytime && (
-          <button
-            type="button"
-            className={chat.end}
-            disabled={completePractice.isPending}
-            onClick={() => setEndConfirmOpen(true)}
-          >
-            종료
-          </button>
-        )}
+        <h1>{isInterview ? "면접 시뮬레이션" : personaLabel}</h1>
+        {/* 시안은 이 자리에 진행 시간만 두지만, 면접도 중간에 끝낼 수 있어야 한다.
+            질문이 남은 방을 끝낼 방법이 없으면 결과를 못 보는 채로 남는다. 둘을
+            나란히 둔다. */}
+        <div className={chat.headerRight}>
+          {isInterview && <span className={chat.elapsed}>{elapsed}</span>}
+          {canEndAnytime && (
+            <button
+              type="button"
+              className={chat.end}
+              disabled={completePractice.isPending}
+              onClick={() => setEndConfirmOpen(true)}
+            >
+              종료
+            </button>
+          )}
+        </div>
       </div>
 
-      {isInterview ? (
-        <>
-          <section className={styles.interviewGoal} aria-live="polite">
-            <strong>면접 시뮬레이션</strong><span>진행 시간 {elapsed}</span>
-          </section>
-          <section className={styles.personaStage}>
-            <img src={personaImageForEmotion(currentEmotion)} alt={`면접 상대의 ${currentEmotionLabel} 표정`} />
-            <div><b>현우 면접관</b><span>기술 면접관</span><strong>{currentEmotionLabel}</strong></div>
-          </section>
-        </>
-      ) : (
-        <section className={chat.hero}>
-          <img
-            src={personaImageForEmotion(currentEmotion)}
-            alt={`대화 상대의 ${currentEmotionLabel} 표정`}
-          />
-          <div className={chat.heroOverlay}>
-            <span className={chat.heroText}>
-              <b>{room.data?.goal ?? room.data?.title}</b>
-              <small>{personaLabel}과 대화 연습</small>
-            </span>
-            <span className={chat.emotion}>{currentEmotionLabel}</span>
-          </div>
-        </section>
-      )}
+      <section className={chat.hero}>
+        <img
+          src={personaImageForEmotion(currentEmotion)}
+          alt={`${isInterview ? "면접 상대" : "대화 상대"}의 ${currentEmotionLabel} 표정`}
+        />
+        <div className={chat.heroOverlay}>
+          <span className={chat.heroText}>
+            <b>{isInterview ? "현우 면접관" : (room.data?.goal ?? room.data?.title)}</b>
+            <small>{isInterview ? "기술 면접관 · Technical Interviewer" : `${personaLabel}과 대화 연습`}</small>
+          </span>
+          <span className={chat.emotion}>{currentEmotionLabel}</span>
+        </div>
+      </section>
 
       <section className={chat.messages} aria-live="polite" aria-label="대화 내용">
         {!sortedMessages.length && !isInterview && (
           <p className={chat.empty}>첫 문장을 보내 대화를 시작해 보세요.</p>
         )}
-        {isInterview && currentQuestion && !hasInterviewerMessage && <article className={styles.interviewMessage} role="group" aria-label="현우 면접관의 질문">
-          <header><img src="/personas/neutral.png" alt="" /><strong>현우 면접관 · 면접관</strong></header>
-          <div><p>{currentQuestion.text}</p><button type="button" aria-label="면접 질문 음성 재생" disabled>🔊</button></div>
-        </article>}
+        {isInterview && currentQuestion && !hasInterviewerMessage && (
+          <article className={chat.turn} role="group" aria-label="현우 면접관의 질문">
+            <div className={chat.who}>
+              <img className={chat.avatar} src="/personas/neutral.png" alt="" />
+              <b>현우 면접관 · 면접관</b>
+            </div>
+            <div className={chat.row}>
+              <p className={`${chat.bubble} ${chat.interviewer}`}>{currentQuestion.text}</p>
+              <button type="button" className={chat.speak} aria-label="면접 질문 음성 재생" disabled>◁))</button>
+            </div>
+          </article>
+        )}
         {sortedMessages.map((message) => message.sender_type === "persona" && isInterview ? (
-          <article key={message.id} className={styles.interviewMessage} role="group" aria-label={message.sequence_no === 1 ? "현우 면접관의 질문" : "현우 면접관의 답변"}>
-            <header><img src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" /><strong>현우 면접관 · 면접관</strong></header>
-            <div><p>{message.content}</p><button type="button" disabled={message.sequence_no === 1 || mediaAction.isPending} onClick={() => mediaAction.mutate({ message, mode: "manual" })} aria-label="면접관 음성 재생">🔊</button></div>
+          <article key={message.id} className={chat.turn} role="group" aria-label={message.sequence_no === 1 ? "현우 면접관의 질문" : "현우 면접관의 답변"}>
+            <div className={chat.who}>
+              <img className={chat.avatar} src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" />
+              <b>현우 면접관 · 면접관</b>
+            </div>
+            <div className={chat.row}>
+              <p className={`${chat.bubble} ${chat.interviewer}`}>{message.content}</p>
+              <button
+                type="button"
+                className={chat.speak}
+                disabled={message.sequence_no === 1 || mediaAction.isPending}
+                onClick={() => mediaAction.mutate({ message, mode: "manual" })}
+                aria-label="면접관 음성 재생"
+              >
+                ◁))
+              </button>
+            </div>
           </article>
         ) : message.sender_type === "user" ? (
           <article className={chat.turn} key={message.id}>
@@ -442,11 +458,33 @@ export function ConversationPage() {
             <Link className={chat.feedbackLink} to={`/rooms/${roomId}/result`}>결과 보기<span aria-hidden="true"> ›</span></Link>
           </section>
         ) : isInterview ? (
-          <section className={styles.interviewVoiceComposer} aria-live="polite">
-            {inputMode === "voice" && content.trim() ? <div className={styles.interviewTranscript}>
-              <span>인식된 답변</span><p>{content}</p>
-              <div><button type="button" className={styles.secondaryButton} onClick={() => { setContent(""); setVoiceBlob(null); setInputMode("text"); }}>다시 녹음</button><button type="button" className={styles.primaryButton} disabled={!voiceBlob || send.isPending} onClick={beginSend}>{send.isPending ? "답변 전송 중…" : "이 답변 전송"}</button></div>
-            </div> : <><button type="button" className={`${styles.interviewMicButton} ${isListening ? styles.micButtonActive : ""}`} onClick={() => { void toggleVoiceInput(); }} disabled={send.isPending} aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"} aria-pressed={isListening}>{isListening ? "■" : "🎙"}</button><p>{isListening ? "답변을 듣고 있어요. 완료되면 버튼을 눌러 주세요." : "마이크로 답변한 뒤 문장을 확인하고 전송해요"}</p></>}
+          <section className={chat.micOnly} aria-live="polite">
+            {inputMode === "voice" && content.trim() ? (
+              <div className={chat.transcript}>
+                <span>인식된 답변</span>
+                <p>{content}</p>
+                <div className={chat.goalActions}>
+                  <Button variant="secondary" compact onClick={() => { setContent(""); setVoiceBlob(null); setInputMode("text"); }}>다시 녹음</Button>
+                  <Button compact disabled={!voiceBlob || send.isPending} onClick={beginSend}>
+                    {send.isPending ? "답변 전송 중…" : "이 답변 전송"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={chat.micLarge}
+                  onClick={() => { void toggleVoiceInput(); }}
+                  disabled={send.isPending}
+                  aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"}
+                  aria-pressed={isListening}
+                >
+                  {isListening ? "■" : "🎙"}
+                </button>
+                <p>{isListening ? "답변을 듣고 있어요. 완료되면 버튼을 눌러 주세요." : "마이크로 답변한 뒤 문장을 확인하고 전송해요"}</p>
+              </>
+            )}
           </section>
         ) : (
           <form className={chat.composer} onSubmit={(event) => { event.preventDefault(); if (!send.isPending) beginSend(); }}>
