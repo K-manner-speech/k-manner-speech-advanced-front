@@ -54,7 +54,7 @@ test("면접 결과는 R21에서 R25·R27 목록과 R22·R23 상세로 이동한
   </Routes></MemoryRouter></QueryClientProvider>);
   expect(await screen.findByRole("heading", { name: "면접 총평" })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("link", { name: "이번 면접에서 잘한 점" }));
-  expect(await screen.findByRole("heading", { name: "면접에서 잘한 점" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "이번 면접에서 잘한 점" })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("link", { name: /구체성·근거/ }));
   expect(await screen.findByRole("heading", { name: "잘한 점 상세" })).toBeInTheDocument();
   expect(screen.getByText("사용자 조사 결과를 바탕으로 개선했습니다.")).toBeInTheDocument();
@@ -94,12 +94,13 @@ test("강점이 없으면 사실을 명확히 안내하고 보완 항목 5개를
 });
 
 test("방 경로와 결과 ID 경로가 서로 다른 조회 API를 사용한다", async () => {
+  // 면접 총평은 면접 평가의 요약을 보여 준다.
   const roomView = renderAt("/rooms/r1/result", <ResultPage source="room" />);
-  expect(await screen.findByText("좋은 연습")).toBeInTheDocument();
+  expect(await screen.findByText("질문의 의도를 빠르게 이해했어요.")).toBeInTheDocument();
   expect(api.result).toHaveBeenCalledWith("r1");
   roomView.unmount();
   renderAt("/results/res1", <ResultPage source="result" />);
-  expect(await screen.findByText("좋은 연습")).toBeInTheDocument();
+  expect(await screen.findByText("질문의 의도를 빠르게 이해했어요.")).toBeInTheDocument();
   expect(api.resultById).toHaveBeenCalledWith("res1");
 });
 
