@@ -133,7 +133,8 @@
   font-size: var(--font-size-body-lg);
 }
 .mic { color: var(--color-accent); background: transparent; }
-.micActive { color: var(--color-neutral-50); background: var(--color-danger); }
+/* 녹음 중에는 마이크를 채워 눌린 상태임을 알린다. */
+.micActive { color: var(--color-neutral-50); background: var(--color-accent); }
 .send { color: var(--color-neutral-50); background: var(--color-accent); }
 .send:disabled { color: var(--color-disabled-text); background: var(--color-disabled-surface); }
 
@@ -163,3 +164,89 @@
 .goalActions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
 
 .empty { color: var(--color-text-muted); font-size: var(--font-size-body); text-align: center; padding: var(--space-8) 0; }
+
+/* 녹음 중 표시. 상대 말풍선 아래 오른쪽에 둔다. */
+.listening { display: grid; gap: var(--space-2); justify-items: end; }
+.listening span { color: var(--color-accent); font-size: var(--font-size-caption); font-weight: 700; }
+.dots { display: flex; gap: 5px; }
+.dots i { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--color-brand-100); animation: pulse 1.2s infinite; }
+.dots i:nth-child(2) { animation-delay: .2s; }
+.dots i:nth-child(3) { animation-delay: .4s; }
+
+@keyframes pulse {
+  0%, 100% { background: var(--color-brand-100); }
+  50% { background: var(--color-accent); }
+}
+
+/* 답변 피드백 시트 */
+.backdrop {
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(53, 35, 31, .45);
+}
+
+.sheet {
+  width: min(100%, 360px);
+  max-height: 88%;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-5) var(--space-6);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--color-surface-app);
+}
+
+.handle { width: 40px; height: 4px; margin: 0 auto var(--space-4); border-radius: var(--radius-pill); background: var(--color-neutral-200); }
+
+.sheetHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.sheetHeader h2 { margin: 0; color: var(--color-text); font-size: var(--font-size-h1); line-height: var(--line-height-h1); font-weight: 700; }
+.sheetHeader p { margin: var(--space-1) 0 0; color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+.close {
+  width: 28px; height: 28px; min-height: 28px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  color: var(--color-text); background: transparent;
+  font-size: var(--font-size-h2); line-height: 1;
+}
+
+.overall { display: grid; gap: var(--space-1); margin: var(--space-5) 0; }
+.overallHead { display: flex; align-items: baseline; justify-content: space-between; }
+.overallHead span { color: var(--color-accent); font-size: var(--font-size-body); font-weight: 700; }
+.overallHead b { color: var(--color-accent); font-size: var(--font-size-body-sm); font-weight: 700; }
+.overallScore { color: var(--color-accent); font-size: var(--font-size-display); line-height: var(--line-height-display); font-weight: 700; }
+.overallScore small { color: var(--color-text-muted); font-size: var(--font-size-body-lg); font-weight: 400; }
+.overall p { margin: var(--space-2) 0 0; color: var(--color-text-body); font-size: var(--font-size-body); line-height: 19px; }
+
+.panel {
+  margin-bottom: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-muted);
+}
+.panel h3 { margin: 0 0 var(--space-4); color: var(--color-text); font-size: var(--font-size-h3); font-weight: 700; }
+
+.bars { display: grid; gap: var(--space-3); }
+.bar { display: grid; grid-template-columns: 84px 1fr auto; align-items: center; gap: var(--space-3); }
+.bar span { color: var(--color-text-body); font-size: var(--font-size-body-sm); }
+.bar strong { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
+.track { height: 8px; border-radius: var(--radius-pill); background: var(--color-neutral-200); overflow: hidden; }
+.track i { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--color-accent); }
+
+/* 항목마다 색을 달리해 어느 줄을 보는지 눈으로 따라가기 쉽게 한다. */
+.honorifics i { background: #7b61b5; }
+.courtesy i { background: #3f9d6d; }
+.contextFit i { background: #3d7ab8; }
+.naturalness i { background: #d08a2e; }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chips span {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-body);
+  background: var(--color-brand-50);
+  font-size: var(--font-size-caption);
+}
+
+.expressions { display: grid; gap: var(--space-4); }
+.expressions h4 { margin: 0 0 var(--space-1); color: var(--color-text); font-size: var(--font-size-body); font-weight: 700; }
+.expressions p { margin: 0; color: var(--color-text-body); font-size: var(--font-size-body); line-height: 19px; }
+.expressions p strong { color: var(--color-accent); margin-right: var(--space-2); }
+.expressions blockquote { margin: var(--space-2) 0 0; padding-left: var(--space-3); border-left: 2px solid var(--color-brand-100); color: var(--color-text); font-size: var(--font-size-body); }

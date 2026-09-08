@@ -23,6 +23,14 @@ const emotionLabels: Record<string, string> = {
   embarrassment: "난처함",
 };
 
+/* 막대 색을 항목마다 달리해 어느 줄을 보는지 따라가기 쉽게 한다. */
+const categoryToneClass: Record<string, string> = {
+  honorifics: "honorifics",
+  courtesy: "courtesy",
+  context_fit: "contextFit",
+  naturalness: "naturalness",
+};
+
 const feedbackCategoryLabels: Record<string, string> = {
   honorifics: "높임법",
   courtesy: "예의와 배려",
@@ -395,6 +403,12 @@ export function ConversationPage() {
             </div>
           </article>
         ))}
+        {isListening && (
+          <div className={chat.listening} role="status">
+            <span>음성 입력 중</span>
+            <span className={chat.dots} aria-hidden="true"><i /><i /><i /></span>
+          </div>
+        )}
         {send.isPending && <p className={chat.typing} role="status">AI가 맥락을 살펴보고 있어요…</p>}
       </section>
 
@@ -508,57 +522,65 @@ function FeedbackDialog({ message, onClose }: { message: Message; onClose: () =>
     ? (isVoice ? "균형 잡힌 답변" : "명확하고 정중해요")
     : "조금 더 다듬으면 좋아요";
   return (
-    <div className={styles.feedbackBackdrop} role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
-      <section className={styles.feedbackSheet} role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-        <div className={styles.feedbackHandle} aria-hidden="true" />
-        <header className={styles.feedbackHeader}>
+    <div className={chat.backdrop} role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
+      <section className={chat.sheet} role="dialog" aria-modal="true" aria-labelledby="feedback-title">
+        <div className={chat.handle} aria-hidden="true" />
+        <header className={chat.sheetHeader}>
           <div><h2 id="feedback-title">답변 피드백</h2><p>{isVoice ? `마이크 입력 · ${statusLabel}` : `텍스트 입력 · ${statusLabel}`}</p></div>
-          <button className={styles.feedbackClose} onClick={onClose} aria-label="피드백 닫기">×</button>
+          <button className={chat.close} onClick={onClose} aria-label="피드백 닫기">×</button>
         </header>
         {feedback.isLoading && <StatusPanel title="피드백을 확인하고 있어요" />}
-        {feedback.error && <div className={styles.partialError}><strong>피드백만 준비되지 않았어요.</strong><span>대화는 정상적으로 보존되었습니다.</span></div>}
+        {feedback.error && <div className={chat.notice}><strong>피드백만 준비되지 않았어요.</strong><span>대화는 정상적으로 보존되었습니다.</span></div>}
         {feedbackStatus === "processing" && <StatusPanel title="피드백을 분석하고 있어요" detail="완료되면 이 화면에 자동으로 표시됩니다." />}
-        {feedbackStatus === "failed" && <div className={styles.partialError}><strong>피드백 분석을 완료하지 못했어요.</strong><span>대화는 정상적으로 보존되었습니다. 다시 생성을 요청할 수 있습니다.</span><button type="button" className={styles.secondaryButton} disabled={retryFeedback.isPending} onClick={() => retryFeedback.mutate()}>{retryFeedback.isPending ? "피드백 다시 요청 중…" : "피드백 다시 시도"}</button></div>}
-        {retryFeedback.error && <div className={styles.partialError} role="alert"><span>{retryFeedback.error.message}</span></div>}
-        {feedback.data && ["ready", "partial"].includes(feedback.data.status) && <div className={styles.feedbackContent}>
-          <section className={styles.feedbackOverall} aria-label="종합 점수">
-            <span>종합 점수</span>
-            <div><strong>{feedback.data.overall_score ?? "—"}</strong><small>/100</small></div>
-            <b>{scoreDescription}</b>
+        {feedbackStatus === "failed" && <div className={chat.notice}><strong>피드백 분석을 완료하지 못했어요.</strong><span>대화는 정상적으로 보존되었습니다. 다시 생성을 요청할 수 있습니다.</span><button type="button" className={styles.secondaryButton} disabled={retryFeedback.isPending} onClick={() => retryFeedback.mutate()}>{retryFeedback.isPending ? "피드백 다시 요청 중…" : "피드백 다시 시도"}</button></div>}
+        {retryFeedback.error && <div className={chat.notice} role="alert"><span>{retryFeedback.error.message}</span></div>}
+        {feedback.data && ["ready", "partial"].includes(feedback.data.status) && <div className={chat.content}>
+          <section className={chat.overall} aria-label="종합 점수">
+            <div className={chat.overallHead}>
+              <span>종합 점수</span>
+              <b>{scoreDescription}</b>
+            </div>
+            <p className={chat.overallScore}>
+              {feedback.data.overall_score ?? "—"}<small>/100</small>
+            </p>
             {feedback.data.summary && <p>{feedback.data.summary}</p>}
           </section>
 
-          <section className={styles.feedbackPanel} aria-labelledby="criteria-title">
+          <section className={chat.panel} aria-labelledby="criteria-title">
             <h3 id="criteria-title">항목별 평가</h3>
-            <div className={styles.feedbackCriteria}>
+            <div className={chat.bars}>
               {feedback.data.scores.map((score) => {
                 const percentage = Math.max(0, Math.min(100, (score.score / score.max_score) * 100));
-                return <div className={styles.feedbackCriterion} key={score.category}>
-                  <div><span>{feedbackCategoryLabels[score.category]}</span><strong>{score.score}/{score.max_score}</strong></div>
-                  <div className={styles.feedbackTrack} aria-hidden="true"><i style={{ width: `${percentage}%` }} /></div>
+                return <div className={chat.bar} key={score.category}>
+                  <span>{feedbackCategoryLabels[score.category]}</span>
+                  <div className={`${chat.track} ${chat[categoryToneClass[score.category] ?? ""] ?? ""}`} aria-hidden="true">
+                    <i style={{ width: `${percentage}%` }} />
+                  </div>
+                  <strong>{score.score}/{score.max_score}</strong>
                 </div>;
               })}
             </div>
           </section>
 
-          {isVoice && feedback.data.emotions.length > 0 && <section className={styles.feedbackPanel} aria-labelledby="emotion-title">
+          {isVoice && feedback.data.emotions.length > 0 && <section className={chat.panel} aria-labelledby="emotion-title">
             <h3 id="emotion-title">감정 분석</h3>
-            <div className={styles.feedbackEmotions}>
-              {feedback.data.emotions.map((emotion) => <div key={`${emotion.label}-${emotion.sort_order}`}>
-                <div><span>{emotionLabels[emotion.label] ?? emotion.label}</span><strong>{emotion.percentage ?? 0}%</strong></div>
-                <div className={styles.feedbackTrack} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, emotion.percentage ?? 0))}%` }} /></div>
+            <div className={chat.bars}>
+              {feedback.data.emotions.map((emotion) => <div className={chat.bar} key={`${emotion.label}-${emotion.sort_order}`}>
+                <span>{emotionLabels[emotion.label] ?? emotion.label}</span>
+                <div className={chat.track} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, emotion.percentage ?? 0))}%` }} /></div>
+                <strong>{emotion.percentage ?? 0}%</strong>
               </div>)}
             </div>
           </section>}
 
-          {isVoice && feedback.data.emotions.some((emotion) => emotion.impression) && <section className={styles.feedbackPanel} aria-labelledby="impression-title">
+          {isVoice && feedback.data.emotions.some((emotion) => emotion.impression) && <section className={chat.panel} aria-labelledby="impression-title">
             <h3 id="impression-title">상대가 느끼는 인상</h3>
-            <div className={styles.feedbackImpressions}>{feedback.data.emotions.map((emotion) => emotion.impression && <span key={`${emotion.label}-impression`}>{emotion.impression}</span>)}</div>
+            <div className={chat.chips}>{feedback.data.emotions.map((emotion) => emotion.impression && <span key={`${emotion.label}-impression`}>{emotion.impression}</span>)}</div>
           </section>}
 
-          <section className={styles.feedbackPanel} aria-labelledby="expression-title">
+          <section className={chat.panel} aria-labelledby="expression-title">
             <h3 id="expression-title">항목별 표현 피드백</h3>
-            <div className={styles.feedbackExpressions}>{feedback.data.scores.map((score) => <article key={`${score.category}-detail`}>
+            <div className={chat.expressions}>{feedback.data.scores.map((score) => <article key={`${score.category}-detail`}>
               <h4>{feedbackCategoryLabels[score.category]}</h4>
               {score.strength && <p><strong>잘했어요</strong>{score.strength}</p>}
               {(score.suggestion || score.recommended_text) && <p><strong>제안</strong>{score.suggestion ?? score.recommended_text}</p>}
