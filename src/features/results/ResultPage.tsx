@@ -128,7 +128,8 @@ function GeneralResult({ data, view, source, onBack, retry, remove }: {
   return (
     <ResultFrame title="결과 요약" onBack={onBack}>
       <section className={sheet.card}>
-        <h1>종합 점수 {data.overall_score ?? "—"}/100</h1>
+        <ScoreBadge score={data.overall_score} />
+        <h2>종합 평가</h2>
         <p>{data.summary ?? "대화에서 관찰된 내용을 기준으로 정리했습니다."}</p>
       </section>
 
@@ -283,6 +284,7 @@ function InterviewResult({ data, view, category, onBack, remove }: { data: Sessi
   return (
     <ResultFrame title="면접 결과" onBack={onBack}>
       <section className={sheet.card}>
+        <ScoreBadge score={evaluation.overall_score ?? data.overall_score} />
         <h2>면접 총평</h2>
         <p>{evaluation.summary ?? data.summary ?? "답변을 바탕으로 면접 결과를 정리했어요."}</p>
       </section>
@@ -324,6 +326,18 @@ function InterviewResult({ data, view, category, onBack, remove }: { data: Sessi
         </Button>
       </div>
     </ResultFrame>
+  );
+}
+
+
+/** 종합 점수. 점수만 크게 두면 무엇의 점수인지 읽히지 않아 이름을 함께 둔다. */
+function ScoreBadge({ score }: { score: number | null | undefined }) {
+  return (
+    <p className={sheet.score}>
+      <span>종합 점수</span>
+      <strong>{score ?? "—"}</strong>
+      <i>/100</i>
+    </p>
   );
 }
 

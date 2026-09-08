@@ -7,6 +7,17 @@
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
+.score {
+  display: flex; align-items: baseline; gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+.score span { color: var(--color-text-muted); font-size: var(--font-size-label); font-weight: 700; }
+.score strong {
+  color: var(--color-accent); font-size: 34px; line-height: 1; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.score i { color: var(--color-text-muted); font-size: var(--font-size-body-sm); font-style: normal; }
+
 .card h2 { margin: 0 0 var(--space-3); color: var(--color-text); font-size: var(--font-size-h2); line-height: var(--line-height-h2); font-weight: 700; }
 .card p { margin: 0; color: var(--color-text-body); font-size: var(--font-size-body); line-height: 19px; }
 

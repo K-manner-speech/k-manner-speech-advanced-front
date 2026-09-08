@@ -172,7 +172,8 @@ test("결과 요약은 항목별 점수와 잘한 점·개선할 점을 미리 �
   vi.mocked(api.resultById).mockResolvedValue(generalSnapshot as never);
   renderGeneralRoutes("/results/res1");
 
-  expect(await screen.findByRole("heading", { name: /종합 점수 75/ })).toBeInTheDocument();
+  expect(await screen.findByText("종합 점수")).toBeInTheDocument();
+  expect(screen.getByText("75")).toBeInTheDocument();
   // 누르지 않아도 무엇을 잘했고 무엇을 고칠지 읽을 수 있어야 한다.
   expect(screen.getByText("학생 식당 위치를 구체적으로 질문함")).toBeInTheDocument();
   expect(screen.getByText("첫 인사의 존댓말과 호칭을 일관되게 사용하기")).toBeInTheDocument();
@@ -199,4 +200,25 @@ test("잘한 점과 개선할 점은 각각 한 화면에 표현을 모아 보�
   expect(await screen.findByRole("heading", { name: "개선할 표현" })).toBeInTheDocument();
   expect(screen.getByText("안녕?")).toBeInTheDocument();
   expect(screen.getByText("안녕하세요, 선배님!")).toBeInTheDocument();
+});
+
+test("면접 결과도 종합 점수를 보여 준다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue(snapshot as never);
+  renderAt("/results/res1", <ResultPage source="result" />);
+
+  expect(await screen.findByText("종합 점수")).toBeInTheDocument();
+  // 면접 평가가 자기 점수를 갖고 있으면 결과의 전체 점수보다 그 값을 쓴다.
+  expect(screen.getByText("84")).toBeInTheDocument();
+});
+
+test("점수를 매기지 못한 면접 결과는 빈 자리 대신 없음을 표시한다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue({
+    ...snapshot,
+    overall_score: null,
+    interview_evaluation: { ...snapshot.interview_evaluation, overall_score: null },
+  } as never);
+  renderAt("/results/res1", <ResultPage source="result" />);
+
+  expect(await screen.findByText("종합 점수")).toBeInTheDocument();
+  expect(screen.getByText("—")).toBeInTheDocument();
 });
