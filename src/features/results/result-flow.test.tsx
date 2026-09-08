@@ -198,8 +198,9 @@ test("잘한 점과 개선할 점은 각각 한 화면에 표현을 모아 보�
   await userEvent.click(await screen.findByRole("link", { name: "개선할 점" }));
 
   expect(await screen.findByRole("heading", { name: "개선할 표현" })).toBeInTheDocument();
-  expect(screen.getByText("안녕?")).toBeInTheDocument();
-  expect(screen.getByText("안녕하세요, 선배님!")).toBeInTheDocument();
+  // 내가 한 말과 추천 표현은 인용으로 감싸 설명과 구분한다.
+  expect(screen.getByText("“안녕?”")).toBeInTheDocument();
+  expect(screen.getByText("“안녕하세요, 선배님!”")).toBeInTheDocument();
 });
 
 test("면접 결과도 종합 점수를 보여 준다", async () => {

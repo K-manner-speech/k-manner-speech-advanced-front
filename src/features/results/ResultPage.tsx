@@ -68,14 +68,14 @@ function GeneralResult({ data, view, source, onBack, retry, remove }: {
       <ResultFrame title="항목별 상세 평가" onBack={onBack}>
         <div className={sheet.items}>
           {scores.map((score) => (
-            <article key={score.category} className={sheet.evidence}>
-              <header>
+            <article key={score.category} className={`${sheet.evidence} ${sheet[score.category] ?? ""}`}>
+              <header className={sheet.evidenceHead}>
                 <h2>{generalLabels[score.category] ?? score.category}</h2>
-                <span>{score.score}/{score.max_score}</span>
+                <span className={sheet.badge}>{score.score}/{score.max_score}</span>
               </header>
-              {score.evidence && <><h3>내가 한 말</h3><p>{score.evidence}</p></>}
+              {score.evidence && <><h3>내가 한 말</h3><p className={sheet.quote}>“{score.evidence}”</p></>}
               {(score.strength || score.suggestion) && (
-                <div>
+                <div className={sheet.suggestion}>
                   <strong>{score.strength ? "잘한 점" : "다듬을 점"}</strong>
                   <p>{score.strength ?? score.suggestion}</p>
                 </div>
@@ -101,16 +101,24 @@ function GeneralResult({ data, view, source, onBack, retry, remove }: {
       >
         <div className={sheet.items}>
           {entries.map((item) => (
-            <article key={item.order} className={sheet.evidence}>
-              <header>
+            <article key={item.order} className={`${sheet.evidence} ${item.category ? sheet[item.category] ?? "" : ""}`}>
+              <header className={sheet.evidenceHead}>
                 <h2>{item.title}</h2>
-                {item.category && <span>{generalLabels[item.category] ?? item.category}</span>}
+                {item.category && (
+                  <span className={sheet.badge}>{generalLabels[item.category] ?? item.category}</span>
+                )}
               </header>
               <h3>내가 한 말</h3>
-              <p>{item.original_expression ?? item.evidence ?? "인용할 표현이 기록되지 않았어요."}</p>
-              <div>
+              <p className={sheet.quote}>
+                {item.original_expression ?? item.evidence
+                  ? `“${item.original_expression ?? item.evidence}”`
+                  : "인용할 표현이 기록되지 않았어요."}
+              </p>
+              <div className={sheet.suggestion}>
                 <strong>{isStrength ? "왜 좋았나요" : "이렇게 바꿔 보세요"}</strong>
-                {!isStrength && item.recommended_expression && <p>{item.recommended_expression}</p>}
+                {!isStrength && item.recommended_expression && (
+                  <p className={sheet.quote}>“{item.recommended_expression}”</p>
+                )}
                 {item.explanation && <p>{item.explanation}</p>}
               </div>
             </article>
