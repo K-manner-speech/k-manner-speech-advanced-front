@@ -1,17 +1,66 @@
-.page { display:flex; flex-direction:column; min-height:100%; }
-.topTitle { min-height:44px; display:flex; align-items:center; font-size:16px; font-weight:800; }
-.code { margin:8px 0 5px; color:var(--color-brand); font-size:11px; font-weight:800; }
-.page h1 { margin:0; font-size:25px; }
-.subtitle { margin:0 0 24px; color:var(--color-text-muted); font-size:13px; }
-.list { display:grid; gap:10px; }
-.list a { display:grid; gap:4px; padding:13px; border:1px solid var(--color-border); border-radius:12px; color:var(--color-text); text-decoration:none; background:white; }
-.list a>span { color:var(--color-brand); font-size:11px; font-weight:800; }
-.list a>strong { font-size:14px; }
-.list a>small { color:var(--color-text-muted); }
-.empty { padding:24px 12px; text-align:center; color:var(--color-text-muted); font-size:13px; }
+.page { display: flex; flex-direction: column; min-height: 100%; padding-bottom: var(--space-4); }
 
-.row { position:relative; }
-.row a { padding-right:44px; -webkit-touch-callout:none; }
-.more { position:absolute; top:50%; right:6px; transform:translateY(-50%); width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:0; border-radius:8px; background:transparent; color:var(--color-text-muted); font-size:18px; line-height:1; cursor:pointer; }
-.more:hover { background:var(--color-border); color:var(--color-text); }
+.headline {
+  margin: var(--space-2) 0 var(--space-5);
+  color: var(--color-text);
+  font-size: var(--font-size-h1);
+  line-height: var(--line-height-h1);
+  font-weight: 700;
+}
 
+.list { display: grid; gap: var(--space-3); }
+
+.row { position: relative; }
+
+.card {
+  display: grid;
+  /* 오른쪽 32px 은 카드 위에 겹쳐 두는 ⋯ 버튼 자리다. */
+  grid-template-columns: 44px 1fr 32px;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-brand-100);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-surface);
+  text-decoration: none;
+  -webkit-touch-callout: none;
+}
+
+.date { grid-column: 2; color: var(--color-accent); font-size: var(--font-size-micro); font-weight: 700; }
+.name { grid-column: 2; font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+.topic { grid-column: 2; color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+
+.avatar {
+  grid-row: 1 / 4; grid-column: 1;
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  color: var(--color-neutral-50);
+  font-size: var(--font-size-h3);
+  font-weight: 700;
+}
+.tone0 { background: var(--color-accent); }
+.tone1 { background: var(--color-neutral-500); }
+.tone2 { background: var(--color-accent-pressed); }
+.tone3 { background: var(--color-neutral-600); }
+
+/* 카드 전체가 링크라 관리 버튼은 그 위에 겹쳐 둔다. */
+.more {
+  position: absolute; top: 50%; right: var(--space-4);
+  transform: translateY(-50%);
+  width: 32px; height: 32px; min-height: 32px;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-md);
+  color: var(--color-text-muted); background: transparent;
+  font-size: var(--font-size-h2); line-height: 1;
+}
+
+.empty {
+  padding: var(--space-8) var(--space-5);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-body);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-body);
+  text-align: center;
+}
