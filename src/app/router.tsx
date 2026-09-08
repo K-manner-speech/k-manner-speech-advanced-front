@@ -7,7 +7,14 @@ import { StatusPanel } from "../components/ui/StatusPanel";
 import { useAuth, LoginPage, OnboardingPage, SignupPage, StartPage } from "../features/auth";
 import { ConversationPage, InterviewCompletePage } from "../features/conversation";
 import { HomePage } from "../features/home";
-import { MyAccountPage, ProfileEditPage } from "../features/account";
+import {
+  EmailChangePage,
+  LanguageSettingPage,
+  MyAccountPage,
+  PasswordChangePage,
+  ProfileEditPage,
+  SecurityPage,
+} from "../features/account";
 import { RoomListPage } from "../features/rooms";
 import { InterviewPage } from "../features/interview";
 import { PracticePage } from "../features/practice";
@@ -55,6 +62,11 @@ export const router = createBrowserRouter([
           { path: "/rooms/:roomId/result", element: <ResultPage source="room" /> },
           { path: "/me", element: <MyAccountPage /> },
           { path: "/me/edit", element: <ProfileEditPage /> },
+          { path: "/me/language/native", element: <LanguageSettingPage kind="native" /> },
+          { path: "/me/language/display", element: <LanguageSettingPage kind="display" /> },
+          { path: "/me/security", element: <SecurityPage /> },
+          { path: "/me/security/email", element: <EmailChangePage /> },
+          { path: "/me/security/password", element: <PasswordChangePage /> },
         ],
       },
     ],

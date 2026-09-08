@@ -26,6 +26,27 @@
 
 /* 상대 사진 위에 이번 연습의 목표를 얹는다. 목표를 접어 두면 무엇을 하는
    중인지 잊는다. */
+/* 미션 카드. 사진 위가 아니라 사진 앞에 둔다. */
+.mission {
+  margin-top: var(--space-3);
+  border: 1px solid var(--color-card-border); border-radius: var(--radius-md);
+  background: var(--color-card);
+  overflow: hidden;
+}
+.missionToggle {
+  width: 100%; min-height: 40px;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: 0 var(--space-4);
+  border: 0; background: transparent;
+  color: var(--color-text); font-family: inherit; text-align: left;
+}
+.missionToggle b { font-size: var(--font-size-body-sm); font-weight: 700; }
+.missionToggle span { color: var(--color-accent); font-size: var(--font-size-caption); font-weight: 700; }
+.missionBody {
+  margin: 0; padding: 0 var(--space-4) var(--space-4);
+  color: var(--color-text-body); font-size: var(--font-size-body-sm); line-height: 19px;
+}
+
 .hero {
   position: relative;
   height: 190px;

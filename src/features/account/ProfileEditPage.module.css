@@ -1,13 +1,35 @@
 .page { display: flex; flex-direction: column; min-height: 100%; padding-bottom: var(--space-4); }
 
+/* 누구의 프로필을 고치는 중인지 위에서 먼저 보인다. */
+.identity { display: grid; justify-items: center; gap: var(--space-1); padding: var(--space-4) 0 var(--space-6); }
+.avatar {
+  width: 72px; height: 72px; margin-bottom: var(--space-2);
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  color: var(--color-neutral-50); background: var(--color-accent);
+  font-size: var(--font-size-h1); font-weight: 700;
+}
+.identity b { color: var(--color-text); font-size: var(--font-size-h3); font-weight: 700; }
+.identity small { color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+
+.sectionTitle { margin: var(--space-6) 0 var(--space-3); color: var(--color-text-muted); font-size: var(--font-size-body-sm); font-weight: 700; }
+.sectionTitle:first-of-type { margin-top: 0; }
+
 .card {
   display: grid; gap: var(--space-5);
-  margin-top: var(--space-2);
   padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-card-border); border-radius: var(--radius-lg);
+  background: var(--color-card);
 }
+
+.notice {
+  display: grid; gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--color-brand-100); border-radius: var(--radius-lg);
+  background: var(--color-brand-50);
+}
+.notice strong { color: var(--color-text); font-size: var(--font-size-body); font-weight: 700; }
+.notice span { color: var(--color-text-body); font-size: var(--font-size-body-sm); }
 
 .action { margin-top: auto; padding-top: var(--space-6); }
 .error { margin: var(--space-4) 0 0; color: var(--color-danger); font-size: var(--font-size-body); }

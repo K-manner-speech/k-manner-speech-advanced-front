@@ -61,19 +61,25 @@ export function MyAccountPage() {
             <small>이름과 생년월일을 수정해요</small>
             <span className={styles.chevron} aria-hidden="true">›</span>
           </Link>
+          <Link className={styles.row} to="/me/security">
+            <span className={`${styles.icon} ${styles.lockIcon}`} aria-hidden="true" />
+            <b>이메일 · 비밀번호</b>
+            <small>로그인 정보를 관리해요</small>
+            <span className={styles.chevron} aria-hidden="true">›</span>
+          </Link>
         </div>
       </section>
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>환경 설정</h2>
         <div className={styles.rows}>
-          <Link className={styles.row} to="/me/edit">
+          <Link className={styles.row} to="/me/language/native">
             <span className={`${styles.icon} ${styles.globeIcon}`} aria-hidden="true" />
             <b>모국어</b>
             <span className={styles.value}>{languageName(profile?.native_language)}</span>
             <span className={styles.chevron} aria-hidden="true">›</span>
           </Link>
-          <Link className={styles.row} to="/me/edit">
+          <Link className={styles.row} to="/me/language/display">
             <span className={`${styles.icon} ${styles.globeIcon}`} aria-hidden="true" />
             <b>표시 언어</b>
             <span className={styles.value}>{languageName(me.data?.display_language)}</span>

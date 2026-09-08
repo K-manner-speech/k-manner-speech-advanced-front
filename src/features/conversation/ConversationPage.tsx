@@ -73,6 +73,7 @@ export function ConversationPage() {
   // goal_achieved 가 화면에 영영 도달하지 않으므로, 전송 뒤 잠시 폴링한다.
   const [goalPollUntil, setGoalPollUntil] = useState(0);
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
+  const [missionOpen, setMissionOpen] = useState<boolean | null>(null);
   const room = useQuery({
     queryKey: ["room", roomId],
     queryFn: () => api.room(roomId),
@@ -301,6 +302,10 @@ export function ConversationPage() {
     return <Navigate to={`/rooms/${roomId}/interview-complete`} replace />;
   }
   const hasInterviewerMessage = sortedMessages.some((message) => message.sender_type === "persona");
+  // 자유채팅에는 미션이 없고, 면접의 안내는 질문 자체가 대신한다.
+  const mission = isInterview ? null : room.data?.goal;
+  const hasSpoken = sortedMessages.some((message) => message.sender_type === "user");
+  const isMissionOpen = missionOpen ?? !hasSpoken;
 
   // 면접은 I 섹션에서 따로 다룬다. 여기서는 자유채팅·시나리오 화면을 그린다.
   const personaLabel = room.data?.persona_name ?? "대화 상대";
@@ -328,6 +333,24 @@ export function ConversationPage() {
         </div>
       </div>
 
+      {/* 미션은 상대 얼굴 위에 겹치지 않는다. 여러 줄짜리 안내가 사진을 덮으면
+          표정을 읽을 수 없고, 표정을 보고 말투를 고르는 연습이 무너진다.
+          아직 한 마디도 하지 않았을 때만 펼쳐 두고 그 뒤로는 접어 둔다. */}
+      {mission && (
+        <section className={chat.mission}>
+          <button
+            type="button"
+            className={chat.missionToggle}
+            aria-expanded={isMissionOpen}
+            onClick={() => setMissionOpen(!isMissionOpen)}
+          >
+            <b>이번 대화의 미션</b>
+            <span aria-hidden="true">{isMissionOpen ? "접기" : "펼치기"}</span>
+          </button>
+          {isMissionOpen && <p className={chat.missionBody}>{mission}</p>}
+        </section>
+      )}
+
       <section className={chat.hero}>
         <img
           src={personaImageForEmotion(currentEmotion)}
@@ -335,7 +358,7 @@ export function ConversationPage() {
         />
         <div className={chat.heroOverlay}>
           <span className={chat.heroText}>
-            <b>{isInterview ? "현우 면접관" : (room.data?.goal ?? room.data?.title)}</b>
+            <b>{isInterview ? "현우 면접관" : (room.data?.title ?? "대화 연습")}</b>
             <small>{isInterview ? "기술 면접관 · Technical Interviewer" : `${personaLabel}과 대화 연습`}</small>
           </span>
           <span className={chat.emotion}>{currentEmotionLabel}</span>
