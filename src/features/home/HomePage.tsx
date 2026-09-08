@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api/service";
 import { Button } from "../../components/ui/Button";
 import { StatusPanel } from "../../components/ui/StatusPanel";
@@ -13,10 +13,22 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 
 export function HomePage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const home = useQuery({ queryKey: ["home"], queryFn: api.home });
   const attend = useMutation({
     mutationFn: api.attend,
     onSuccess: (summary) => queryClient.setQueryData(["home"], summary),
+  });
+  // 카드가 특정 대화를 보여 주고 있으므로 버튼도 그 대화로 들어가야 한다.
+  // 상대를 정하지 못한 시나리오만 연습 화면에서 직접 고르게 넘긴다.
+  const startRecommended = useMutation({
+    mutationFn: (recommended: { scenario_id: string; persona_id: string }) =>
+      api.createRoom({
+        practice_type: "scenario",
+        persona_id: recommended.persona_id,
+        scenario_id: recommended.scenario_id,
+      }),
+    onSuccess: (room) => navigate(`/rooms/${room.id}`),
   });
 
   if (home.isLoading) return <StatusPanel title="오늘의 학습을 준비하고 있어요" />;
@@ -111,7 +123,24 @@ export function HomePage() {
               .join(" · ")}
           </p>
 
-          <Link className={styles.start} to="/practice">이 대화 시작하기 ↗</Link>
+          {recommendation.persona_id ? (
+            <button
+              type="button"
+              className={styles.start}
+              disabled={startRecommended.isPending}
+              onClick={() => startRecommended.mutate({
+                scenario_id: recommendation.scenario_id,
+                persona_id: recommendation.persona_id as string,
+              })}
+            >
+              {startRecommended.isPending ? "대화방 준비 중…" : "이 대화 시작하기 ↗"}
+            </button>
+          ) : (
+            <Link className={styles.start} to="/practice">이 대화 시작하기 ↗</Link>
+          )}
+          {startRecommended.error && (
+            <p className={styles.error} role="alert">{startRecommended.error.message}</p>
+          )}
         </section>
       ) : (
         <p className={styles.empty}>

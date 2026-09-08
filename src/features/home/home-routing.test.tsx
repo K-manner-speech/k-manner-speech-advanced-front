@@ -1,14 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import { vi } from "vitest";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { beforeEach, vi } from "vitest";
 import { api } from "../../api/service";
 import { HomePage } from "./HomePage";
 
 vi.mock("../../api/service", () => ({
-  api: { home: vi.fn(), attend: vi.fn() },
+  api: { home: vi.fn(), attend: vi.fn(), createRoom: vi.fn() },
 }));
+
+beforeEach(() => { vi.clearAllMocks(); });
 
 function summary(overrides: Record<string, unknown> = {}) {
   return {
@@ -38,7 +40,13 @@ function summary(overrides: Record<string, unknown> = {}) {
 function renderHome() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter><HomePage /></MemoryRouter>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/rooms/:roomId" element={<p>대화 화면</p>} />
+          <Route path="/practice" element={<p>연습 유형 화면</p>} />
+        </Routes>
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -78,4 +86,32 @@ test("추천이 없으면 빈 카드 대신 이유와 다음 행동을 보여 �
   renderHome();
 
   expect(await screen.findByText(/추천할 연습을 고르지 못했어요/)).toBeInTheDocument();
+});
+
+test("추천 카드의 시작 버튼은 그 시나리오로 바로 대화를 연다", async () => {
+  vi.mocked(api.home).mockResolvedValue(summary() as never);
+  vi.mocked(api.createRoom).mockResolvedValue({ id: "r1" } as never);
+  renderHome();
+
+  await userEvent.click(await screen.findByRole("button", { name: /이 대화 시작하기/ }));
+
+  expect(api.createRoom).toHaveBeenCalledWith({
+    practice_type: "scenario",
+    persona_id: "p1",
+    scenario_id: "s1",
+  });
+  expect(await screen.findByText("대화 화면")).toBeInTheDocument();
+});
+
+test("상대가 정해지지 않은 추천은 연습 유형 화면에서 고르게 한다", async () => {
+  vi.mocked(api.home).mockResolvedValue({
+    ...summary(),
+    recommendation: { ...summary().recommendation, persona_id: null, persona_name: null },
+  } as never);
+  renderHome();
+
+  await userEvent.click(await screen.findByRole("link", { name: /이 대화 시작하기/ }));
+
+  expect(await screen.findByText("연습 유형 화면")).toBeInTheDocument();
+  expect(api.createRoom).not.toHaveBeenCalled();
 });

@@ -53,7 +53,14 @@
   border: 0; border-radius: var(--radius-md);
   color: var(--color-accent); background: var(--color-surface);
   font-size: var(--font-size-label); font-weight: 700;
-  text-decoration: none;
+  font-family: inherit; text-decoration: none; cursor: pointer;
+}
+
+.start:disabled { cursor: default; opacity: 0.6; }
+
+.error {
+  margin: 0; padding-top: var(--space-2);
+  color: var(--color-danger); font-size: var(--font-size-caption);
 }
 
 /* 피드백 모아보기 */
