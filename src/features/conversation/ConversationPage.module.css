@@ -1,0 +1,165 @@
+/* 화면 전체가 세로로 꽉 차고 가운데 대화만 스크롤한다. 머리 줄과 입력창은 고정이다. */
+.screen { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+
+.header {
+  position: relative;
+  min-height: 40px;
+  display: flex; align-items: center; justify-content: center;
+}
+.header h1 { margin: 0; font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+.back {
+  position: absolute; left: 0;
+  width: 32px; height: 32px; min-height: 32px;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  color: var(--color-text); background: transparent;
+  font-size: var(--font-size-h2); line-height: 1;
+}
+.end {
+  position: absolute; right: 0;
+  min-height: 32px; padding: 0 var(--space-1);
+  border: 0; background: transparent;
+  color: var(--color-accent);
+  font-size: var(--font-size-body); font-weight: 700;
+  white-space: nowrap;
+}
+.end:disabled { opacity: .5; }
+
+/* 상대 사진 위에 이번 연습의 목표를 얹는다. 목표를 접어 두면 무엇을 하는
+   중인지 잊는다. */
+.hero {
+  position: relative;
+  height: 190px;
+  margin: var(--space-3) 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-neutral-200);
+}
+.hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.heroOverlay {
+  position: absolute; inset: auto 0 0 0;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  background: linear-gradient(transparent, rgba(53, 35, 31, .72));
+}
+.heroText { display: grid; gap: 2px; }
+.heroText b { color: #fff; font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+.heroText small { color: rgba(255, 255, 255, .82); font-size: var(--font-size-caption); }
+
+.emotion {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.messages { min-height: 0; overflow-y: auto; display: grid; gap: var(--space-4); align-content: start; padding: var(--space-2) 0; }
+
+.turn { display: grid; gap: var(--space-2); }
+.who { display: flex; align-items: center; gap: var(--space-2); }
+.avatar { width: 26px; height: 26px; border-radius: var(--radius-pill); object-fit: cover; }
+.who b { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; }
+
+.row { display: flex; align-items: flex-start; gap: var(--space-2); }
+.mine { justify-content: flex-end; }
+
+.bubble {
+  max-width: 78%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-neutral-100);
+  font-size: var(--font-size-body-lg);
+  line-height: 21px;
+  white-space: pre-wrap;
+}
+.mine .bubble { background: var(--color-brand-100); }
+
+.speak {
+  width: 28px; height: 28px; min-height: 28px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  color: var(--color-accent); background: transparent;
+  font-size: var(--font-size-body);
+}
+.speak:disabled { opacity: .5; }
+
+.inputMode {
+  align-self: flex-end;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+.feedbackLink {
+  align-self: flex-end;
+  min-height: 30px;
+  padding: 0 var(--space-3);
+  border: 0; border-radius: var(--radius-md);
+  color: var(--color-neutral-50); background: var(--color-accent);
+  font-size: var(--font-size-caption); font-weight: 700;
+}
+
+.typing { color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+
+/* 입력창 */
+.composer {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) 0 var(--space-2);
+}
+.composer label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.input {
+  flex: 1;
+  min-height: var(--field-height);
+  max-height: 96px;
+  padding: 14px var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: var(--font-size-body);
+  resize: none;
+}
+.input:focus { outline: none; border: 2px solid var(--color-accent); }
+
+.mic, .send {
+  width: 44px; height: 44px; min-height: 44px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  font-size: var(--font-size-body-lg);
+}
+.mic { color: var(--color-accent); background: transparent; }
+.micActive { color: var(--color-neutral-50); background: var(--color-danger); }
+.send { color: var(--color-neutral-50); background: var(--color-accent); }
+.send:disabled { color: var(--color-disabled-text); background: var(--color-disabled-surface); }
+
+.hint { color: var(--color-text-muted); font-size: var(--font-size-caption); }
+
+.notice {
+  display: grid; gap: var(--space-2);
+  margin: var(--space-2) 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-body);
+}
+.notice strong { color: var(--color-text); }
+.notice span { color: var(--color-text-body); }
+.error { color: var(--color-danger); }
+
+.goalCard {
+  display: grid; gap: var(--space-3);
+  margin: var(--space-2) 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-brand-50);
+}
+.goalCard strong { color: var(--color-text); font-size: var(--font-size-h3); }
+.goalCard p { margin: 0; color: var(--color-text-body); font-size: var(--font-size-body); }
+.goalActions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+
+.empty { color: var(--color-text-muted); font-size: var(--font-size-body); text-align: center; padding: var(--space-8) 0; }
