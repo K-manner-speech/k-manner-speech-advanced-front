@@ -17,6 +17,7 @@ const DISPLAY_OPTIONS: Option[] = [
 ];
 
 const NATIVE_OPTIONS: Option[] = [
+  { value: "Korean", name: "한국어", sub: "Korean" },
   { value: "English", name: "English", sub: "영어" },
   { value: "Japanese", name: "日本語", sub: "일본어" },
   { value: "Chinese", name: "中文", sub: "중국어" },

@@ -37,10 +37,6 @@ export const api = {
   async saveProfile(body: components["schemas"]["ProfileReplaceRequest"]) {
     return unwrap(await http.PUT("/api/v1/me/profile", { body }));
   },
-  /** 200 이어도 아직 바뀌지 않는다. 새 주소로 간 확인 링크를 눌러야 확정된다. */
-  async changeEmail(email: string) {
-    return unwrap(await http.PUT("/api/v1/me/email", { body: { email } }));
-  },
   async changePassword(body: components["schemas"]["PasswordChangeRequest"]) {
     return unwrap(await http.PUT("/api/v1/me/password", { body }));
   },

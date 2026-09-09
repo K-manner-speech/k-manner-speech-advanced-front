@@ -124,29 +124,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/me/email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Change Email
-         * @description 주소 변경을 요청한다.
-         *
-         *     응답이 200 이어도 아직 바뀌지 않았다. 새 주소로 간 확인 링크를 눌러야
-         *     확정된다. 확인 없이 바꾸면 오타 하나로 계정에 다시 들어올 수 없다.
-         */
-        put: operations["me_email.change"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/me/password": {
         parameters: {
             query?: never;
@@ -878,11 +855,14 @@ export interface components {
         };
         /**
          * CredentialChangeResponse
-         * @description 무엇이 끝났고 무엇이 남았는지 화면이 그대로 옮겨 적을 수 있게 한다.
+         * @description 바꾸기가 끝났음을 알린다. 지금은 비밀번호 변경만 이 응답을 쓴다.
          */
         CredentialChangeResponse: {
-            /** Pending Email */
-            pending_email?: string | null;
+            /**
+             * Changed
+             * @default true
+             */
+            changed: boolean;
         };
         /** DomainJobAccepted */
         DomainJobAccepted: {
@@ -898,14 +878,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-        };
-        /**
-         * EmailChangeRequest
-         * @description 주소 변경 요청. 확인 메일을 받아야 확정된다.
-         */
-        EmailChangeRequest: {
-            /** Email */
-            email: string;
         };
         /** EmotionSnapshot */
         EmotionSnapshot: {
@@ -2243,39 +2215,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    "me_email.change": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EmailChangeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CredentialChangeResponse"];
                 };
             };
             /** @description Validation Error */

@@ -16,7 +16,7 @@ const schema = z.object({
   display_name: z.string().trim().min(1, "이름을 입력해 주세요."),
   birth_date: z.string().min(1, "생년월일을 선택해 주세요."),
   gender: z.string().min(1, "성별을 선택해 주세요."),
-  native_language: z.enum(["English", "Japanese", "Chinese"], {
+  native_language: z.enum(["Korean", "English", "Japanese", "Chinese"], {
     error: "모국어를 선택해 주세요.",
   }),
 });
@@ -28,6 +28,7 @@ const GENDERS = [
   { value: "other", label: "기타 · Prefer not to say" },
 ];
 const NATIVE_LANGUAGES = [
+  { value: "Korean", label: "한국어 · Korean" },
   { value: "English", label: "영어 · English" },
   { value: "Japanese", label: "일본어 · Japanese" },
   { value: "Chinese", label: "중국어 · Chinese" },

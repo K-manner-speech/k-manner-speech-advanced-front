@@ -8,7 +8,6 @@ import { useAuth, LoginPage, OnboardingPage, SignupPage, StartPage } from "../fe
 import { ConversationPage, InterviewCompletePage } from "../features/conversation";
 import { HomePage } from "../features/home";
 import {
-  EmailChangePage,
   LanguageSettingPage,
   MyAccountPage,
   PasswordChangePage,
@@ -65,7 +64,6 @@ export const router = createBrowserRouter([
           { path: "/me/language/native", element: <LanguageSettingPage kind="native" /> },
           { path: "/me/language/display", element: <LanguageSettingPage kind="display" /> },
           { path: "/me/security", element: <SecurityPage /> },
-          { path: "/me/security/email", element: <EmailChangePage /> },
           { path: "/me/security/password", element: <PasswordChangePage /> },
         ],
       },

@@ -6,13 +6,13 @@ import { beforeEach, vi } from "vitest";
 import { api } from "../../api/service";
 import { LanguageSettingPage } from "./LanguageSettingPage";
 import { PasswordChangePage } from "./PasswordChangePage";
-import { EmailChangePage } from "./EmailChangePage";
 import { ProfileEditPage } from "./ProfileEditPage";
+import { SecurityPage } from "./SecurityPage";
 
 vi.mock("../../api/service", () => ({
   api: {
     me: vi.fn(), saveProfile: vi.fn(), saveLanguage: vi.fn(),
-    changeEmail: vi.fn(), changePassword: vi.fn(),
+    changePassword: vi.fn(),
   },
 }));
 
@@ -84,14 +84,22 @@ test("새 비밀번호를 두 번 다르게 적으면 서버로 보내지 않는
   expect(api.changePassword).not.toHaveBeenCalled();
 });
 
-test("이메일 변경은 아직 끝나지 않았음을 알린다", async () => {
-  vi.mocked(api.changeEmail).mockResolvedValue({ pending_email: "new@example.com" } as never);
-  renderPage(<EmailChangePage />);
+test("모국어로 한국어를 고를 수 있다", async () => {
+  renderPage(<LanguageSettingPage kind="native" />);
 
-  await userEvent.type(screen.getByLabelText("새 이메일"), "new@example.com");
-  await userEvent.click(screen.getByRole("button", { name: "확인 메일 보내기" }));
+  await userEvent.click(await screen.findByRole("radio", { name: /한국어/ }));
+  await userEvent.click(screen.getByRole("button", { name: "선택 완료" }));
 
-  // 바뀐 줄 알고 예전 주소를 버리면 계정에 다시 들어올 수 없다.
-  expect(await screen.findByText(/확인 메일을 보냈어요/)).toBeInTheDocument();
-  expect(screen.getByText(/링크를 눌러야 주소가 바뀝니다/)).toBeInTheDocument();
+  await waitFor(() => expect(api.saveProfile).toHaveBeenCalledWith({
+    display_name: "민준", birth_date: "1998-06-18", gender: "male", native_language: "Korean",
+  }));
+});
+
+test("이메일은 읽기만 하고 바꾸는 곳으로 이어지지 않는다", async () => {
+  renderPage(<SecurityPage />);
+
+  expect(await screen.findByText("minjun@example.com")).toBeInTheDocument();
+  // 가입 주소가 계정을 가리키는 이름이라 바꿀 수 없다.
+  expect(screen.queryByRole("link", { name: /이메일/ })).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /비밀번호 변경/ })).toBeInTheDocument();
 });

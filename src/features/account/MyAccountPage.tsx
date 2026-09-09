@@ -10,6 +10,7 @@ const languageName = (value: string | null | undefined) => {
   const names: Record<string, string> = {
     ko: "한국어",
     en: "English",
+    Korean: "한국어",
     English: "영어",
     Japanese: "일본어",
     Chinese: "중국어",

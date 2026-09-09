@@ -16,13 +16,14 @@ export function SecurityPage() {
       <ScreenHeader title="이메일 · 비밀번호" onBack={() => navigate(-1)} />
 
       <h2 className={styles.sectionTitle}>로그인 정보</h2>
-      <Link className={styles.card} to="/me/security/email">
+      {/* 이메일은 바꿀 수 없다. 가입에 쓴 주소가 계정을 가리키는 이름이라
+          바뀌면 지난 연습 기록을 누구 것으로 볼지가 흔들린다. */}
+      <div className={styles.card}>
         <span className={styles.rowText}>
           <b>이메일</b>
           <small>{session?.user.email ?? "-"}</small>
         </span>
-        <span className={styles.chevron} aria-hidden="true">›</span>
-      </Link>
+      </div>
 
       <h2 className={styles.sectionTitle}>보안</h2>
       <Link className={styles.card} to="/me/security/password">
