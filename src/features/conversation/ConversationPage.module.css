@@ -1,0 +1,311 @@
+/* 화면 전체가 세로로 꽉 차고 가운데 대화만 스크롤한다. 머리 줄과 입력창은 고정이다. */
+.screen { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+
+.header {
+  position: relative;
+  min-height: 40px;
+  display: flex; align-items: center; justify-content: center;
+}
+.header h1 { margin: 0; font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+.back {
+  position: absolute; left: 0;
+  width: 32px; height: 32px; min-height: 32px;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  color: var(--color-text); background: transparent;
+  font-size: var(--font-size-h2); line-height: 1;
+}
+.end {
+  min-height: 32px; padding: 0 var(--space-1);
+  border: 0; background: transparent;
+  color: var(--color-accent);
+  font-size: var(--font-size-body); font-weight: 700;
+  white-space: nowrap;
+}
+.end:disabled { opacity: .5; }
+
+/* 상대 사진 위에 이번 연습의 목표를 얹는다. 목표를 접어 두면 무엇을 하는
+   중인지 잊는다. */
+/* 미션 카드. 사진 위가 아니라 사진 앞에 둔다. */
+.mission {
+  margin-top: var(--space-3);
+  border: 1px solid var(--color-card-border); border-radius: var(--radius-md);
+  background: var(--color-card);
+  overflow: hidden;
+}
+.missionToggle {
+  width: 100%; min-height: 40px;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: 0 var(--space-4);
+  border: 0; background: transparent;
+  color: var(--color-text); font-family: inherit; text-align: left;
+}
+.missionToggle b { font-size: var(--font-size-body-sm); font-weight: 700; }
+.missionToggle span { color: var(--color-accent); font-size: var(--font-size-caption); font-weight: 700; }
+.missionBody {
+  margin: 0; padding: 0 var(--space-4) var(--space-4);
+  color: var(--color-text-body); font-size: var(--font-size-body-sm); line-height: 19px;
+}
+
+.hero {
+  position: relative;
+  height: 190px;
+  margin: var(--space-3) 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-neutral-200);
+}
+.hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.heroOverlay {
+  position: absolute; inset: auto 0 0 0;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  background: linear-gradient(transparent, rgba(53, 35, 31, .72));
+}
+.heroText { display: grid; gap: 2px; }
+.heroText b { color: #fff; font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+.heroText small { color: rgba(255, 255, 255, .82); font-size: var(--font-size-caption); }
+
+.emotion {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.messages { min-height: 0; overflow-y: auto; display: grid; gap: var(--space-4); align-content: start; padding: var(--space-2) 0; }
+
+.turn { display: grid; gap: var(--space-2); }
+.who { display: flex; align-items: center; gap: var(--space-2); }
+.avatar { width: 26px; height: 26px; border-radius: var(--radius-pill); object-fit: cover; }
+.who b { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; }
+
+.row { display: flex; align-items: flex-start; gap: var(--space-2); }
+.mine { justify-content: flex-end; }
+
+.bubble {
+  max-width: 78%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-neutral-100);
+  font-size: var(--font-size-body-lg);
+  line-height: 21px;
+  white-space: pre-wrap;
+}
+.mine .bubble { background: var(--color-brand-100); }
+
+.speak {
+  width: 28px; height: 28px; min-height: 28px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  color: var(--color-accent); background: transparent;
+  font-size: var(--font-size-body);
+}
+.speak:disabled { opacity: .5; }
+
+.inputMode {
+  align-self: flex-end;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+.feedbackLink {
+  align-self: flex-end;
+  min-height: 30px;
+  padding: 0 var(--space-3);
+  border: 0; border-radius: var(--radius-md);
+  color: var(--color-neutral-50); background: var(--color-accent);
+  font-size: var(--font-size-caption); font-weight: 700;
+}
+
+.typing { color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+
+/* 입력창 */
+.composer {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) 0 var(--space-2);
+}
+.composer label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.input {
+  flex: 1;
+  min-height: var(--field-height);
+  max-height: 96px;
+  padding: 14px var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: var(--font-size-body);
+  resize: none;
+}
+.input:focus { outline: none; border: 2px solid var(--color-accent); }
+
+.mic, .send {
+  width: 44px; height: 44px; min-height: 44px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  font-size: var(--font-size-body-lg);
+}
+.mic { color: var(--color-accent); background: transparent; }
+/* 녹음 중에는 마이크를 채워 눌린 상태임을 알린다. */
+.micActive { color: var(--color-neutral-50); background: var(--color-accent); }
+.send { color: var(--color-neutral-50); background: var(--color-accent); }
+.send:disabled { color: var(--color-disabled-text); background: var(--color-disabled-surface); }
+
+.hint { color: var(--color-text-muted); font-size: var(--font-size-caption); }
+
+.notice {
+  display: grid; gap: var(--space-2);
+  margin: var(--space-2) 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-body);
+}
+.notice strong { color: var(--color-text); }
+.notice span { color: var(--color-text-body); }
+.error { color: var(--color-danger); }
+
+.goalCard {
+  display: grid; gap: var(--space-3);
+  margin: var(--space-2) 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-brand-50);
+}
+.goalCard strong { color: var(--color-text); font-size: var(--font-size-h3); }
+.goalCard p { margin: 0; color: var(--color-text-body); font-size: var(--font-size-body); }
+.goalActions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+
+.empty { color: var(--color-text-muted); font-size: var(--font-size-body); text-align: center; padding: var(--space-8) 0; }
+
+/* 녹음 중 표시. 상대 말풍선 아래 오른쪽에 둔다. */
+.listening { display: grid; gap: var(--space-2); justify-items: end; }
+.listening span { color: var(--color-accent); font-size: var(--font-size-caption); font-weight: 700; }
+.dots { display: flex; gap: 5px; }
+.dots i { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--color-brand-100); animation: pulse 1.2s infinite; }
+.dots i:nth-child(2) { animation-delay: .2s; }
+.dots i:nth-child(3) { animation-delay: .4s; }
+
+@keyframes pulse {
+  0%, 100% { background: var(--color-brand-100); }
+  50% { background: var(--color-accent); }
+}
+
+/* 답변 피드백 시트 */
+.backdrop {
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(53, 35, 31, .45);
+}
+
+.sheet {
+  width: min(100%, 360px);
+  max-height: 88%;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-5) var(--space-6);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--color-surface-app);
+}
+
+.handle { width: 40px; height: 4px; margin: 0 auto var(--space-4); border-radius: var(--radius-pill); background: var(--color-neutral-200); }
+
+.sheetHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.sheetHeader h2 { margin: 0; color: var(--color-text); font-size: var(--font-size-h1); line-height: var(--line-height-h1); font-weight: 700; }
+.sheetHeader p { margin: var(--space-1) 0 0; color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+.close {
+  width: 28px; height: 28px; min-height: 28px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  color: var(--color-text); background: transparent;
+  font-size: var(--font-size-h2); line-height: 1;
+}
+
+.overall { display: grid; gap: var(--space-1); margin: var(--space-5) 0; }
+.overallHead { display: flex; align-items: baseline; justify-content: space-between; }
+.overallHead span { color: var(--color-accent); font-size: var(--font-size-body); font-weight: 700; }
+.overallHead b { color: var(--color-accent); font-size: var(--font-size-body-sm); font-weight: 700; }
+.overallScore { color: var(--color-accent); font-size: var(--font-size-display); line-height: var(--line-height-display); font-weight: 700; }
+.overallScore small { color: var(--color-text-muted); font-size: var(--font-size-body-lg); font-weight: 400; }
+.overall p { margin: var(--space-2) 0 0; color: var(--color-text-body); font-size: var(--font-size-body); line-height: 19px; }
+
+.panel {
+  margin-bottom: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-muted);
+}
+.panel h3 { margin: 0 0 var(--space-4); color: var(--color-text); font-size: var(--font-size-h3); font-weight: 700; }
+
+.bars { display: grid; gap: var(--space-3); }
+.bar { display: grid; grid-template-columns: 84px 1fr auto; align-items: center; gap: var(--space-3); }
+.bar span { color: var(--color-text-body); font-size: var(--font-size-body-sm); }
+.bar strong { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
+.track { height: 8px; border-radius: var(--radius-pill); background: var(--color-neutral-200); overflow: hidden; }
+.track i { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--color-accent); }
+
+/* 항목마다 색을 달리해 어느 줄을 보는지 눈으로 따라가기 쉽게 한다. */
+.honorifics i { background: #7b61b5; }
+.courtesy i { background: #3f9d6d; }
+.contextFit i { background: #3d7ab8; }
+.naturalness i { background: #d08a2e; }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chips span {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-body);
+  background: var(--color-brand-50);
+  font-size: var(--font-size-caption);
+}
+
+.expressions { display: grid; gap: var(--space-4); }
+.expressions h4 { margin: 0 0 var(--space-1); color: var(--color-text); font-size: var(--font-size-body); font-weight: 700; }
+.expressions p { margin: 0; color: var(--color-text-body); font-size: var(--font-size-body); line-height: 19px; }
+.expressions p strong { color: var(--color-accent); margin-right: var(--space-2); }
+.expressions blockquote { margin: var(--space-2) 0 0; padding-left: var(--space-3); border-left: 2px solid var(--color-brand-100); color: var(--color-text); font-size: var(--font-size-body); }
+
+.headerRight {
+  position: absolute; right: 0;
+  display: flex; align-items: center; gap: var(--space-3);
+}
+.elapsed {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 면접관 말풍선은 테두리로 한 번 더 구분한다. */
+.interviewer { border: 1px solid var(--color-brand-100); background: var(--color-surface); }
+
+/* 면접 입력은 마이크 하나뿐이다. 화면 가운데에 크게 둔다. */
+.micOnly { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-4) 0 var(--space-2); }
+.micLarge {
+  width: 56px; height: 56px; min-height: 56px;
+  display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: var(--radius-pill);
+  color: var(--color-accent); background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-h2);
+}
+.micLarge[aria-pressed="true"] { color: var(--color-neutral-50); background: var(--color-accent); }
+.micOnly p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-body-sm); text-align: center; }
+
+/* 인식된 답변 확인. 자동 전송하지 않고 사용자가 보고 보낸다. */
+.transcript {
+  width: 100%;
+  display: grid; gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+.transcript span { color: var(--color-text-muted); font-size: var(--font-size-caption); font-weight: 700; }
+.transcript p { margin: 0; color: var(--color-text); font-size: var(--font-size-body-lg); line-height: 21px; }

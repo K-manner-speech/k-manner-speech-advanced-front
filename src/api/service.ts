@@ -19,8 +19,26 @@ export const api = {
   async me() {
     return unwrap(await http.GET("/api/v1/me"));
   },
+  /** 되돌릴 수 없다. 성공하면 세션도 함께 사라진다. */
+  async deleteAccount() {
+    return unwrap(
+      await http.DELETE("/api/v1/me", {
+        params: { header: { "Idempotency-Key": createIdempotencyKey() } },
+      }),
+    );
+  },
+  async home() {
+    return unwrap(await http.GET("/api/v1/home"));
+  },
+  /** 출석은 하루에 한 번만 기록되므로 다시 눌러도 결과가 같다. */
+  async attend() {
+    return unwrap(await http.POST("/api/v1/home/attendance", {}));
+  },
   async saveProfile(body: components["schemas"]["ProfileReplaceRequest"]) {
     return unwrap(await http.PUT("/api/v1/me/profile", { body }));
+  },
+  async changePassword(body: components["schemas"]["PasswordChangeRequest"]) {
+    return unwrap(await http.PUT("/api/v1/me/password", { body }));
   },
   async saveLanguage(display_language: "ko" | "en") {
     return unwrap(await http.PUT("/api/v1/me/language", { body: { display_language } }));

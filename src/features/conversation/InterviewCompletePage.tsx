@@ -2,9 +2,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { api, waitForTerminal } from "../../api/service";
 import { ApiError } from "../../api/http";
-import { BackHeader } from "../../components/ui/BackHeader";
+import { Button } from "../../components/ui/Button";
+import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { StatusPanel } from "../../components/ui/StatusPanel";
-import styles from "../../components/ui/Pages.module.css";
+import styles from "./InterviewCompletePage.module.css";
 
 export function InterviewCompletePage() {
   const { roomId = "" } = useParams();
@@ -31,20 +32,47 @@ export function InterviewCompletePage() {
   const seconds = Math.max(0, Math.round((new Date(room.data.completed_at ?? room.data.updated_at).getTime() - new Date(room.data.started_at).getTime()) / 1000));
   const elapsed = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const resultMissing = result.error instanceof ApiError && result.error.code === "RESULT_NOT_FOUND";
-  return <div className={`${styles.page} ${styles.interviewCompletePage}`}>
-    <BackHeader title="면접" onBack={() => navigate("/rooms")} />
-    <main aria-live="polite">
-      <span className={styles.interviewCompleteIcon}>✓</span>
-      <h1>면접이 종료되었습니다</h1>
-      <p>답변이 모두 안전하게 저장되었습니다.<br />종합 피드백에서 표현과 어투를 확인해보세요.</p>
-      <div><strong>총 진행 시간&nbsp; {elapsed}</strong><strong>답변 {room.data.turn_count}개 저장 완료</strong></div>
-      {result.data ? <Link className={styles.primaryLink} to={`/rooms/${roomId}/result`}>종합 피드백 확인</Link>
-        : resultMissing
-          ? <button className={styles.primaryButton} disabled={createResult.isPending} onClick={() => createResult.mutate()}>{createResult.isPending ? "종합 피드백 생성 중…" : "종합 피드백 생성"}</button>
-          : <button className={styles.primaryButton} disabled>종합 피드백 정리 중…</button>}
-      {createResult.error && <div className={styles.partialError} role="alert"><strong>종합 피드백 생성에 실패했어요.</strong><span>{createResult.error.message}</span></div>}
-      {result.error && !resultMissing && (!(result.error instanceof ApiError) || result.error.code !== "RESULT_PROCESSING")
-        && <div className={styles.partialError} role="alert"><strong>종합 피드백을 준비하지 못했어요.</strong><span>{result.error.message}</span><button type="button" onClick={() => void result.refetch()}>다시 확인</button></div>}
-    </main>
-  </div>;
+  return (
+    <div className={styles.page}>
+      <ScreenHeader title="면접" onBack={() => navigate("/rooms")} />
+      <main className={styles.body} aria-live="polite">
+        <span className={styles.icon} aria-hidden="true">✓</span>
+        <h1 className={styles.title}>면접이 종료되었습니다</h1>
+        <p className={styles.lead}>
+          답변이 모두 안전하게 저장되었습니다.<br />종합 피드백에서 표현과 어투를 확인해보세요.
+        </p>
+        <div className={styles.facts}>
+          <strong>총 진행 시간 {elapsed}</strong>
+          <strong>답변 {room.data.turn_count}개 저장 완료</strong>
+        </div>
+
+        {createResult.error && (
+          <div className={styles.notice} role="alert">
+            <strong>종합 피드백 생성에 실패했어요.</strong>
+            <span>{createResult.error.message}</span>
+          </div>
+        )}
+        {result.error && !resultMissing
+          && (!(result.error instanceof ApiError) || result.error.code !== "RESULT_PROCESSING") && (
+          <div className={styles.notice} role="alert">
+            <strong>종합 피드백을 준비하지 못했어요.</strong>
+            <span>{result.error.message}</span>
+            <Button variant="secondary" compact onClick={() => void result.refetch()}>다시 확인</Button>
+          </div>
+        )}
+
+        <div className={styles.action}>
+          {result.data ? (
+            <Link className={styles.link} to={`/rooms/${roomId}/result`}>종합 피드백 확인</Link>
+          ) : resultMissing ? (
+            <Button disabled={createResult.isPending} onClick={() => createResult.mutate()}>
+              {createResult.isPending ? "종합 피드백 생성 중…" : "종합 피드백 생성"}
+            </Button>
+          ) : (
+            <Button disabled>종합 피드백 정리 중…</Button>
+          )}
+        </div>
+      </main>
+    </div>
+  );
 }

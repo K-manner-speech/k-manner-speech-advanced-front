@@ -1,0 +1,70 @@
+.choices { display: grid; gap: var(--space-4); margin-top: var(--space-6); }
+
+.choice {
+  width: 100%;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-surface);
+  text-align: left;
+}
+
+/* 선택은 테두리만이 아니라 면 색과 체크 표시로 함께 나타낸다. 색만으로 구분하면
+   색을 구별하기 어려운 사용자가 알 수 없다. */
+.selected {
+  border-color: var(--color-accent);
+  color: var(--color-neutral-50);
+  background: var(--color-accent);
+}
+
+.glyph {
+  width: 44px; height: 44px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: var(--font-size-h2);
+  font-weight: 700;
+}
+.selected .glyph { background: var(--color-neutral-50); }
+
+.text { display: grid; gap: 2px; margin-right: auto; }
+.text b { font-size: var(--font-size-h2); line-height: var(--line-height-h2); }
+.text small { color: var(--color-text-muted); font-size: var(--font-size-body); }
+.selected .text small { color: var(--color-brand-50); }
+
+.check {
+  width: 26px; height: 26px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  color: var(--color-neutral-50);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+}
+.selected .check { background: var(--color-neutral-900); }
+
+.notice {
+  display: flex; gap: var(--space-3);
+  margin: var(--space-6) 0 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-brand-100);
+}
+
+.noticeIcon {
+  width: 20px; height: 20px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  color: var(--color-neutral-50);
+  background: var(--color-accent);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.notice b { display: block; color: var(--color-text); font-size: var(--font-size-body); }
+.notice span span, .notice > span:last-child { color: var(--color-text-body); font-size: var(--font-size-body-sm); line-height: 17px; }

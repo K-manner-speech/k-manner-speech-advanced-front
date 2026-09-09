@@ -2,8 +2,11 @@ import { useMutation } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, waitForTerminal } from "../../api/service";
-import { BackHeader } from "../../components/ui/BackHeader";
-import styles from "../../components/ui/Pages.module.css";
+import { Button } from "../../components/ui/Button";
+import { Field } from "../../components/ui/Field";
+import { ScreenHeader } from "../../components/ui/ScreenHeader";
+import { SelectField } from "../../components/ui/SelectField";
+import styles from "./InterviewPage.module.css";
 
 const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
@@ -77,64 +80,107 @@ export function InterviewPage() {
     else navigate("/practice");
   };
 
-  if (screen === "conditions") return <InterviewFrame onBack={goBack} code="I01">
-    <h1 aria-label="지원 정보를 입력해 주세요">지원 정보를<br />입력해 주세요</h1>
-    <p className={styles.lead}>이력서와 겹치지 않는 지원 희망 정보를<br />직접 입력해 주세요.</p>
-    <div className={styles.interviewFields}>
-      <label>희망 직무<input aria-label="희망 직무" value={desiredRole} onChange={(event) => setDesiredRole(event.target.value)} maxLength={200} placeholder="희망 직무를 입력해 주세요" /></label>
-      <label>지원 유형<select aria-label="지원 유형" value={applicationType} onChange={(event) => setApplicationType(event.target.value)}><option>신입</option><option>경력</option><option>인턴</option></select></label>
+  if (screen === "conditions") return <InterviewFrame onBack={goBack}>
+    {/* 줄바꿈이 접근성 이름에 섞이지 않도록 한 줄로 읽히는 이름을 따로 준다. */}
+    <h1 className={styles.headline} aria-label="지원 정보를 입력해 주세요">지원 정보를<br />입력해 주세요</h1>
+    <div className={styles.card}>
+      <Field
+        label="희망 직무"
+        aria-label="희망 직무"
+        value={desiredRole}
+        onChange={(event) => setDesiredRole(event.target.value)}
+        maxLength={200}
+        placeholder="희망 직무를 입력해 주세요"
+      />
+      <SelectField
+        label="지원 유형"
+        aria-label="지원 유형"
+        placeholder="지원 유형을 입력해 주세요"
+        value={applicationType}
+        onChange={(event) => setApplicationType(event.target.value)}
+        options={[
+          { value: "신입", label: "신입" },
+          { value: "경력", label: "경력" },
+          { value: "인턴", label: "인턴" },
+        ]}
+      />
     </div>
-    <button className={styles.interviewPrimary} disabled={!desiredRole.trim() || !applicationType.trim()} onClick={() => setScreen("attachments")}>다음</button>
+    <div className={styles.actions}>
+      <Button disabled={!desiredRole.trim() || !applicationType.trim()} onClick={() => setScreen("attachments")}>다음</Button>
+    </div>
   </InterviewFrame>;
 
-  if (screen === "attachments") return <InterviewFrame onBack={goBack} code="I03">
-    <h1 aria-label="면접 자료를 첨부해 주세요">면접 자료를<br />첨부해 주세요</h1>
-    <p className={styles.lead}>이력서는 필수예요. 포트폴리오와 자기소개서를 추가하면<br />맞춤 질문이 더 정교해져요.</p>
-    <div className={styles.interviewAttachments}>
+  if (screen === "attachments") return <InterviewFrame onBack={goBack}>
+    <h1 className={styles.headline} aria-label="면접 자료를 첨부해 주세요">면접 자료를<br />첨부해 주세요</h1>
+    <p className={styles.lead}>이력서는 필수예요. 포트폴리오와 자기소개서를 추가하면 맞춤 질문이 더 정교해져요.</p>
+    <div className={styles.attachments}>
       <Attachment label="이력서 (필수)" detail="PDF 또는 DOCX · 최대 10MB" file={files.resume} onChange={(file) => chooseFile("resume", file)} />
       <Attachment label="포트폴리오 (선택)" detail="PDF 또는 DOCX · 최대 10MB" file={files.portfolio} onChange={(file) => chooseFile("portfolio", file)} />
       <Attachment label="자기소개서 (선택)" detail="PDF 또는 DOCX · 최대 10MB" file={files.self_introduction} onChange={(file) => chooseFile("self_introduction", file)} />
     </div>
-    <div className={styles.interviewInfo}>✓ 이력서를 첨부해야 면접 질문 분석을 시작할 수 있어요.</div>
+    <div className={styles.info}>✓ 이력서를 첨부해야 면접 질문 분석을 시작할 수 있어요.</div>
     {fileError && <div className={styles.error} role="alert">{fileError}</div>}
-    {prepare.error && <div className={styles.partialError} role="alert"><strong>면접 준비를 완료하지 못했어요.</strong><span>{prepare.error.message}</span><small>선택한 파일은 유지됩니다. 상태를 확인하고 다시 시도해 주세요.</small></div>}
-    <button className={styles.interviewPrimary} disabled={!files.resume || prepare.isPending} onClick={() => prepare.mutate()}>첨부한 자료로 분석하기</button>
+    {prepare.error && <div className={styles.notice} role="alert"><strong>면접 준비를 완료하지 못했어요.</strong><span>{prepare.error.message}</span><small>선택한 파일은 유지됩니다. 상태를 확인하고 다시 시도해 주세요.</small></div>}
+    <div className={styles.actions}>
+      <Button disabled={!files.resume || prepare.isPending} onClick={() => prepare.mutate()}>첨부한 자료로 분석하기</Button>
+    </div>
   </InterviewFrame>;
 
-  if (screen === "preparing") return <InterviewFrame onBack={goBack} code="I04">
-    <h1 aria-label="모의 면접을 준비하고 있어요">모의 면접을<br />준비하고 있어요</h1>
-    <p className={styles.lead}>첨부한 자료와 선택한 조건으로<br />실제와 같은 면접 흐름을 만들고 있어요.</p>
-    <section className={styles.interviewPreparing} aria-live="polite">
-      <div className={styles.interviewSpark}>✦</div><div><strong>맞춤 면접을 구성하는 중</strong><small>잠시만 기다려 주세요</small></div>
+  if (screen === "preparing") return <InterviewFrame onBack={goBack}>
+    <h1 className={styles.headline} aria-label="모의 면접을 준비하고 있어요">모의 면접을<br />준비하고 있어요</h1>
+    <p className={styles.lead}>첨부한 자료와 선택한 조건으로 실제와 같은 면접 흐름을 만들고 있어요.</p>
+    <section className={styles.steps} aria-live="polite">
       <ProgressItem number="1" title="자료 안전하게 업로드" active={stage === "uploading"} done={stage !== "uploading"} />
       <ProgressItem number="2" title="경험과 기술 분석" active={stage === "analyzing"} done={stage === "generating"} />
       <ProgressItem number="3" title="근거 기반 질문 생성" active={stage === "generating"} done={false} />
     </section>
-    <div className={styles.interviewPrivacy}><strong>개인정보 안내</strong><p>파일은 비공개 Storage에 저장되며, Browser에 저장 경로나 서명 URL을 남기지 않습니다.</p></div>
+    <div className={styles.privacy}><strong>개인정보 안내</strong><p>파일은 비공개 Storage에 저장되며, Browser에 저장 경로나 서명 URL을 남기지 않습니다.</p></div>
   </InterviewFrame>;
 
   const reflected = [files.resume && "이력서", files.portfolio && "포트폴리오", files.self_introduction && "자기소개서"].filter(Boolean).join(", ");
-  return <InterviewFrame onBack={goBack} code="I05">
-    <h1 aria-label="면접 구성을 확인해 주세요">면접 구성을<br />확인해 주세요</h1>
+  return <InterviewFrame onBack={goBack}>
+    <h1 className={styles.headline} aria-label="면접 구성을 확인해 주세요">면접 구성을<br />확인해 주세요</h1>
     <p className={styles.lead}>선택한 조건과 자료 반영 방식을 확인한 뒤 바로 시작할 수 있어요.</p>
-    <section className={styles.interviewSummary}>
+    <section className={styles.summary}>
       <h2>면접 구성 상세</h2><p>필요한 항목만 반영해 맞춤 질문을 구성했어요.</p>
       <dl><div><dt>희망 직무</dt><dd>{desiredRole}</dd></div><div><dt>지원 유형</dt><dd>{applicationType}</dd></div><div><dt>자료 반영</dt><dd>{reflected}</dd></div></dl>
     </section>
     {startInterview.error && <div className={styles.error} role="alert">{startInterview.error.message}</div>}
-    <button className={styles.interviewSecondary} onClick={() => setScreen("conditions")}>면접 다시 구성하기</button>
-    <button className={styles.interviewPrimary} disabled={startInterview.isPending} onClick={() => startInterview.mutate()}>{startInterview.isPending ? "면접방 여는 중…" : "면접 시작하기"}</button>
+    <div className={styles.actions}>
+      <Button variant="secondary" onClick={() => setScreen("conditions")}>면접 다시 구성하기</Button>
+      <Button disabled={startInterview.isPending} onClick={() => startInterview.mutate()}>
+        {startInterview.isPending ? "면접방 여는 중…" : "면접 시작하기"}
+      </Button>
+    </div>
   </InterviewFrame>;
 }
 
-function InterviewFrame({ children, onBack, code }: { children: ReactNode; onBack: () => void; code: string }) {
-  return <div className={`${styles.page} ${styles.interviewStep}`} data-step={code}><BackHeader title="면접 연습" onBack={onBack} /><main className={styles.interviewStepBody}>{children}</main></div>;
+function InterviewFrame({ children, onBack }: { children: ReactNode; onBack: () => void }) {
+  return (
+    <div className={styles.page}>
+      <ScreenHeader title="면접 연습" onBack={onBack} />
+      {children}
+    </div>
+  );
 }
 
 function Attachment({ label, detail, file, onChange }: { label: string; detail: string; file?: File; onChange: (file?: File) => void }) {
-  return <label className={styles.interviewAttachment}><input aria-label={label} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => onChange(event.target.files?.[0])} /><span>▣</span><strong>{label}</strong><small>{file ? file.name : detail}</small><b>{file ? "변경" : "첨부"}</b></label>;
+  return (
+    <label className={`${styles.attachment} ${file ? styles.attached : ""}`}>
+      <input aria-label={label} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => onChange(event.target.files?.[0])} />
+      <span aria-hidden="true">▣</span>
+      <strong>{label}</strong>
+      <small>{file ? file.name : detail}</small>
+      <b>{file ? "변경" : "첨부"}</b>
+    </label>
+  );
 }
 
 function ProgressItem({ number, title, active, done }: { number: string; title: string; active: boolean; done: boolean }) {
-  return <div className={`${styles.progressItem} ${active ? styles.progressActive : ""}`}><span>{done ? "✓" : number}</span><div><strong>{title}</strong><small>{done ? "완료" : active ? "처리 중…" : "대기"}</small></div></div>;
+  return (
+    <div className={`${styles.step} ${active ? styles.stepActive : ""} ${done ? styles.stepDone : ""}`}>
+      <span aria-hidden="true">{done ? "✓" : number}</span>
+      <div><strong>{title}</strong><small>{done ? "완료" : active ? "처리 중…" : "대기"}</small></div>
+    </div>
+  );
 }

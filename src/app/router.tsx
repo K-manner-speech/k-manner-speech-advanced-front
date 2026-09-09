@@ -4,10 +4,16 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { api } from "../api/service";
 import { AppShell } from "../components/shell/AppShell";
 import { StatusPanel } from "../components/ui/StatusPanel";
-import { useAuth, LoginPage, OnboardingPage, SignupPage } from "../features/auth";
+import { useAuth, LoginPage, OnboardingPage, SignupPage, StartPage } from "../features/auth";
 import { ConversationPage, InterviewCompletePage } from "../features/conversation";
 import { HomePage } from "../features/home";
-import { MyAccountPage, ProfileEditPage } from "../features/account";
+import {
+  LanguageSettingPage,
+  MyAccountPage,
+  PasswordChangePage,
+  ProfileEditPage,
+  SecurityPage,
+} from "../features/account";
 import { RoomListPage } from "../features/rooms";
 import { InterviewPage } from "../features/interview";
 import { PracticePage } from "../features/practice";
@@ -16,7 +22,7 @@ import { ResultListPage, ResultPage } from "../features/results";
 export function RequireAuth() {
   const { session, isLoading } = useAuth();
   if (isLoading) return <StatusPanel title="세션을 확인하고 있어요" />;
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session) return <Navigate to="/start" replace />;
   return <Outlet />;
 }
 
@@ -29,6 +35,7 @@ function RequireOnboarding() {
 }
 
 export const router = createBrowserRouter([
+  { path: "/start", element: <StartPage /> },
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
   {
@@ -46,6 +53,7 @@ export const router = createBrowserRouter([
           { path: "/interview", element: <InterviewPage /> },
           { path: "/results", element: <ResultListPage /> },
           { path: "/results/:resultId", element: <ResultPage source="result" /> },
+          { path: "/results/:resultId/scores", element: <ResultPage source="result" view="scores" /> },
           { path: "/results/:resultId/strengths", element: <ResultPage source="result" view="strengths" /> },
           { path: "/results/:resultId/strengths/:key", element: <ResultPage source="result" view="strength-detail" /> },
           { path: "/results/:resultId/improvements", element: <ResultPage source="result" view="improvements" /> },
@@ -53,6 +61,10 @@ export const router = createBrowserRouter([
           { path: "/rooms/:roomId/result", element: <ResultPage source="room" /> },
           { path: "/me", element: <MyAccountPage /> },
           { path: "/me/edit", element: <ProfileEditPage /> },
+          { path: "/me/language/native", element: <LanguageSettingPage kind="native" /> },
+          { path: "/me/language/display", element: <LanguageSettingPage kind="display" /> },
+          { path: "/me/security", element: <SecurityPage /> },
+          { path: "/me/security/password", element: <PasswordChangePage /> },
         ],
       },
     ],

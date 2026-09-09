@@ -88,9 +88,9 @@ test("시나리오 상황 브리핑을 대화 화면에 보여준다", async () 
   vi.mocked(api.messages).mockResolvedValue({ items: [], next_cursor: null });
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
 
+  // 목표는 접어 두지 않고 상대 사진 위에 항상 띄운다. 접어 두면 무엇을 하는
+  // 중인지 잊는다.
   expect(await screen.findByText(briefing)).toBeInTheDocument();
-  const panel = screen.getByText("이번 연습 상황").closest("details");
-  expect(panel).toHaveAttribute("open");   // 첫 발화 전에는 펼쳐서 보여준다
 });
 
 test("면접 화면에는 상황 브리핑을 띄우지 않는다", async () => {
@@ -101,7 +101,6 @@ test("면접 화면에는 상황 브리핑을 띄우지 않는다", async () => 
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
 
   expect(await screen.findByText("면접 시뮬레이션")).toBeInTheDocument();
-  expect(screen.queryByText("이번 연습 상황")).not.toBeInTheDocument();
   expect(screen.queryByText("면접 목표")).not.toBeInTheDocument();
 });
 
@@ -166,7 +165,7 @@ test("AI 메시지에는 음성 재생만 제공한다", async () => {
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
 
   expect(await screen.findByRole("img", { name: "대화 상대의 불편함 표정" })).toHaveAttribute("src", "/personas/angry.png");
-  expect(screen.getByText("민준 팀장")).toBeInTheDocument();
+  expect(screen.getAllByText("민준 팀장").length).toBeGreaterThan(0);
   expect(screen.getByText("시스템")).toBeInTheDocument();
   expect(screen.queryByText("AI 대화 상대")).not.toBeInTheDocument();
   await user.click(await screen.findByRole("button", { name: "AI 음성 재생" }));

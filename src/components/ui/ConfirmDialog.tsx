@@ -1,4 +1,5 @@
 import { useEffect, useId } from "react";
+import { Button } from "./Button";
 import styles from "./ConfirmDialog.module.css";
 
 type ConfirmDialogProps = {
@@ -48,12 +49,10 @@ export function ConfirmDialog({
         )}
         {error && <p className={styles.error} role="alert">{error}</p>}
         <div className={styles.actions}>
-          <button type="button" className={styles.cancel} disabled={pending} onClick={onCancel}>
-            취소
-          </button>
-          <button type="button" className={styles.confirm} disabled={pending} onClick={onConfirm}>
+          <Button variant="secondary" compact disabled={pending} onClick={onCancel}>취소</Button>
+          <Button variant="danger" compact disabled={pending} onClick={onConfirm}>
             {pending ? (pendingLabel ?? confirmLabel) : confirmLabel}
-          </button>
+          </Button>
         </div>
       </section>
     </div>

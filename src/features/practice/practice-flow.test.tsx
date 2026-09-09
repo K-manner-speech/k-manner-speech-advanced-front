@@ -19,7 +19,7 @@ beforeEach(() => {
 
 test("scenario와 허용 persona가 준비되어야 상황 대화를 시작할 수 있다", async () => {
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PracticePage /></MemoryRouter></QueryClientProvider>);
-  await userEvent.click(await screen.findByRole("button", { name: "시나리오" }));
+  await userEvent.click(await screen.findByRole("button", { name: /^시나리오/ }));
   const start = await screen.findByRole("button", { name: "대화 시작" });
   expect(start).toBeDisabled();
   await userEvent.click(await screen.findByRole("button", { name: /마감 연장 요청/ }));
@@ -27,19 +27,17 @@ test("scenario와 허용 persona가 준비되어야 상황 대화를 시작할 �
   expect(true, "AC-T2-CATALOG-SELECTION").toBe(true);
 });
 
-test("자유채팅 버튼을 누르면 즉시 H03 페르소나 화면으로 이동한다", async () => {
+test("자유채팅 버튼을 누르면 즉시 H03 대화 상대 화면으로 이동한다", async () => {
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PracticePage /></MemoryRouter></QueryClientProvider>);
-  await userEvent.click(await screen.findByRole("button", { name: "자유채팅" }));
-  expect(await screen.findByText("H03")).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "페르소나", level: 1 })).toBeInTheDocument();
+  await userEvent.click(await screen.findByRole("button", { name: /^자유채팅/ }));
+  expect(await screen.findByRole("heading", { name: "대화 상대", level: 1 })).toBeInTheDocument();
 });
 
 test("시나리오 버튼을 누르면 즉시 H04 시나리오 화면으로 이동한다", async () => {
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PracticePage /></MemoryRouter></QueryClientProvider>);
-  await userEvent.click(await screen.findByRole("button", { name: "시나리오" }));
-  expect(await screen.findByText("H04")).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "시나리오", level: 1 })).toBeInTheDocument();
-  expect(screen.queryByText("H03")).not.toBeInTheDocument();
+  await userEvent.click(await screen.findByRole("button", { name: /^시나리오/ }));
+  expect(await screen.findByRole("heading", { name: "시나리오", level: 1 })).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "대화 상대", level: 1 })).not.toBeInTheDocument();
 });
 
 test("자유채팅 페르소나를 누르면 즉시 방을 만들고 채팅 화면으로 이동한다", async () => {
@@ -53,7 +51,7 @@ test("자유채팅 페르소나를 누르면 즉시 방을 만들고 채팅 화�
       </MemoryRouter>
     </QueryClientProvider>,
   );
-  await userEvent.click(await screen.findByRole("button", { name: "자유채팅" }));
+  await userEvent.click(await screen.findByRole("button", { name: /^자유채팅/ }));
   await userEvent.click(await screen.findByRole("button", { name: /민준/ }));
   expect(await screen.findByText("채팅 화면")).toBeInTheDocument();
   expect(api.createRoom).toHaveBeenCalledWith({ practice_type: "free_chat", persona_id: "p1", scenario_id: null });

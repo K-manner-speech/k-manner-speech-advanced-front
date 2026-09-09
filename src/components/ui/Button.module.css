@@ -1,0 +1,38 @@
+.button {
+  width: 100%;
+  min-height: var(--control-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  font-weight: 700;
+  transition: background-color 120ms, color 120ms;
+}
+
+/* 상태 가이드의 기본·누름·비활성 세 가지. 비활성은 투명도로 흐리게 만들지 않고
+   전용 배경과 글자색을 쓴다. 흐린 테라코타는 눌리는 중처럼 보인다. */
+.primary { color: var(--color-neutral-50); background: var(--color-accent); box-shadow: var(--shadow-button); }
+.primary:active:not(:disabled) { background: var(--color-accent-pressed); }
+.primary:disabled { color: var(--color-disabled-text); background: var(--color-disabled-surface); box-shadow: none; }
+
+.secondary { color: var(--color-accent); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-border); }
+.secondary:active:not(:disabled) { background: var(--color-brand-50); }
+.secondary:disabled { color: var(--color-disabled-text); background: var(--color-surface); }
+
+.ghost { color: var(--color-text-body); background: transparent; box-shadow: none; }
+.ghost:active:not(:disabled) { background: var(--color-surface-muted); }
+.ghost:disabled { color: var(--color-disabled-text); }
+
+.danger { color: var(--color-neutral-50); background: var(--color-danger); }
+.danger:active:not(:disabled) { background: #9a251e; }
+
+/* 다이얼로그·카드 안의 압축형에만 허용한다. */
+.compact { min-height: var(--control-height-compact); }
+
+/* 시작 화면의 대표 CTA 만 16px Semibold 와 큰 모서리를 쓴다. */
+.hero { border-radius: var(--radius-cta); font-size: 16px; font-weight: 600; box-shadow: var(--shadow-hero); }

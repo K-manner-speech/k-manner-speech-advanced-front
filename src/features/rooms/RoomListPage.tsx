@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { formatListDate } from "../../lib/date";
 import { api, type Room } from "../../api/service";
-import { BackHeader } from "../../components/ui/BackHeader";
+import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import styles from "./RoomListPage.module.css";
 
@@ -14,9 +15,13 @@ function practiceLabel(practiceType: string) {
 }
 
 export function RoomListPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const rooms = useQuery({ queryKey: ["rooms"], queryFn: api.rooms });
+  // 목록에는 상대 이름이 없고 persona_id 만 온다. 카탈로그에서 이름을 채운다.
+  const personas = useQuery({ queryKey: ["personas"], queryFn: api.personas });
+  const personaNames = new Map(
+    (personas.data?.items ?? []).map((persona) => [persona.id, persona.name]),
+  );
   const [target, setTarget] = useState<Room | null>(null);
   const timer = useRef<number | null>(null);
   const longPressed = useRef(false);
@@ -44,18 +49,22 @@ export function RoomListPage() {
     }, LONG_PRESS_MILLISECONDS);
   };
 
+  const partnerName = (room: Room) =>
+    room.practice_type === "interview"
+      ? "면접 연습"
+      : (room.persona_id && personaNames.get(room.persona_id)) ?? practiceLabel(room.practice_type);
+
   return (
     <div className={styles.page}>
-      <BackHeader title="대화 목록" onBack={() => navigate("/")} />
-      <p className={styles.code}>L01</p>
-      <h1>대화 목록</h1>
-      <p className={styles.subtitle}>Chat history</p>
+      <ScreenHeader title="대화방 목록" />
+      <h1 className={styles.headline}>연습했던 대화가 여기에 모여 있어요</h1>
       {rooms.isLoading && <p className={styles.empty}>대화 목록을 불러오고 있어요.</p>}
       {rooms.isError && <p className={styles.empty}>대화 목록을 불러오지 못했어요.</p>}
       <div className={styles.list}>
-        {rooms.data?.items.map((room) => (
+        {rooms.data?.items.map((room, index) => (
           <div key={room.id} className={styles.row}>
             <Link
+              className={styles.card}
               to={`/rooms/${room.id}`}
               state={{ from: "/rooms" }}
               onPointerDown={() => startPress(room)}
@@ -70,11 +79,14 @@ export function RoomListPage() {
                 if (longPressed.current) event.preventDefault();
               }}
             >
-              <span>{practiceLabel(room.practice_type)}</span>
-              <strong>{room.title}</strong>
-              <small>
-                {new Date(room.updated_at).toLocaleDateString("ko-KR")} · {room.turn_count}턴
-              </small>
+              <span className={`${styles.avatar} ${styles[`tone${index % 4}`]}`} aria-hidden="true">
+                {partnerName(room).slice(0, 1)}
+              </span>
+              <span className={styles.date}>
+                {formatListDate(room.updated_at)}
+              </span>
+              <span className={styles.name}>{partnerName(room)}</span>
+              <span className={styles.topic}>{room.title}</span>
             </Link>
             <button
               type="button"
@@ -94,7 +106,7 @@ export function RoomListPage() {
         <ConfirmDialog
           title="대화방을 삭제할까요?"
           description="삭제한 대화방과 대화 기록은 복구할 수 없습니다."
-          subject={{ name: target.title, caption: practiceLabel(target.practice_type) }}
+          subject={{ name: `${partnerName(target)} / ${target.title}` }}
           confirmLabel="삭제"
           pendingLabel="삭제 중…"
           pending={remove.isPending}
