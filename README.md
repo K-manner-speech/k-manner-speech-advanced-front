@@ -39,7 +39,14 @@ npm run build
 npm run e2e
 ```
 
-실제 Supabase 로그인과 Catalog E2E는 API가 실행 중인 상태에서 `E2E_EMAIL`, `E2E_PASSWORD`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`를 셸 환경변수로 제공하면 추가 실행됩니다. 자격 증명은 파일에 기록하지 않습니다.
+실제 Supabase 로그인과 Catalog E2E는 API가 실행 중인 상태에서 `.env.test.example`을 `.env.test`로 복사하고 테스트 계정 및 Supabase 값을 입력하면 추가 실행됩니다.
+
+```powershell
+Copy-Item .env.test.example .env.test
+npm run e2e
+```
+
+`.env.test`는 Git에서 제외되며 `.env.test.example`만 공유합니다. CI나 셸에서 같은 환경변수를 지정하면 해당 값이 `.env.test`보다 우선합니다. Service role key는 프론트 환경파일에 넣지 않습니다.
 
 ## OpenAPI
 
