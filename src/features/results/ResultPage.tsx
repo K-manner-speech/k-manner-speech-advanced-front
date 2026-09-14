@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, waitForTerminal, type SessionResult } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
@@ -12,6 +12,66 @@ const labels: Record<string, string> = {
   job_fit_problem_solving: "직무 적합성·문제 해결력", delivery_attitude: "전달력·태도",
 };
 type ResultView = "summary" | "scores" | "strengths" | "improvements" | "strength-detail" | "improvement-detail";
+
+type FeedbackEntry = {
+  /** 펼침 상태를 식별하고 깊은 링크로 여는 값. */
+  key: string;
+  label: string;
+  /** 접혀 있을 때 보여 줄 한 줄. */
+  preview: string | null;
+  /** 항목 색. 목록과 펼친 내용이 같은 색을 쓴다. */
+  toneClass: string;
+  detail: ReactNode;
+};
+
+/**
+ * 피드백 항목 목록. 누르면 그 자리에서 펼쳐진다.
+ *
+ * 항목마다 다른 화면으로 넘어가면 다른 항목과 견주어 보려고 매번 뒤로 가야 한다.
+ * 한 화면에서 펼쳤다 접는 편이 비교에 맞고, 화면 수도 줄어든다. 색은 접혔을 때와
+ * 펼쳤을 때가 같아야 방금 누른 항목을 다시 찾지 않는다.
+ */
+function FeedbackAccordion({ entries, initialKey, emptyText }: {
+  entries: FeedbackEntry[];
+  initialKey?: string;
+  emptyText: string;
+}) {
+  const [openKey, setOpenKey] = useState<string | null>(
+    initialKey && entries.some((entry) => entry.key === initialKey) ? initialKey : null,
+  );
+
+  if (!entries.length) return <div className={sheet.empty}>{emptyText}</div>;
+
+  return (
+    <div className={sheet.items}>
+      {entries.map((entry) => {
+        const isOpen = entry.key === openKey;
+        return (
+          <section key={entry.key} className={`${sheet.accordion} ${entry.toneClass} ${isOpen ? sheet.accordionOpen : ""}`}>
+            <button
+              type="button"
+              className={sheet.accordionHead}
+              aria-expanded={isOpen}
+              aria-controls={`panel-${entry.key}`}
+              onClick={() => setOpenKey(isOpen ? null : entry.key)}
+            >
+              <span className={sheet.accordionTitle}>
+                <strong>{entry.label}</strong>
+                {entry.preview && !isOpen && <span>{entry.preview}</span>}
+              </span>
+              <b aria-hidden="true" className={sheet.accordionMark}>›</b>
+            </button>
+            {isOpen && (
+              <div className={sheet.accordionPanel} id={`panel-${entry.key}`}>
+                {entry.detail}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
 
 export function ResultPage({ source = "room", view = "summary" }: { source?: "room" | "result"; view?: ResultView }) {
   const { roomId = "", resultId = "", key: itemKey = "" } = useParams();
@@ -41,11 +101,11 @@ export function ResultPage({ source = "room", view = "summary" }: { source?: "ro
   const data = result.data;
   if (!data) return <StatusPanel title="결과가 아직 준비되지 않았어요" />;
   if (data.status === "failed") return <FailedResult data={data} retry={retry} remove={remove} onBack={() => navigate(-1)} />;
-  if (data.interview_evaluation) return <InterviewResult data={data} view={view} category={itemKey} onBack={() => navigate(-1)} remove={remove} />;
+  if (data.interview_evaluation) return <InterviewResult data={data} view={view} category={itemKey} onBack={() => navigate(-1)} />;
   // 요약은 대화가 끝난 직후 replace 로 들어오는 화면이라 뒤로가기가 방으로 돌아가면 안 된다.
   const backFromSummary = () => navigate(source === "result" ? "/results" : "/rooms");
-  return <GeneralResult data={data} view={view} source={source}
-    onBack={view === "summary" ? backFromSummary : () => navigate(-1)} retry={retry} remove={remove} />;
+  return <GeneralResult data={data} view={view} itemKey={itemKey}
+    onBack={view === "summary" ? backFromSummary : () => navigate(-1)} retry={retry} />;
 }
 
 const generalLabels: Record<string, string> = {
@@ -53,9 +113,9 @@ const generalLabels: Record<string, string> = {
 };
 
 /** 자유 대화와 상황 연습 결과. 면접과 같은 요약 → 목록 → 상세 3단으로 보여 준다. */
-function GeneralResult({ data, view, source, onBack, retry, remove }: {
-  data: SessionResult; view: ResultView; source: "room" | "result"; onBack: () => void;
-  retry: UseMutationResult<unknown, Error, string>; remove: UseMutationResult<void, Error, string>;
+function GeneralResult({ data, view, itemKey, onBack, retry }: {
+  data: SessionResult; view: ResultView; itemKey: string; onBack: () => void;
+  retry: UseMutationResult<unknown, Error, string>;
 }) {
   const base = `/results/${data.id}`;
   // 항목별 점수가 생기기 전에 만들어진 결과에는 이 값이 없다.
@@ -90,45 +150,41 @@ function GeneralResult({ data, view, source, onBack, retry, remove }: {
     );
   }
 
-  if (view === "strengths" || view === "improvements") {
-    const isStrength = view === "strengths";
+  if (view === "strengths" || view === "improvements" || view === "strength-detail" || view === "improvement-detail") {
+    const isStrength = view === "strengths" || view === "strength-detail";
     const entries = isStrength ? strengths : improvements;
     return (
-      <ResultFrame
-        title={isStrength ? "잘한 표현" : "개선할 표현"}
-        onBack={onBack}
-        className={sheet.page}
-      >
-        <div className={sheet.items}>
-          {entries.map((item) => (
-            <article key={item.order} className={`${sheet.evidence} ${item.category ? sheet[item.category] ?? "" : ""}`}>
-              <header className={sheet.evidenceHead}>
-                <h2>{item.title}</h2>
+      <ResultFrame title={isStrength ? "잘한 표현" : "개선할 표현"} onBack={onBack}>
+        <FeedbackAccordion
+          initialKey={itemKey}
+          emptyText={isStrength ? "이번 연습에서는 뚜렷하게 확인된 강점이 없어요." : "다듬을 점으로 정리된 표현이 없어요."}
+          entries={entries.map((item) => ({
+            key: String(item.order),
+            label: item.title,
+            preview: item.category ? generalLabels[item.category] ?? item.category : null,
+            toneClass: item.category ? sheet[item.category] ?? "" : "",
+            detail: (
+              <>
                 {item.category && (
                   <span className={sheet.badge}>{generalLabels[item.category] ?? item.category}</span>
                 )}
-              </header>
-              <h3>내가 한 말</h3>
-              <p className={sheet.quote}>
-                {item.original_expression ?? item.evidence
-                  ? `“${item.original_expression ?? item.evidence}”`
-                  : "인용할 표현이 기록되지 않았어요."}
-              </p>
-              <div className={sheet.suggestion}>
-                <strong>{isStrength ? "왜 좋았나요" : "이렇게 바꿔 보세요"}</strong>
-                {!isStrength && item.recommended_expression && (
-                  <p className={sheet.quote}>“{item.recommended_expression}”</p>
-                )}
-                {item.explanation && <p>{item.explanation}</p>}
-              </div>
-            </article>
-          ))}
-          {!entries.length && (
-            <div className={sheet.empty}>
-              {isStrength ? "이번 연습에서는 뚜렷하게 확인된 강점이 없어요." : "다듬을 점으로 정리된 표현이 없어요."}
-            </div>
-          )}
-        </div>
+                <h3>내가 한 말</h3>
+                <p className={sheet.quote}>
+                  {item.original_expression ?? item.evidence
+                    ? `“${item.original_expression ?? item.evidence}”`
+                    : "인용할 표현이 기록되지 않았어요."}
+                </p>
+                <div className={sheet.suggestion}>
+                  <strong>{isStrength ? "왜 좋았나요" : "이렇게 바꿔 보세요"}</strong>
+                  {!isStrength && item.recommended_expression && (
+                    <p className={sheet.quote}>“{item.recommended_expression}”</p>
+                  )}
+                  {item.explanation && <p>{item.explanation}</p>}
+                </div>
+              </>
+            ),
+          }))}
+        />
       </ResultFrame>
     );
   }
@@ -178,15 +234,7 @@ function GeneralResult({ data, view, source, onBack, retry, remove }: {
         ) : <p>다듬을 점으로 정리된 표현이 없어요.</p>}
       </Link>
 
-      {(retry.error || remove.error) && <div className={sheet.error} role="alert">{(retry.error ?? remove.error)?.message}</div>}
-      <div className={sheet.actions}>
-        <Link className={sheet.secondaryLink} to="/results">결과 목록</Link>
-        {source === "result" && (
-          <Button variant="danger" disabled={remove.isPending} onClick={() => remove.mutate(data.id)}>
-            {remove.isPending ? "삭제 중…" : "결과 삭제"}
-          </Button>
-        )}
-      </div>
+      {retry.error && <div className={sheet.error} role="alert">{retry.error.message}</div>}
     </ResultFrame>
   );
 }
@@ -198,6 +246,7 @@ function FailedResult({ data, retry, remove, onBack }: { data: SessionResult; re
     : data.failure_code === "AI_PROVIDER_SCHEMA_INVALID"
       ? "AI가 만든 피드백이 서버가 요구한 형식을 만족하지 못했습니다. 대화 내용은 정상적으로 저장되었습니다."
       : "종합 피드백 생성을 완료하지 못했습니다. 대화 내용은 정상적으로 저장되었습니다.";
+
   return (
     <ResultFrame title={data.practice_type === "interview" ? "면접 결과" : "결과 요약"} onBack={onBack}>
       <section className={sheet.card}>
@@ -224,64 +273,40 @@ function FailedResult({ data, retry, remove, onBack }: { data: SessionResult; re
 }
 
 
-function InterviewResult({ data, view, category, onBack, remove }: { data: SessionResult; view: ResultView; category: string; onBack: () => void; remove: UseMutationResult<void, Error, string> }) {
+function InterviewResult({ data, view, category, onBack }: { data: SessionResult; view: ResultView; category: string; onBack: () => void }) {
   const evaluation = data.interview_evaluation!;
   const base = `/results/${data.id}`;
   const strengths = evaluation.scores.filter((score) => score.strength);
   const improvements = evaluation.scores.filter((score) => score.suggestion);
 
-  if (view === "strengths" || view === "improvements") {
-    const isStrength = view === "strengths";
+  if (view === "strengths" || view === "improvements" || view === "strength-detail" || view === "improvement-detail") {
+    const isStrength = view === "strengths" || view === "strength-detail";
     const entries = isStrength ? strengths : improvements;
+    // 상단 바가 "면접 결과"이고 바로 아래에 같은 뜻의 제목이 또 있었다.
+    // 화면 이름을 상단 바 한 곳에서만 말한다.
     return (
-      <ResultFrame title="면접 결과" onBack={onBack}>
-        <h1 className={sheet.detailTitle}>
-          {isStrength ? "이번 면접에서 잘한 점" : "다음 면접에서 보완할 점"}
-        </h1>
-        <div className={sheet.items}>
-          {entries.map((score) => (
-            <Link
-              key={score.category}
-              className={sheet.item}
-              to={`${base}/${isStrength ? "strengths" : "improvements"}/${score.category}`}
-            >
-              <strong>{labels[score.category]}</strong>
-              <span>{isStrength ? score.strength : score.suggestion}</span>
-              <b aria-hidden="true">›</b>
-            </Link>
-          ))}
-          {!entries.length && (
-            <p className={sheet.empty}>
-              {isStrength ? "이번 면접에서는 뚜렷하게 확인된 강점이 없어요." : "표시할 보완 항목이 없습니다."}
-            </p>
-          )}
-        </div>
-      </ResultFrame>
-    );
-  }
-
-  if (view === "strength-detail" || view === "improvement-detail") {
-    const isStrength = view === "strength-detail";
-    const score = evaluation.scores.find((item) => item.category === category && (isStrength ? item.strength : item.suggestion));
-    return (
-      <ResultFrame title="면접 결과" onBack={onBack}>
-        <h1 className={sheet.detailTitle}>{isStrength ? "잘한 점 상세" : "부족한 점 상세"}</h1>
-        {score ? (
-          <article className={sheet.evidence}>
-            <header className={sheet.evidenceHead}>
-              <h2>{labels[score.category]}</h2>
-              <span className={sheet.badge}>{isStrength ? "잘 전달됨" : "보완 필요"}</span>
-            </header>
-            <h3>답변에서 포착된 근거</h3>
-            <p>{score.evidence ?? (isStrength ? score.strength : score.suggestion)}</p>
-            <div className={sheet.suggestion}>
-              <strong>{isStrength ? "전달 방식 관찰" : "다음 답변 제안"}</strong>
-              <p>{isStrength ? score.strength : score.suggestion}</p>
-            </div>
-          </article>
-        ) : (
-          <p className={sheet.empty}>해당 피드백을 찾을 수 없습니다.</p>
-        )}
+      <ResultFrame title={isStrength ? "잘한 점" : "보완할 점"} onBack={onBack}>
+        <FeedbackAccordion
+          initialKey={category}
+          emptyText={isStrength ? "이번 면접에서는 뚜렷하게 확인된 강점이 없어요." : "표시할 보완 항목이 없습니다."}
+          entries={entries.map((score) => ({
+            key: score.category,
+            label: labels[score.category] ?? score.category,
+            preview: isStrength ? score.strength : score.suggestion,
+            toneClass: sheet[score.category] ?? "",
+            detail: (
+              <>
+                <span className={sheet.badge}>{isStrength ? "잘 전달됨" : "보완 필요"}</span>
+                <h3>답변에서 포착된 근거</h3>
+                <p>{score.evidence ?? (isStrength ? score.strength : score.suggestion)}</p>
+                <div className={sheet.suggestion}>
+                  <strong>{isStrength ? "전달 방식 관찰" : "다음 답변 제안"}</strong>
+                  <p>{isStrength ? score.strength : score.suggestion}</p>
+                </div>
+              </>
+            ),
+          }))}
+        />
       </ResultFrame>
     );
   }
@@ -302,8 +327,8 @@ function InterviewResult({ data, view, category, onBack, remove }: { data: Sessi
         <h2>이번 면접에서 잘한 점</h2>
         {strengths.length ? (
           <div className={sheet.chips}>
-            {strengths.map((score, index) => (
-              <span key={score.category} className={sheet[`tone${index % 5}`]}>{labels[score.category]}</span>
+            {strengths.map((score) => (
+              <span key={score.category} className={sheet[score.category] ?? ""}>{labels[score.category]}</span>
             ))}
           </div>
         ) : <p>이번 면접에서는 뚜렷하게 확인된 강점이 없어요.</p>}
@@ -313,23 +338,13 @@ function InterviewResult({ data, view, category, onBack, remove }: { data: Sessi
         <h2>이번 면접에서 부족한 점</h2>
         {improvements.length ? (
           <div className={sheet.chips}>
-            {improvements.map((score, index) => (
-              <span key={score.category} className={sheet[`tone${index % 5}`]}>{labels[score.category]}</span>
+            {improvements.map((score) => (
+              <span key={score.category} className={sheet[score.category] ?? ""}>{labels[score.category]}</span>
             ))}
           </div>
         ) : <p>다음 답변에서 보완할 점을 살펴보세요.</p>}
       </Link>
 
-      {remove.error && <p className={sheet.error} role="alert">{remove.error.message}</p>}
-      <div className={sheet.actions}>
-        <Button
-          variant="danger"
-          disabled={remove.isPending}
-          onClick={() => { if (window.confirm("이 결과를 삭제할까요? 삭제 후 복구할 수 없습니다.")) remove.mutate(data.id); }}
-        >
-          {remove.isPending ? "삭제 중…" : "결과 삭제"}
-        </Button>
-      </div>
     </ResultFrame>
   );
 }
