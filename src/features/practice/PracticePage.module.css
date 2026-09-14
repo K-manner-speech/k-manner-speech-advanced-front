@@ -7,6 +7,12 @@
   line-height: var(--line-height-h1);
   font-weight: 700;
 }
+.scenarioHeadline,
+.personaHeadline {
+  margin-bottom: 0;
+  font-size: var(--font-size-h2);
+  line-height: var(--line-height-h2);
+}
 
 .list { display: grid; gap: var(--space-4); }
 
@@ -26,21 +32,80 @@
 /* 추천·선택은 테두리와 배경을 함께 바꾸고 배지로도 알린다. */
 .highlighted { border-color: var(--color-accent); background: var(--color-brand-50); }
 
+.scenarioCard {
+  position: relative;
+  align-items: stretch;
+  padding: 16px;
+}
+.scenarioCard .text {
+  width: 100%;
+  gap: 4px;
+}
+.scenarioCard .text > b {
+  font-size: var(--font-size-body-lg);
+  line-height: 22px;
+}
+.scenarioCard .badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+.personaCard {
+  align-items: flex-start;
+  padding: 16px;
+}
+.personaCard .text {
+  min-width: 0;
+  gap: 5px;
+}
+.personaAvatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  /* 4:5 인물 사진을 정사각형에 담으므로 위를 기준으로 자른다. 가운데를 쓰면
+     이마가 잘린다. */
+  object-position: center top;
+  background: var(--color-neutral-200);
+}
+.traitLabel {
+  margin-top: 2px;
+  color: var(--color-accent);
+  font-size: var(--font-size-micro);
+  line-height: 16px;
+  font-weight: 700;
+}
+.traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.traits span {
+  border: 1px solid transparent;
+  padding: 5px 8px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-body);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-caption);
+  line-height: 16px;
+  font-weight: 600;
+}
+.traits .traitWarm { color: #9a4c2f; border-color: #edc3ae; background: #f9e7dc; }
+.traits .traitPurple { color: #684f91; border-color: #d5c7ea; background: #eee8f8; }
+.traits .traitGreen { color: #287452; border-color: #b9ddcb; background: #e3f3eb; }
+.traits .traitBlue { color: #326b9b; border-color: #bdd6e9; background: #e4f0f8; }
+.traits .traitAmber { color: #8a5a16; border-color: #ead19e; background: #f8edcf; }
+.traits .traitRose { color: #a24655; border-color: #ecc2c9; background: #fae7ea; }
+.traits .traitNeutral { color: var(--color-text-body); border-color: var(--color-neutral-200); background: var(--color-surface-muted); }
+
 .icon {
   width: 24px; height: 24px; flex: 0 0 auto;
   color: var(--color-accent); background: currentColor;
   -webkit-mask: var(--icon) center/contain no-repeat;
   mask: var(--icon) center/contain no-repeat;
 }
-/* 페르소나 사진은 마스크 아이콘이 아니라 인물이다. 얼굴이 보이도록 크게 두고
-   정사각형으로 자를 때 위를 기준으로 담는다. */
-.personaIcon {
-  width: 48px; height: 48px; flex: 0 0 auto;
-  border-radius: var(--radius-pill);
-  object-fit: cover; object-position: center top;
-  background: var(--color-neutral-200);
-}
-
 .chatIcon { --icon: url("/figma/nav-5.svg"); }
 .scenarioIcon { --icon: url("/figma/nav-2.svg"); }
 .interviewIcon { --icon: url("/figma/nav-7.svg"); }
@@ -48,6 +113,31 @@
 .text { display: grid; gap: 2px; margin-right: auto; }
 .text b { font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
 .text small { color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+
+.scenarioGoal {
+  display: grid;
+  gap: 3px;
+  margin: 5px 0 4px;
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-50);
+}
+.scenarioGoal em {
+  color: var(--color-accent);
+  font-size: var(--font-size-micro);
+  line-height: 16px;
+  font-style: normal;
+  font-weight: 700;
+}
+.scenarioGoal small {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--color-text);
+  line-height: 19px;
+  font-weight: 600;
+}
 
 .badge {
   flex: 0 0 auto;
@@ -59,7 +149,12 @@
   font-weight: 700;
 }
 
-.meta { color: var(--color-text-muted); font-size: var(--font-size-caption); font-weight: 700; }
+.meta { display: flex; gap: 6px; color: var(--color-text-muted); font-size: var(--font-size-caption); font-weight: 700; }
+.meta span {
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+}
 
 .action { margin-top: var(--space-4); }
 

@@ -3,7 +3,7 @@ import { api } from "../../api/service";
 import { playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
 import { playCompletedTts, playStreamingTts } from "./ttsStreaming";
 
-vi.mock("../../api/service", () => ({ api: { audio: vi.fn() } }));
+vi.mock("../../api/service", () => ({ api: { audio: vi.fn(), retryTts: vi.fn() } }));
 vi.mock("./ttsStreaming", () => ({ playCompletedTts: vi.fn(), playStreamingTts: vi.fn() }));
 
 beforeEach(() => vi.clearAllMocks());
@@ -61,4 +61,18 @@ test("수동 재생은 스트림을 열지 않고 완성 WAV만 사용한다", a
 
   expect(playStreamingTts).not.toHaveBeenCalled();
   expect(playCompletedTts).toHaveBeenCalledWith("https://example.test/full.wav");
+});
+
+test("첫 메시지에 음성이 없으면 생성을 요청하고 기존 실시간 스트리밍 경로로 재생한다", async () => {
+  vi.mocked(api.audio)
+    .mockRejectedValueOnce(new Error("AUDIO_NOT_FOUND"))
+    .mockResolvedValueOnce({ status: "processing", signed_url: null, expires_at: null, audio_type: "persona_tts", duration_ms: null })
+    .mockResolvedValueOnce({ status: "ready", signed_url: "https://example.test/full.wav", expires_at: null, audio_type: "persona_tts", duration_ms: 4_000 });
+  vi.mocked(api.retryTts).mockResolvedValue({} as never);
+  vi.mocked(playStreamingTts).mockResolvedValue({ firstByteMs: 250, firstRenderMs: 1_100, completeMs: 3_000, underrunMs: 0, pcmDurationMs: 4_000 });
+
+  await playManualMessageAudio("opening-message");
+
+  expect(api.retryTts).toHaveBeenCalledWith("opening-message");
+  expect(playStreamingTts).toHaveBeenCalledWith("opening-message");
 });

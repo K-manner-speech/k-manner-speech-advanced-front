@@ -81,16 +81,20 @@ test("전송 뒤 늦게 도착한 목표 달성을 폴링으로 받아온다", a
   vi.useRealTimers();
 });
 
-test("시나리오 상황 브리핑을 대화 화면에 보여준다", async () => {
-  // 헤더의 goal 문단은 모바일 CSS 가 숨긴다. 브리핑은 전용 영역이어야 한다.
+test("시나리오 상황 브리핑은 기본으로 접고 사용자가 펼칠 수 있다", async () => {
+  const user = userEvent.setup();
   const briefing = "점심시간인데 학생 식당이 어디인지 모른다. 선배에게 물어보자.";
   vi.mocked(api.room).mockResolvedValue({ ...goalAchievedRoom(), ended_reason: null, goal: briefing });
   vi.mocked(api.messages).mockResolvedValue({ items: [], next_cursor: null });
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
 
-  // 목표는 접어 두지 않고 상대 사진 위에 항상 띄운다. 접어 두면 무엇을 하는
-  // 중인지 잊는다.
-  expect(await screen.findByText(briefing)).toBeInTheDocument();
+  const toggle = await screen.findByRole("button", { name: /이번 대화의 미션/ });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(screen.queryByText(briefing)).not.toBeInTheDocument();
+
+  await user.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByText(briefing)).toBeInTheDocument();
 });
 
 test("면접 화면에는 상황 브리핑을 띄우지 않는다", async () => {
