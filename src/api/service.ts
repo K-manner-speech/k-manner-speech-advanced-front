@@ -3,6 +3,10 @@ import { http, unwrap } from "./http";
 import { createIdempotencyKey } from "../lib/idempotency";
 
 export type Me = components["schemas"]["MeResponse"];
+/** 지원 유형은 서버가 세 값만 받는다. 화면이 아무 문자열이나 보내지 못하게 계약에서 가져온다. */
+export type ApplicationType = NonNullable<
+  components["schemas"]["InterviewSetupCreateRequest"]["application_type"]
+>;
 export type Persona = components["schemas"]["PersonaSummary"];
 export type Scenario = components["schemas"]["ScenarioSummary"];
 export type Room = components["schemas"]["Room"];
@@ -253,11 +257,11 @@ export const api = {
       }),
     );
   },
-  async createInterviewSetup(desiredRole: string, applicationType: string) {
+  async createInterviewSetup(desiredRole: string, applicationType: ApplicationType) {
     return unwrap(
       await http.POST("/api/v1/interview-setups", {
         params: { header: { "Idempotency-Key": createIdempotencyKey() } },
-        body: { desired_role: desiredRole, application_type: applicationType || null },
+        body: { desired_role: desiredRole, application_type: applicationType },
       }),
     );
   },

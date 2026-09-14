@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, waitForTerminal } from "../../api/service";
+import { api, waitForTerminal, type ApplicationType } from "../../api/service";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
@@ -15,6 +15,17 @@ type Screen = "conditions" | "attachments" | "preparing" | "confirmation";
 type Stage = "uploading" | "analyzing" | "generating";
 type DocumentType = "resume" | "portfolio" | "self_introduction";
 
+const APPLICATION_TYPES = ["신입", "경력", "인턴"] as const satisfies readonly ApplicationType[];
+const APPLICATION_TYPE_LABELS: Record<ApplicationType, string> = {
+  신입: "Entry-level",
+  경력: "Experienced",
+  인턴: "Intern",
+};
+
+function isApplicationType(value: string): value is ApplicationType {
+  return (APPLICATION_TYPES as readonly string[]).includes(value);
+}
+
 export function InterviewPage() {
   const en = usePreferences((state) => state.language) === "en";
   const tr = (ko: string, english: string) => en ? english : ko;
@@ -22,7 +33,7 @@ export function InterviewPage() {
   const [screen, setScreen] = useState<Screen>("conditions");
   const [stage, setStage] = useState<Stage>("uploading");
   const [desiredRole, setDesiredRole] = useState(en ? "Backend Developer" : "백엔드 개발자");
-  const [applicationType, setApplicationType] = useState("신입");
+  const [applicationType, setApplicationType] = useState<ApplicationType>("신입");
   const [files, setFiles] = useState<Partial<Record<DocumentType, File>>>({});
   const [fileError, setFileError] = useState<string | null>(null);
   const [configurationId, setConfigurationId] = useState<string | null>(null);
@@ -32,7 +43,7 @@ export function InterviewPage() {
       if (!files.resume) throw new Error("이력서 파일을 먼저 선택해 주세요.");
       setScreen("preparing");
       setStage("uploading");
-      const setup = await api.createInterviewSetup(desiredRole.trim(), applicationType.trim());
+      const setup = await api.createInterviewSetup(desiredRole.trim(), applicationType);
       const uploaded = [];
       for (const [documentType, selectedFile] of Object.entries(files) as [DocumentType, File][]) {
         uploaded.push(await api.uploadInterviewDocument(setup.id, selectedFile, documentType));
@@ -100,16 +111,19 @@ export function InterviewPage() {
         aria-label={tr("지원 유형", "Application Type")}
         placeholder={tr("지원 유형을 입력해 주세요", "Select an application type")}
         value={applicationType}
-        onChange={(event) => setApplicationType(event.target.value)}
-        options={[
-          { value: "신입", label: tr("신입", "Entry-level") },
-          { value: "경력", label: tr("경력", "Experienced") },
-          { value: "인턴", label: tr("인턴", "Intern") },
-        ]}
+        // select 는 문자열만 돌려준다. 계약에 있는 값인지 확인하고 받는다.
+        onChange={(event) => {
+          const value = event.target.value;
+          if (isApplicationType(value)) setApplicationType(value);
+        }}
+        options={APPLICATION_TYPES.map((value) => ({
+          value,
+          label: tr(value, APPLICATION_TYPE_LABELS[value]),
+        }))}
       />
     </div>
     <div className={styles.actions}>
-      <Button disabled={!desiredRole.trim() || !applicationType.trim()} onClick={() => setScreen("attachments")}>{tr("다음", "Next")}</Button>
+      <Button disabled={!desiredRole.trim()} onClick={() => setScreen("attachments")}>{tr("다음", "Next")}</Button>
     </div>
   </InterviewFrame>;
 
