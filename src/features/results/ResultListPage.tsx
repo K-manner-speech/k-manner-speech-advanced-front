@@ -91,8 +91,11 @@ export function ResultListPage() {
                   <span className={styles.score}>{result.overall_score}점<b aria-hidden="true">›</b></span>
                 )}
               </div>
+              {/* 목록은 훑는 화면이라 AI 가 따로 써 준 한 문장을 쓴다. 짧은 요약이
+                  없던 시절의 결과는 긴 요약을 두 줄까지만 보여 준다. */}
               <p>
-                {result.summary
+                {result.short_summary
+                  ?? result.summary
                   ?? (result.missing_categories.length
                     ? `누락 항목 ${result.missing_categories.length}개를 제외한 피드백이에요.`
                     : "완료한 연습의 강점과 개선점을 확인해 보세요.")}
