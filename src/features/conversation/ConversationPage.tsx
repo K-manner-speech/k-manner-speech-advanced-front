@@ -7,7 +7,7 @@ import { PersonaAvatar } from "../../components/ui/PersonaAvatar";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import chat from "./ConversationPage.module.css";
 import { Button } from "../../components/ui/Button";
-import { INTERVIEWER_AVATAR_KEY, latestPersonaReaction } from "./personaImage";
+import { INTERVIEWER_AVATAR_KEY, INTERVIEWER_NAME, INTERVIEWER_ROLE, latestPersonaReaction } from "./personaImage";
 import { AudioGenerationFailedError, playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
 import { primeStreamingTts, stopActiveTtsPlayback } from "./ttsStreaming";
 
@@ -361,8 +361,8 @@ export function ConversationPage() {
           />
           <div className={chat.heroOverlay}>
             <span className={chat.heroText}>
-              <b>{isInterview ? "현우 면접관" : (room.data?.title ?? "대화 연습")}</b>
-              <small>{isInterview ? "기술 면접관 · Technical Interviewer" : `${personaLabel}과 대화 연습`}</small>
+              <b>{isInterview ? INTERVIEWER_NAME : (room.data?.title ?? "대화 연습")}</b>
+              <small>{isInterview ? `${INTERVIEWER_ROLE} · 면접관` : `${personaLabel}과 대화 연습`}</small>
             </span>
             <span className={chat.emotion}>{currentEmotionLabel}</span>
           </div>
@@ -374,10 +374,10 @@ export function ConversationPage() {
           <p className={chat.empty}>첫 문장을 보내 대화를 시작해 보세요.</p>
         )}
         {isInterview && currentQuestion && !hasInterviewerMessage && (
-          <article className={`${chat.turn} ${chat.personaTurn}`} role="group" aria-label="현우 면접관의 질문">
+          <article className={`${chat.turn} ${chat.personaTurn}`} role="group" aria-label={`${INTERVIEWER_NAME}의 질문`}>
             <PersonaAvatar className={chat.avatar} avatarKey={personaAvatarKey} alt="" />
             <div className={chat.personaContent}>
-              <b className={chat.senderName}>현우 면접관 · 면접관</b>
+              <b className={chat.senderName}>{INTERVIEWER_NAME} · 면접관</b>
               <div className={chat.row}>
                 <p className={`${chat.bubble} ${chat.interviewer}`}>{currentQuestion.text}</p>
                 <button type="button" className={chat.speak} aria-label="면접 질문 음성 재생" disabled>
@@ -388,10 +388,10 @@ export function ConversationPage() {
           </article>
         )}
         {sortedMessages.map((message) => message.sender_type === "persona" && isInterview ? (
-          <article key={message.id} className={`${chat.turn} ${chat.personaTurn}`} role="group" aria-label={message.sequence_no === 1 ? "현우 면접관의 질문" : "현우 면접관의 답변"}>
+          <article key={message.id} className={`${chat.turn} ${chat.personaTurn}`} role="group" aria-label={`${INTERVIEWER_NAME}의 ${message.sequence_no === 1 ? "질문" : "답변"}`}>
             <PersonaAvatar className={chat.avatar} avatarKey={personaAvatarKey} emotion={message.emotion?.label} alt="" />
             <div className={chat.personaContent}>
-              <b className={chat.senderName}>현우 면접관 · 면접관</b>
+              <b className={chat.senderName}>{INTERVIEWER_NAME} · 면접관</b>
               <div className={chat.row}>
                 <p className={`${chat.bubble} ${chat.interviewer}`}>{message.content}</p>
                 <button
