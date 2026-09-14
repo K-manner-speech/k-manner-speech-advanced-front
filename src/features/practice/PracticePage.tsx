@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/service";
 import { Button } from "../../components/ui/Button";
+import { PersonaAvatar } from "../../components/ui/PersonaAvatar";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { StatusPanel } from "../../components/ui/StatusPanel";
 import styles from "./PracticePage.module.css";
@@ -80,7 +81,7 @@ export function PracticePage() {
               </span>
             </button>
             <button
-              className={`${styles.card} ${styles.highlighted}`}
+              className={styles.card}
               onClick={() => { setPracticeType("scenario"); setStep("scenario"); }}
             >
               <span className={`${styles.icon} ${styles.scenarioIcon}`} aria-hidden="true" />
@@ -88,7 +89,6 @@ export function PracticePage() {
                 <b>시나리오</b>
                 <small>실제 상황에 맞춰 표현을 연습해요</small>
               </span>
-              <span className={styles.badge}>오늘 추천</span>
             </button>
             <button className={styles.card} onClick={() => navigate("/interview")}>
               <span className={`${styles.icon} ${styles.interviewIcon}`} aria-hidden="true" />
@@ -113,9 +113,9 @@ export function PracticePage() {
                   disabled={createRoom.isPending}
                   onClick={() => createRoom.mutate(persona.id)}
                 >
-                  <img
-                    className={styles.icon}
-                    src="/personas/neutral.png"
+                  <PersonaAvatar
+                    className={styles.personaIcon}
+                    avatarKey={persona.avatar_key}
                     alt={`${persona.role_title ?? "대화 상대"} ${persona.name}의 차분한 표정`}
                   />
                   <span className={styles.text}>

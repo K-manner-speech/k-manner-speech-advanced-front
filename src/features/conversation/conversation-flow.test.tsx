@@ -15,7 +15,7 @@ vi.mock("../../api/service", async () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "대화", practice_type: "free_chat", persona_id: "p1", persona_name: "민준 팀장", scenario_id: null, status: "in_progress", turn_count: 0, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:00Z", goal: "연습" });
+  vi.mocked(api.room).mockResolvedValue({ id: "r1", title: "대화", practice_type: "free_chat", persona_id: "p1", persona_name: "민준 팀장", persona_avatar_key: "test-team-lead", scenario_id: null, status: "in_progress", turn_count: 0, ended_reason: null, started_at: "2026-01-01T00:00:00Z", completed_at: null, updated_at: "2026-01-01T00:00:00Z", goal: "연습" });
   vi.mocked(api.messages).mockResolvedValue({ items: [], next_cursor: null });
 });
 
@@ -164,7 +164,8 @@ test("AI 메시지에는 음성 재생만 제공한다", async () => {
   const user = userEvent.setup();
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/rooms/r1"]}><Routes><Route path="/rooms/:roomId" element={<ConversationPage />} /></Routes></MemoryRouter></QueryClientProvider>);
 
-  expect(await screen.findByRole("img", { name: "대화 상대의 불편함 표정" })).toHaveAttribute("src", "/personas/angry.png");
+  // 인물은 방의 avatar_key 가, 표정은 감정이 정한다.
+  expect(await screen.findByRole("img", { name: "대화 상대의 불편함 표정" })).toHaveAttribute("src", "/personas/test-team-lead/angry.png");
   expect(screen.getAllByText("민준 팀장").length).toBeGreaterThan(0);
   expect(screen.getByText("시스템")).toBeInTheDocument();
   expect(screen.queryByText("AI 대화 상대")).not.toBeInTheDocument();
