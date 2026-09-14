@@ -91,6 +91,18 @@ npm run contract-check
 
 이메일 변경 화면은 두지 않습니다. 가입 주소가 계정을 가리키는 이름이므로 `/me`에서 읽기 전용으로만 보여 줍니다.
 
+## 표시 언어와 대화 화면
+
+표시 언어로 English를 선택하면 공용 하단 메뉴, 표시 언어 설정, 홈, 연습 유형·상대·시나리오 선택과 면접 준비 안내가 영어로 바뀝니다. 실제 자유채팅·상황 시나리오·면접 대화와 대화 기록, 결과·피드백은 한국어 학습 콘텐츠이므로 한국어로 유지합니다.
+
+`/rooms/:roomId` 대화 화면에서는 자유채팅·상황 시나리오·면접 모두 공용 하단 내비게이션을 숨깁니다. 화면을 뒤로 나가더라도 연습을 종료하지 않으며 진행 중인 방은 대화방 목록에서 이어갈 수 있습니다.
+
+## 결과·피드백 표시
+
+면접 결과 상단의 `interview_evaluation.summary`는 면접 전체 총평입니다. 항목별 `interview_evaluation.scores[].summary`는 접힌 보완점 카드의 짧은 요약이며, 카드를 펼치면 같은 항목의 `suggestion`과 `evidence`를 표시합니다. 이름이 같은 두 `summary`는 JSON 경로와 용도가 다릅니다. 면접 잘한 점은 기존 `strength`를 유지합니다.
+
+자유채팅·상황 시나리오 결과는 `result_items.title`을 접힌 카드의 요약으로 사용하고, 펼친 카드에서 `explanation`, `original_expression`, `recommended_expression`을 보여 줍니다.
+
 ## 실시간 TTS 재생
 
 페르소나 음성은 두 경로로 재생합니다. 생성이 끝나기를 기다리지 않는 `GET /api/v1/messages/{message_id}/audio/stream`
@@ -99,6 +111,8 @@ npm run contract-check
 끝난 경우에는 완성 음성의 남은 뒷부분만 이어서 재생합니다. 관련 코드는
 `src/features/conversation/ttsStreaming.ts`와 `audioPlayback.ts`이며, 버퍼 정책은 `STREAMING_TTS_BUFFER_POLICY`
 한 곳에서 정합니다.
+
+현재 PCM 재생은 최초 1초 분량을 모은 뒤 시작하고, 재생 중 청크가 끊기면 0.5초 분량을 다시 모은 뒤 이어서 재생합니다. 완성 음성 조회는 처리 중일 때 0.5초 간격으로 확인하며, 스트림을 사용할 수 없거나 중간에 실패하면 완성 음성 재생으로 전환합니다.
 
 ## 브랜치
 
