@@ -49,20 +49,18 @@
 .choice p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* 칩도 항목 색을 쓴다. 요약에서 본 색과 목록·펼친 내용의 색이 같아야
+   같은 항목이라는 것이 읽힌다. 순서로 색을 주면 화면마다 색이 달라진다. */
 .chips span {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-pill);
+  color: var(--bar, var(--color-text-body));
+  background: var(--tint, var(--color-surface-muted));
   font-size: var(--font-size-caption);
   font-weight: 700;
 }
 /* 항목마다 색을 달리하되 이름을 함께 적어 색만으로 구분하지 않게 한다. */
-.tone0 { color: #2f5d8c; background: #dbe8f5; }
-.tone1 { color: #8a5a20; background: #f7e6cd; }
-.tone2 { color: #7a5aa8; background: #e8ddf6; }
-.tone3 { color: #2f6f52; background: #d9eee2; }
-.tone4 { color: #99453a; background: #f7dcd7; }
 
-.detailTitle { margin: 0 0 var(--space-4); color: var(--color-text); font-size: var(--font-size-h1); line-height: var(--line-height-h1); font-weight: 700; }
 
 .items { display: grid; gap: var(--space-3); }
 .item {
@@ -147,3 +145,41 @@
 .courtesy { --tint: #fdf3f4; --tint-border: #f2dade; }
 .context_fit { --tint: #fbf5ea; --tint-border: #ecdcc0; }
 .naturalness { --tint: #f2f7f3; --tint-border: #d5e5d9; }
+
+/* 피드백 항목 아코디언. 접혀 있을 때와 펼쳤을 때가 같은 카드이고 같은 색이다.
+   색이 바뀌면 방금 누른 항목이 어느 것이었는지 다시 찾아야 한다. */
+.accordion {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--tint-border, var(--color-card-border));
+  background: var(--tint, var(--color-card));
+  overflow: hidden;
+}
+.accordionHead {
+  width: 100%;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 0; background: transparent;
+  color: var(--color-text); font-family: inherit; text-align: left; cursor: pointer;
+}
+.accordionTitle { display: grid; gap: 2px; }
+.accordionTitle strong {
+  color: var(--bar, var(--color-text));
+  font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700;
+}
+.accordionTitle span { color: var(--color-text-muted); font-size: var(--font-size-body-sm); line-height: 17px; }
+/* 펼침 방향을 화살표로 알린다. 접혔을 때는 오른쪽, 펼치면 아래를 가리킨다. */
+.accordionMark {
+  color: var(--color-text-muted); font-size: var(--font-size-h2); font-weight: 400;
+  transition: transform .15s ease;
+}
+.accordionOpen .accordionMark { transform: rotate(90deg); }
+.accordionPanel { padding: 0 var(--space-5) var(--space-5); }
+.accordionPanel h3 { margin: var(--space-4) 0 var(--space-2); color: var(--color-text-muted); font-size: var(--font-size-caption); font-weight: 700; }
+.accordionPanel > p { margin: 0; color: var(--color-text); font-size: var(--font-size-body); line-height: 19px; }
+
+/* 면접 다섯 항목의 색. 일반 대화 네 항목과 같은 방식으로 옅게 입힌다. */
+.question_understanding_fit { --bar: #2f5d8c; --tint: #f0f5fa; --tint-border: #cfdff0; }
+.answer_structure { --bar: #99453a; --tint: #fdf2f0; --tint-border: #f2d7d1; }
+.specificity_evidence { --bar: #8a5a20; --tint: #fbf5ea; --tint-border: #ecdcc0; }
+.job_fit_problem_solving { --bar: #2f6f52; --tint: #f1f8f4; --tint-border: #cfe6d9; }
+.delivery_attitude { --bar: #7a5aa8; --tint: #f6f2fb; --tint-border: #ddd2ee; }

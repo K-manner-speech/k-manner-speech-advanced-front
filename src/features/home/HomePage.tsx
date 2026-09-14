@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api/service";
 import { Button } from "../../components/ui/Button";
+import { PersonaAvatar } from "../../components/ui/PersonaAvatar";
 import { StatusPanel } from "../../components/ui/StatusPanel";
 import styles from "./HomePage.module.css";
 
@@ -101,9 +102,9 @@ export function HomePage() {
           {recommendation.opening_message && (
             <div className={styles.preview}>
               <div className={styles.previewWho}>
-                <img
+                <PersonaAvatar
                   className={styles.avatar}
-                  src="/personas/neutral.png"
+                  avatarKey={recommendation.persona_avatar_key}
                   alt={`${recommendation.relationship_label ?? "대화 상대"} ${recommendation.persona_name ?? ""}의 차분한 표정`}
                 />
                 <b>

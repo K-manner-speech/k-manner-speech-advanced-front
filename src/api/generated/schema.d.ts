@@ -1594,6 +1594,8 @@ export interface components {
             persona_id: string | null;
             /** Persona Name */
             persona_name: string | null;
+            /** Persona Avatar Key */
+            persona_avatar_key?: string | null;
             /** Relationship Label */
             relationship_label: string | null;
             /** Opening Message */
@@ -1734,6 +1736,8 @@ export interface components {
             goal: string | null;
             /** Persona Name */
             persona_name: string | null;
+            /** Persona Avatar Key */
+            persona_avatar_key?: string | null;
             /** Interview Configuration Id */
             interview_configuration_id?: string | null;
             /** Current Interview Question Id */
@@ -1878,6 +1882,8 @@ export interface components {
             overall_score?: number | null;
             /** Summary */
             summary?: string | null;
+            /** Short Summary */
+            short_summary?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1928,6 +1934,8 @@ export interface components {
             overall_score?: number | null;
             /** Summary */
             summary?: string | null;
+            /** Short Summary */
+            short_summary?: string | null;
             /**
              * Created At
              * Format: date-time

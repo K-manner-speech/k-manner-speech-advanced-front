@@ -65,6 +65,10 @@
   flex: 0 0 auto;
   border-radius: var(--radius-pill);
   object-fit: cover;
+  /* 4:5 인물 사진을 정사각형에 담으므로 위를 기준으로 자른다. 가운데를 쓰면
+     이마가 잘린다. */
+  object-position: center top;
+  background: var(--color-neutral-200);
 }
 .traitLabel {
   margin-top: 2px;

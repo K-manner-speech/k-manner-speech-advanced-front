@@ -3,10 +3,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, waitForTerminal, type Message } from "../../api/service";
 import { StatusPanel } from "../../components/ui/StatusPanel";
+import { PersonaAvatar } from "../../components/ui/PersonaAvatar";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import chat from "./ConversationPage.module.css";
 import { Button } from "../../components/ui/Button";
-import { latestPersonaReaction, personaImageForEmotion } from "./personaImage";
+import { INTERVIEWER_AVATAR_KEY, latestPersonaReaction } from "./personaImage";
 import { AudioGenerationFailedError, playAutomaticMessageAudio, playManualMessageAudio } from "./audioPlayback";
 import { primeStreamingTts, stopActiveTtsPlayback } from "./ttsStreaming";
 
@@ -308,6 +309,10 @@ export function ConversationPage() {
 
   // 면접은 I 섹션에서 따로 다룬다. 여기서는 자유채팅·시나리오 화면을 그린다.
   const personaLabel = room.data?.persona_name ?? "대화 상대";
+  // 인물은 방의 페르소나가 정한다. 면접방에는 아직 페르소나 행이 없어 키가 비므로
+  // 임시로 팀장 이미지를 빌려 쓴다. 면접관 페르소나가 생기면 이 분기를 지운다.
+  const personaAvatarKey = room.data?.persona_avatar_key
+    ?? (isInterview ? INTERVIEWER_AVATAR_KEY : null);
 
   return (
     <div className={`${chat.screen} ${isInterview ? chat.interviewScreen : ""}`}>
@@ -349,8 +354,9 @@ export function ConversationPage() {
         )}
 
         <section className={chat.hero}>
-          <img
-            src={personaImageForEmotion(currentEmotion)}
+          <PersonaAvatar
+            avatarKey={personaAvatarKey}
+            emotion={currentEmotion}
             alt={`${isInterview ? "면접 상대" : "대화 상대"}의 ${currentEmotionLabel} 표정`}
           />
           <div className={chat.heroOverlay}>
@@ -369,7 +375,7 @@ export function ConversationPage() {
         )}
         {isInterview && currentQuestion && !hasInterviewerMessage && (
           <article className={`${chat.turn} ${chat.personaTurn}`} role="group" aria-label="현우 면접관의 질문">
-            <img className={chat.avatar} src="/personas/neutral.png" alt="" />
+            <PersonaAvatar className={chat.avatar} avatarKey={personaAvatarKey} alt="" />
             <div className={chat.personaContent}>
               <b className={chat.senderName}>현우 면접관 · 면접관</b>
               <div className={chat.row}>
@@ -383,7 +389,7 @@ export function ConversationPage() {
         )}
         {sortedMessages.map((message) => message.sender_type === "persona" && isInterview ? (
           <article key={message.id} className={`${chat.turn} ${chat.personaTurn}`} role="group" aria-label={message.sequence_no === 1 ? "현우 면접관의 질문" : "현우 면접관의 답변"}>
-            <img className={chat.avatar} src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" />
+            <PersonaAvatar className={chat.avatar} avatarKey={personaAvatarKey} emotion={message.emotion?.label} alt="" />
             <div className={chat.personaContent}>
               <b className={chat.senderName}>현우 면접관 · 면접관</b>
               <div className={chat.row}>
@@ -425,7 +431,7 @@ export function ConversationPage() {
           </article>
         ) : (
           <article className={`${chat.turn} ${chat.personaTurn}`} key={message.id}>
-            <img className={chat.avatar} src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" />
+            <PersonaAvatar className={chat.avatar} avatarKey={personaAvatarKey} emotion={message.emotion?.label} alt="" />
             <div className={chat.personaContent}>
               <b className={chat.senderName}>{message.sender_type === "system" ? "시스템" : personaLabel}</b>
               <div className={chat.row}>

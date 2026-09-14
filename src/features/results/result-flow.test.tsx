@@ -54,10 +54,22 @@ test("면접 결과는 R21에서 R25·R27 목록과 R22·R23 상세로 이동한
   </Routes></MemoryRouter></QueryClientProvider>);
   expect(await screen.findByRole("heading", { name: "면접 총평" })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("link", { name: "이번 면접에서 잘한 점" }));
-  expect(await screen.findByRole("heading", { name: "이번 면접에서 잘한 점" })).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("link", { name: /구체성·근거/ }));
-  expect(await screen.findByRole("heading", { name: "잘한 점 상세" })).toBeInTheDocument();
+  // 화면 이름은 상단 바 한 곳에서만 말한다. 같은 제목을 두 번 두지 않는다.
+  expect(await screen.findByRole("heading", { name: "잘한 점" })).toBeInTheDocument();
+  // 항목은 다른 화면으로 넘기지 않고 그 자리에서 펼친다. 다른 항목과 견주어
+  // 보려고 매번 뒤로 갈 필요가 없어야 한다.
+  const item = screen.getByRole("button", { name: /구체성·근거/ });
+  expect(item).toHaveAttribute("aria-expanded", "false");
+  await userEvent.click(item);
+  expect(item).toHaveAttribute("aria-expanded", "true");
   expect(screen.getByText("사용자 조사 결과를 바탕으로 개선했습니다.")).toBeInTheDocument();
+  // 화면은 그대로다.
+  expect(screen.getByRole("heading", { name: "잘한 점" })).toBeInTheDocument();
+
+  // 다시 누르면 접힌다.
+  await userEvent.click(item);
+  expect(item).toHaveAttribute("aria-expanded", "false");
+  expect(screen.queryByText("사용자 조사 결과를 바탕으로 개선했습니다.")).not.toBeInTheDocument();
 });
 
 test("강점이 없으면 사실을 명확히 안내하고 보완 항목 5개를 모두 보여준다", async () => {
@@ -104,14 +116,31 @@ test("방 경로와 결과 ID 경로가 서로 다른 조회 API를 사용한다
   expect(api.resultById).toHaveBeenCalledWith("res1");
 });
 
-test("저장 결과 삭제를 취소하면 API를 호출하지 않는다", async () => {
+const failedResult = {
+  ...snapshot, status: "failed" as const, failure_code: "JOB_DEADLINE_EXCEEDED", overall_score: null,
+  interview_evaluation: { status: "failed" as const, overall_score: null, summary: null, scores: [], missing_categories: ["question_understanding_fit" as const] },
+};
+
+test("종합 피드백에는 결과 목록·결과 삭제 버튼을 두지 않는다", async () => {
+  // 읽는 화면이라 아래쪽을 행동 버튼으로 채우지 않는다. 삭제는 생성에 실패한
+  // 결과를 정리할 때만 필요하므로 그 화면에만 남긴다.
+  renderAt("/results/res1", <ResultPage source="result" />);
+
+  expect(await screen.findByText("질문의 의도를 빠르게 이해했어요.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "결과 삭제" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "결과 목록" })).not.toBeInTheDocument();
+});
+
+test("생성에 실패한 결과는 삭제를 취소하면 API를 호출하지 않는다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue(failedResult);
   vi.spyOn(window, "confirm").mockReturnValue(false);
   renderAt("/results/res1", <ResultPage source="result" />);
   await userEvent.click(await screen.findByRole("button", { name: "결과 삭제" }));
   expect(api.deleteResult).not.toHaveBeenCalled();
 });
 
-test("면접 결과 삭제 성공 시 목록으로 이동한다", async () => {
+test("생성에 실패한 결과를 삭제하면 목록으로 이동한다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue(failedResult);
   vi.spyOn(window, "confirm").mockReturnValue(true);
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/results/res1"]}><Routes>
     <Route path="/results/:resultId" element={<ResultPage source="result" />} />
@@ -123,7 +152,8 @@ test("면접 결과 삭제 성공 시 목록으로 이동한다", async () => {
   expect(await screen.findByRole("heading", { name: "결과 목록 화면" })).toBeInTheDocument();
 });
 
-test("면접 결과 삭제 실패를 화면에 표시한다", async () => {
+test("생성에 실패한 결과의 삭제 실패를 화면에 표시한다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue(failedResult);
   vi.spyOn(window, "confirm").mockReturnValue(true);
   vi.mocked(api.deleteResult).mockRejectedValue(new Error("결과를 삭제하지 못했습니다."));
   renderAt("/results/res1", <ResultPage source="result" />);
@@ -191,6 +221,16 @@ test("항목별 점수를 누르면 R02 상세 평가로 간다", async () => {
   expect(screen.getByText("존댓말을 지켜 보세요.")).toBeInTheDocument();
 });
 
+test("항목 주소로 바로 들어오면 그 항목이 펼쳐진 채 열린다", async () => {
+  // 예전 상세 화면 주소를 그대로 두되 화면을 넘기지 않고 해당 항목만 펼친다.
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/results/res1/strengths/specificity_evidence"]}><Routes>
+    <Route path="/results/:resultId/strengths/:key" element={<ResultPage source="result" view="strength-detail" />} />
+  </Routes></MemoryRouter></QueryClientProvider>);
+
+  expect(await screen.findByRole("button", { name: /구체성·근거/ })).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByText("사용자 조사 결과를 바탕으로 개선했습니다.")).toBeInTheDocument();
+});
+
 test("잘한 점과 개선할 점은 각각 한 화면에 표현을 모아 보여 준다", async () => {
   vi.mocked(api.resultById).mockResolvedValue(generalSnapshot as never);
   renderGeneralRoutes("/results/res1");
@@ -198,6 +238,7 @@ test("잘한 점과 개선할 점은 각각 한 화면에 표현을 모아 보�
   await userEvent.click(await screen.findByRole("link", { name: "개선할 점" }));
 
   expect(await screen.findByRole("heading", { name: "개선할 표현" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: /첫 인사의 존댓말과 호칭을 일관되게 사용하기/ }));
   // 내가 한 말과 추천 표현은 인용으로 감싸 설명과 구분한다.
   expect(screen.getByText("“안녕?”")).toBeInTheDocument();
   expect(screen.getByText("“안녕하세요, 선배님!”")).toBeInTheDocument();
@@ -238,6 +279,25 @@ test("피드백 목록은 행마다 점수와 한 줄 요약을 보여 준다", 
   expect(screen.getByText("정중하고 자연스럽게 필요한 정보를 물었어요.")).toBeInTheDocument();
   // 자리를 채운 날짜여야 줄끼리 세로로 맞는다.
   expect(screen.getByText("2026/08/21")).toBeInTheDocument();
+});
+
+test("목록은 긴 요약 대신 AI 가 따로 써 준 한 문장을 보여 준다", async () => {
+  // 긴 요약을 잘라 쓰면 문장이 끊겨 무슨 말인지 알 수 없다. 목록용 문장을 따로 받는다.
+  const rows = [
+    { ...listRows[0], short_summary: "답변 흐름이 안정적이었어요.", summary: "대화 전체에서 지원자는 질문의 의도를 빠르게 이해했고, 근거를 들어 설명했으며, 후속 질문에도 일관된 태도를 유지했습니다." },
+  ];
+  vi.mocked(api.results).mockResolvedValue({ items: rows, next_cursor: null } as never);
+  renderAt("/results", <ResultListPage />);
+
+  expect(await screen.findByText("답변 흐름이 안정적이었어요.")).toBeInTheDocument();
+  expect(screen.queryByText(/대화 전체에서 지원자는/)).not.toBeInTheDocument();
+});
+
+test("짧은 요약이 없던 예전 결과는 긴 요약을 그대로 쓴다", async () => {
+  vi.mocked(api.results).mockResolvedValue({ items: listRows, next_cursor: null } as never);
+  renderAt("/results", <ResultListPage />);
+
+  expect(await screen.findByText("정중하고 자연스럽게 필요한 정보를 물었어요.")).toBeInTheDocument();
 });
 
 test("점수를 아직 못 매긴 결과는 빈 자리 대신 진행 상태를 보여 준다", async () => {

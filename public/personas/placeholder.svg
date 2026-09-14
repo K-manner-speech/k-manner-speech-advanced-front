@@ -1,0 +1,10 @@
+<!--
+  이미지가 아직 준비되지 않은 페르소나의 자리 표시자다. 다른 페르소나의 얼굴을
+  대신 보여 주면 사용자가 인물을 잘못 익히므로, 특정 인물로 읽히지 않는 실루엣을
+  쓴다. 가이드의 4:5 비율을 따른다.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" width="240" height="300" role="img" aria-label="준비 중인 페르소나 이미지">
+  <rect width="240" height="300" fill="#e8eaf0" />
+  <circle cx="120" cy="115" r="46" fill="#b9bfcd" />
+  <path d="M32 300c0-48 39-86 88-86s88 38 88 86z" fill="#b9bfcd" />
+</svg>
