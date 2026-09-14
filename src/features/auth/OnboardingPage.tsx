@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { api } from "../../api/service";
+import { usePreferences } from "../../store/preferences";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
 import { SelectField } from "../../components/ui/SelectField";
@@ -43,6 +44,7 @@ export function OnboardingPage() {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<"profile" | "language">("profile");
   const [displayLanguage, setDisplayLanguage] = useState<"ko" | "en">("ko");
+  const setLanguage = usePreferences((state) => state.setLanguage);
   const form = useForm<Values>({ resolver: zodResolver(schema) });
 
   const mutation = useMutation({
@@ -58,6 +60,7 @@ export function OnboardingPage() {
       return api.completeOnboarding();
     },
     onSuccess: async () => {
+      setLanguage(displayLanguage);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       navigate("/", { replace: true });
     },

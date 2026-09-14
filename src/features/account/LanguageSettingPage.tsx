@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/service";
 import { Button } from "../../components/ui/Button";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { StatusPanel } from "../../components/ui/StatusPanel";
+import { usePreferences } from "../../store/preferences";
 import styles from "./LanguageSettingPage.module.css";
 
 type Option = { value: string; name: string; sub: string };
@@ -41,15 +43,32 @@ const COPY = {
 } as const;
 
 export function LanguageSettingPage({ kind }: { kind: "native" | "display" }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const me = useQuery({ queryKey: ["me"], queryFn: api.me });
   const [picked, setPicked] = useState<string | null>(null);
-  const copy = COPY[kind];
+  const setLanguage = usePreferences((state) => state.setLanguage);
+  const copy = {
+    ...COPY[kind],
+    title: t(`language.${kind}.title`),
+    lead: t(`language.${kind}.lead`),
+    noticeTitle: t(`language.${kind}.noticeTitle`),
+    noticeBody: t(`language.${kind}.noticeBody`),
+  };
+
+  useEffect(() => {
+    if (me.data?.display_language) setLanguage(me.data.display_language);
+  }, [me.data?.display_language, setLanguage]);
 
   const save = useMutation({
     mutationFn: async (value: string) => {
-      if (kind === "display") return api.saveLanguage(value as "ko" | "en");
+      if (kind === "display") {
+        const language = value as "ko" | "en";
+        const response = await api.saveLanguage(language);
+        setLanguage(language);
+        return response;
+      }
       // 프로필은 통째로 바꾸는 API 라 나머지 값을 그대로 실어 보낸다.
       const profile = me.data!.profile;
       return api.saveProfile({
@@ -78,7 +97,7 @@ export function LanguageSettingPage({ kind }: { kind: "native" | "display" }) {
       <ScreenHeader title={copy.title} onBack={() => navigate(-1)} />
       <p className={styles.lead}>{copy.lead}</p>
 
-      <h2 className={styles.sectionTitle}>언어 선택</h2>
+      <h2 className={styles.sectionTitle}>{t("language.section")}</h2>
       <div className={styles.options} role="radiogroup" aria-label={copy.title}>
         {copy.options.map((option) => (
           <button
@@ -110,7 +129,7 @@ export function LanguageSettingPage({ kind }: { kind: "native" | "display" }) {
           disabled={!selected || selected === saved || save.isPending}
           onClick={() => save.mutate(selected)}
         >
-          {save.isPending ? "저장 중…" : "선택 완료"}
+          {save.isPending ? t("language.saving") : t("language.save")}
         </Button>
       </div>
     </div>

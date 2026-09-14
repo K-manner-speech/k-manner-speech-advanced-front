@@ -47,6 +47,62 @@
 .choice h2 i { font-style: normal; }
 .choice h2 em { color: var(--color-text-body); font-style: normal; font-weight: 400; }
 .choice p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+.choiceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.choiceHeader > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 34px;
+  padding: 7px 13px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-body-sm);
+  line-height: 18px;
+  font-weight: 700;
+}
+.choiceHeader i { font-size: var(--font-size-body); font-style: normal; }
+.choiceHeader > b { color: var(--color-text-muted); font-size: var(--font-size-h2); font-weight: 400; }
+.positiveLabel { color: #287452; background: #e3f3eb; }
+.warningLabel { color: var(--color-accent); background: var(--color-brand-50); }
+.choiceSummary {
+  color: var(--color-text);
+  font-size: var(--font-size-body);
+  line-height: 20px;
+  font-weight: 700;
+}
+.choiceQuote,
+.choiceRecommendation {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+.choiceQuote {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--color-text-body);
+  font-size: var(--font-size-body-sm);
+  line-height: 18px;
+}
+.choiceRecommendation { display: grid; gap: 4px; }
+.choiceRecommendation span { color: var(--color-accent); font-size: var(--font-size-micro); font-weight: 700; }
+.choiceRecommendation blockquote {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--color-text-body);
+  font-size: var(--font-size-body-sm);
+  line-height: 18px;
+}
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 /* 칩도 항목 색을 쓴다. 요약에서 본 색과 목록·펼친 내용의 색이 같아야

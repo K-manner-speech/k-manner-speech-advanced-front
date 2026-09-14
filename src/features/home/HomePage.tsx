@@ -4,6 +4,7 @@ import { api } from "../../api/service";
 import { Button } from "../../components/ui/Button";
 import { PersonaAvatar } from "../../components/ui/PersonaAvatar";
 import { StatusPanel } from "../../components/ui/StatusPanel";
+import { usePreferences } from "../../store/preferences";
 import styles from "./HomePage.module.css";
 
 const DIFFICULTY_LABELS: Record<string, string> = {
@@ -13,6 +14,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 };
 
 export function HomePage() {
+  const en = usePreferences((state) => state.language) === "en";
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const home = useQuery({ queryKey: ["home"], queryFn: api.home });
@@ -32,11 +34,11 @@ export function HomePage() {
     onSuccess: (room) => navigate(`/rooms/${room.id}`),
   });
 
-  if (home.isLoading) return <StatusPanel title="오늘의 학습을 준비하고 있어요" />;
+  if (home.isLoading) return <StatusPanel title={en ? "Preparing today’s practice…" : "오늘의 학습을 준비하고 있어요"} />;
   if (home.error) {
     return (
       <StatusPanel
-        title="홈을 불러오지 못했어요"
+        title={en ? "Couldn’t load Home" : "홈을 불러오지 못했어요"}
         detail={home.error.message}
         onRetry={() => void home.refetch()}
       />
@@ -58,11 +60,11 @@ export function HomePage() {
           <div className={styles.streakHead}>
             <h2 className={styles.streakTitle} id="streak-title">
               {streak.streak_days > 0
-                ? `${streak.streak_days}일 연속 학습 중`
-                : "오늘부터 시작해요"}
+                ? (en ? `${streak.streak_days}-day learning streak` : `${streak.streak_days}일 연속 학습 중`)
+                : (en ? "Start today" : "오늘부터 시작해요")}
             </h2>
             <span className={styles.streakGoal}>
-              {streak.goal_days}일 목표 · {streak.recent_days}/{streak.goal_days}
+              {en ? `${streak.goal_days}-day goal` : `${streak.goal_days}일 목표`} · {streak.recent_days}/{streak.goal_days}
             </span>
           </div>
           <div
@@ -78,14 +80,14 @@ export function HomePage() {
             ))}
           </div>
           {streak.attended_today ? (
-            <p className={styles.attended}>✓ 오늘 출석 완료</p>
+            <p className={styles.attended}>✓ {en ? "Checked in today" : "오늘 출석 완료"}</p>
           ) : (
             <Button
               compact
               disabled={attend.isPending}
               onClick={() => attend.mutate()}
             >
-              {attend.isPending ? "기록하는 중…" : "출석하기"}
+              {attend.isPending ? (en ? "Saving…" : "기록하는 중…") : (en ? "Check In" : "출석하기")}
             </Button>
           )}
         </section>
@@ -94,8 +96,8 @@ export function HomePage() {
       {recommendation ? (
         <section className={styles.recommend} aria-labelledby="recommend-title">
           <div className={styles.recommendHead}>
-            <span>오늘의 추천</span>
-            <span>말하기 연습</span>
+            <span>{en ? "Today’s Pick" : "오늘의 추천"}</span>
+            <span>{en ? "Speaking Practice" : "말하기 연습"}</span>
           </div>
           <h2 className={styles.recommendTitle} id="recommend-title">{recommendation.title}</h2>
 
@@ -112,7 +114,7 @@ export function HomePage() {
                   {recommendation.relationship_label && ` · ${recommendation.relationship_label}`}
                 </b>
               </div>
-              <p className={styles.previewHint}>이렇게 말을 걸어보세요</p>
+              <p className={styles.previewHint}>{en ? "Try starting with this Korean expression" : "이렇게 말을 걸어보세요"}</p>
               <p className={styles.previewLine}>“{recommendation.opening_message}”</p>
             </div>
           )}
@@ -139,10 +141,10 @@ export function HomePage() {
                 persona_id: recommendation.persona_id as string,
               })}
             >
-              {startRecommended.isPending ? "대화방 준비 중…" : "이 대화 시작하기 ↗"}
+              {startRecommended.isPending ? (en ? "Preparing conversation…" : "대화방 준비 중…") : (en ? "Start This Conversation ↗" : "이 대화 시작하기 ↗")}
             </button>
           ) : (
-            <Link className={styles.start} to="/practice">이 대화 시작하기 ↗</Link>
+            <Link className={styles.start} to="/practice">{en ? "Choose a Partner ↗" : "이 대화 시작하기 ↗"}</Link>
           )}
           {startRecommended.error && (
             <p className={styles.error} role="alert">{startRecommended.error.message}</p>
@@ -150,15 +152,15 @@ export function HomePage() {
         </section>
       ) : (
         <p className={styles.empty}>
-          아직 추천할 연습을 고르지 못했어요. 연습 유형을 직접 골라 시작해 보세요.
+          {en ? "No recommendation is available yet. Choose a practice type to get started." : "아직 추천할 연습을 고르지 못했어요. 연습 유형을 직접 골라 시작해 보세요."}
         </p>
       )}
 
       <section className={styles.feedback}>
-        <h2>피드백 모아보기</h2>
+        <h2>{en ? "Practice Feedback" : "피드백 모아보기"}</h2>
         <div className={styles.feedbackRow}>
-          <p>지난 연습의 표현과 피드백을 확인해요.</p>
-          <Link className={styles.feedbackLink} to="/results">보기 →</Link>
+          <p>{en ? "Review expressions and feedback from past practice." : "지난 연습의 표현과 피드백을 확인해요."}</p>
+          <Link className={styles.feedbackLink} to="/results">{en ? "View →" : "보기 →"}</Link>
         </div>
       </section>
     </div>

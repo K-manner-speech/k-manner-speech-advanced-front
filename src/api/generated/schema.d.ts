@@ -1210,6 +1210,8 @@ export interface components {
             strength: string | null;
             /** Suggestion */
             suggestion: string | null;
+            /** Summary */
+            summary?: string | null;
             /** Evidence */
             evidence: string | null;
         };

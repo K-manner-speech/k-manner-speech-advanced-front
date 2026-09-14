@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/Button";
 import { PersonaAvatar } from "../../components/ui/PersonaAvatar";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { StatusPanel } from "../../components/ui/StatusPanel";
+import { usePreferences } from "../../store/preferences";
 import styles from "./PracticePage.module.css";
 
 const DIFFICULTY_LABELS: Record<string, string> = {
@@ -13,6 +14,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   medium: "보통",
   hard: "어려움",
 };
+const DIFFICULTY_LABELS_EN: Record<string, string> = { easy: "Easy", medium: "Medium", hard: "Hard" };
 
 function conciseGoal(goal: string | null): string {
   const fallback = "상황에 맞는 표현으로 목표를 달성해 보세요.";
@@ -26,7 +28,7 @@ function conciseGoal(goal: string | null): string {
   return normalized;
 }
 
-function personaTraits(description: string | null, roleTitle: string | null): string[] {
+function personaTraits(description: string | null, roleTitle: string | null, en = false): string[] {
   const source = description ?? "";
   const role = roleTitle ?? "";
   const relationship = /선배/.test(role + source)
@@ -43,19 +45,26 @@ function personaTraits(description: string | null, roleTitle: string | null): st
       : /불만|구체적인 해결/.test(source)
         ? "단호함"
         : "차분함";
-  return [relationship, personality];
+  if (!en) return [relationship, personality];
+  const translations: Record<string, string> = {
+    "학과 선배": "Senior Student", "직장 상사": "Work Supervisor", "서비스 고객": "Customer",
+    "대화 상대": "Conversation Partner", "친근함": "Friendly", "꼼꼼함": "Detail-oriented",
+    "단호함": "Assertive", "차분함": "Calm",
+  };
+  return [translations[relationship] ?? relationship, translations[personality] ?? personality];
 }
 
 function traitTone(trait: string): string {
-  if (/선배|상사|고객|대화 상대/.test(trait)) return "traitBlue";
-  if (/친근/.test(trait)) return "traitGreen";
-  if (/꼼꼼/.test(trait)) return "traitAmber";
-  if (/단호/.test(trait)) return "traitRose";
-  if (/차분/.test(trait)) return "traitPurple";
+  if (/선배|상사|고객|대화 상대|Student|Supervisor|Customer|Partner/.test(trait)) return "traitBlue";
+  if (/친근|Friendly/.test(trait)) return "traitGreen";
+  if (/꼼꼼|Detail/.test(trait)) return "traitAmber";
+  if (/단호|Assertive/.test(trait)) return "traitRose";
+  if (/차분|Calm/.test(trait)) return "traitPurple";
   return "traitNeutral";
 }
 
 export function PracticePage() {
+  const en = usePreferences((state) => state.language) === "en";
   const navigate = useNavigate();
   const [step, setStep] = useState<"type" | "persona" | "scenario">("type");
   const [practiceType, setPracticeType] = useState<"free_chat" | "scenario">("scenario");
@@ -87,16 +96,16 @@ export function PracticePage() {
     effectivePersonaId && (practiceType === "free_chat" || scenarioId),
   );
 
-  const title = step === "type" ? "연습 유형" : step === "persona" ? "대화 상대" : "시나리오";
+  const title = step === "type" ? (en ? "Practice Type" : "연습 유형") : step === "persona" ? (en ? "Conversation Partner" : "대화 상대") : (en ? "Scenario" : "시나리오");
   const goBack = () => (step === "type" ? navigate("/") : setStep("type"));
 
   if (personas.isLoading || scenarios.isLoading) {
-    return <StatusPanel title="연습 상대와 상황을 불러오고 있어요" />;
+    return <StatusPanel title={en ? "Loading practice options…" : "연습 상대와 상황을 불러오고 있어요"} />;
   }
   if (personas.error || scenarios.error) {
     return (
       <StatusPanel
-        title="연습 목록을 불러오지 못했어요"
+        title={en ? "Couldn’t load practice options" : "연습 목록을 불러오지 못했어요"}
         detail={(personas.error ?? scenarios.error)?.message}
         onRetry={() => { void personas.refetch(); void scenarios.refetch(); }}
       />
@@ -109,7 +118,7 @@ export function PracticePage() {
 
       {step === "type" && (
         <>
-          <h2 className={styles.headline}>오늘은 어떤 연습이 필요하세요?</h2>
+          <h2 className={styles.headline}>{en ? "What would you like to practice today?" : "오늘은 어떤 연습이 필요하세요?"}</h2>
           <div className={styles.list}>
             <button
               className={styles.card}
@@ -117,8 +126,8 @@ export function PracticePage() {
             >
               <span className={`${styles.icon} ${styles.chatIcon}`} aria-hidden="true" />
               <span className={styles.text}>
-                <b>자유채팅</b>
-                <small>주제 없이 편하게 대화를 이어가요</small>
+                <b>{en ? "Free Chat" : "자유채팅"}</b>
+                <small>{en ? "Have a relaxed conversation without a set topic" : "주제 없이 편하게 대화를 이어가요"}</small>
               </span>
             </button>
             <button
@@ -127,15 +136,15 @@ export function PracticePage() {
             >
               <span className={`${styles.icon} ${styles.scenarioIcon}`} aria-hidden="true" />
               <span className={styles.text}>
-                <b>시나리오</b>
-                <small>실제 상황에 맞춰 표현을 연습해요</small>
+                <b>{en ? "Scenario" : "시나리오"}</b>
+                <small>{en ? "Practice expressions for real-life situations" : "실제 상황에 맞춰 표현을 연습해요"}</small>
               </span>
             </button>
             <button className={styles.card} onClick={() => navigate("/interview")}>
               <span className={`${styles.icon} ${styles.interviewIcon}`} aria-hidden="true" />
               <span className={styles.text}>
-                <b>면접 시뮬레이션</b>
-                <small>질문에 답하며 실전 감각을 익혀요</small>
+                <b>{en ? "Interview Simulation" : "면접 시뮬레이션"}</b>
+                <small>{en ? "Build confidence by answering interview questions" : "질문에 답하며 실전 감각을 익혀요"}</small>
               </span>
             </button>
           </div>
@@ -144,7 +153,7 @@ export function PracticePage() {
 
       {step === "persona" && (
         <>
-          <h2 className={`${styles.headline} ${styles.personaHeadline}`}>누구와 이야기해 볼까요?</h2>
+          <h2 className={`${styles.headline} ${styles.personaHeadline}`}>{en ? "Who would you like to talk with?" : "누구와 이야기해 볼까요?"}</h2>
           {personas.data?.items.length ? (
             <div className={styles.list}>
               {personas.data.items.map((persona) => (
@@ -161,9 +170,9 @@ export function PracticePage() {
                   />
                   <span className={styles.text}>
                     <b>{persona.name}</b>
-                    <span className={styles.traitLabel}>대화 특징</span>
+                    <span className={styles.traitLabel}>{en ? "Profile" : "대화 특징"}</span>
                     <span className={styles.traits}>
-                      {personaTraits(persona.description, persona.role_title).map((trait) => (
+                      {personaTraits(persona.description, persona.role_title, en).map((trait) => (
                         <span className={styles[traitTone(trait)]} key={trait}>{trait}</span>
                       ))}
                     </span>
@@ -173,7 +182,7 @@ export function PracticePage() {
             </div>
           ) : (
             <p className={styles.empty}>
-              현재 선택할 수 있는 대화 상대가 없어요. 잠시 뒤 다시 확인해 주세요.
+              {en ? "No conversation partners are available right now. Please try again later." : "현재 선택할 수 있는 대화 상대가 없어요. 잠시 뒤 다시 확인해 주세요."}
             </p>
           )}
           {createRoom.error && <p className={styles.error} role="alert">{createRoom.error.message}</p>}
@@ -182,7 +191,7 @@ export function PracticePage() {
 
       {step === "scenario" && (
         <>
-          <h2 className={`${styles.headline} ${styles.scenarioHeadline}`}>어떤 상황을 연습할까요?</h2>
+          <h2 className={`${styles.headline} ${styles.scenarioHeadline}`}>{en ? "Which situation would you like to practice?" : "어떤 상황을 연습할까요?"}</h2>
           {scenarios.data?.items.length ? (
             <div className={styles.list}>
               {scenarios.data.items.map((scenario) => (
@@ -195,21 +204,23 @@ export function PracticePage() {
                   <span className={styles.text}>
                     <b>{scenario.title}</b>
                     <span className={styles.scenarioGoal}>
-                      <em>연습 목표</em>
+                      <em>{en ? "Practice Goal" : "연습 목표"}</em>
                       <small>{conciseGoal(scenario.goal)}</small>
                     </span>
                     <span className={styles.meta}>
-                      <span>{DIFFICULTY_LABELS[scenario.difficulty ?? ""] ?? scenario.difficulty ?? "기본"}</span>
-                      <span>약 {scenario.estimated_minutes ?? 5}분</span>
+                      <span>{en
+                        ? (DIFFICULTY_LABELS_EN[scenario.difficulty ?? ""] ?? scenario.difficulty ?? "Standard")
+                        : (DIFFICULTY_LABELS[scenario.difficulty ?? ""] ?? scenario.difficulty ?? "기본")}</span>
+                      <span>{en ? `About ${scenario.estimated_minutes ?? 5} min` : `약 ${scenario.estimated_minutes ?? 5}분`}</span>
                     </span>
                   </span>
-                  {scenario.id === scenarioId && <span className={styles.badge}>선택됨</span>}
+                  {scenario.id === scenarioId && <span className={styles.badge}>{en ? "Selected" : "선택됨"}</span>}
                 </button>
               ))}
             </div>
           ) : (
             <p className={styles.empty}>
-              현재 선택할 수 있는 상황이 없어요. 잠시 뒤 다시 확인해 주세요.
+              {en ? "No scenarios are available right now. Please try again later." : "현재 선택할 수 있는 상황이 없어요. 잠시 뒤 다시 확인해 주세요."}
             </p>
           )}
           {(selectedScenario.error || createRoom.error) && (
@@ -222,7 +233,7 @@ export function PracticePage() {
               disabled={!canStart || createRoom.isPending}
               onClick={() => createRoom.mutate(undefined)}
             >
-              {createRoom.isPending ? "대화방 준비 중…" : "대화 시작"}
+              {createRoom.isPending ? (en ? "Preparing conversation…" : "대화방 준비 중…") : (en ? "Start Conversation" : "대화 시작")}
             </Button>
           </div>
         </>

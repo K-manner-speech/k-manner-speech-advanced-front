@@ -168,25 +168,25 @@
 
 /* 입력창 */
 .composer {
-  display: flex; align-items: center; gap: var(--space-2);
-  min-height: 70px;
-  margin-inline: -6px;
-  padding: 9px 4px;
+  display: flex; align-items: center; gap: 4px;
+  min-height: 56px;
+  margin: 26px -6px 0;
+  padding: 5px 6px 5px 12px;
   border: 1px solid rgba(200, 95, 74, .6);
-  border-radius: 18px;
+  border-radius: var(--radius-pill);
 }
 .composer label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
 .input {
   flex: 1;
   min-width: 0;
-  min-height: 42px;
+  min-height: 44px;
   max-height: 96px;
-  padding: 12px 8px;
+  padding: 11px 4px;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: 0;
   color: var(--color-text);
-  background: var(--color-surface);
+  background: transparent;
   font-size: var(--font-size-body);
   resize: none;
 }
@@ -198,11 +198,11 @@
   padding: 0; border: 0; border-radius: var(--radius-pill);
   font-size: var(--font-size-body-lg);
 }
-.mic { color: var(--color-accent); background: transparent; }
+.mic { color: var(--color-accent); background: rgba(200, 95, 74, .1); }
 .mic img { width: 24px; height: 24px; display: block; }
 /* 녹음 중에는 마이크를 채워 눌린 상태임을 알린다. */
 .micActive { color: var(--color-neutral-50); background: var(--color-accent); }
-.send { width: 40px; height: 40px; min-height: 40px; color: var(--color-neutral-50); background: var(--color-accent); }
+.send { width: 44px; height: 44px; min-height: 44px; color: var(--color-neutral-50); background: var(--color-accent); }
 .send img { width: 22px; height: 22px; display: block; }
 .send:disabled { color: var(--color-disabled-text); background: var(--color-disabled-surface); }
 

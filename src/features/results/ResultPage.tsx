@@ -24,6 +24,27 @@ type FeedbackEntry = {
   detail: ReactNode;
 };
 
+function improvementPreview(summary: string | null | undefined, suggestion: string | null): string | null {
+  if (summary?.trim()) return summary.trim();
+  if (!suggestion?.trim()) return null;
+  const firstSentence = suggestion.trim().match(/^[^.!?。！？]+[.!?。！？]?/)?.[0]?.trim();
+  const preview = firstSentence || suggestion.trim();
+  return preview.length <= 45 ? preview : `${preview.slice(0, 44).trimEnd()}…`;
+}
+
+function compactOverallSummary(summary: string | null | undefined, fallback: string): string {
+  const value = summary?.trim();
+  if (!value || value.length <= 180) return value || fallback;
+  const sentences = value.match(/[^.!?。！？]+[.!?。！？]?/g) ?? [];
+  const selected: string[] = [];
+  for (const sentence of sentences) {
+    const candidate = [...selected, sentence.trim()].join(" ");
+    if (candidate.length > 180 || selected.length === 3) break;
+    selected.push(sentence.trim());
+  }
+  return selected.length ? selected.join(" ") : `${value.slice(0, 179).trimEnd()}…`;
+}
+
 /**
  * 피드백 항목 목록. 누르면 그 자리에서 펼쳐진다.
  *
@@ -160,8 +181,10 @@ function GeneralResult({ data, view, itemKey, onBack, retry }: {
           emptyText={isStrength ? "이번 연습에서는 뚜렷하게 확인된 강점이 없어요." : "다듬을 점으로 정리된 표현이 없어요."}
           entries={entries.map((item) => ({
             key: String(item.order),
-            label: item.title,
-            preview: item.category ? generalLabels[item.category] ?? item.category : null,
+            label: item.category
+              ? generalLabels[item.category] ?? item.category
+              : item.title,
+            preview: item.title,
             toneClass: item.category ? sheet[item.category] ?? "" : "",
             detail: (
               <>
@@ -193,7 +216,7 @@ function GeneralResult({ data, view, itemKey, onBack, retry }: {
     <ResultFrame title="결과 요약" onBack={onBack}>
       <section className={sheet.card}>
         <ScoreBadge score={data.overall_score} />
-        <p>{data.summary ?? "대화에서 관찰된 내용을 기준으로 정리했습니다."}</p>
+        <p>{compactOverallSummary(data.summary, "대화에서 관찰된 내용을 기준으로 정리했습니다.")}</p>
       </section>
 
       <p className={sheet.hint}>
@@ -217,19 +240,32 @@ function GeneralResult({ data, view, itemKey, onBack, retry }: {
       </Link>
 
       <Link className={sheet.choice} to={`${base}/strengths`} aria-label="잘한 점">
-        <h2><i aria-hidden="true">✓</i> 잘한 점 <em>{strengths[0]?.title ?? ""}</em></h2>
+        <div className={sheet.choiceHeader}>
+          <span className={sheet.positiveLabel}><i aria-hidden="true">✓</i> 잘한 점</span>
+          <b aria-hidden="true">›</b>
+        </div>
         {strengths[0] ? (
           <>
-            {strengths[0].original_expression && <blockquote>“{strengths[0].original_expression}”</blockquote>}
+            <strong className={sheet.choiceSummary}>{strengths[0].title}</strong>
+            {strengths[0].original_expression && <blockquote className={sheet.choiceQuote}>“{strengths[0].original_expression}”</blockquote>}
           </>
         ) : <p>이번 연습에서는 뚜렷하게 확인된 강점이 없어요.</p>}
       </Link>
 
       <Link className={`${sheet.choice} ${sheet.choiceWarning}`} to={`${base}/improvements`} aria-label="개선할 점">
-        <h2><i aria-hidden="true">!</i> 개선할 점 <em>{improvements[0]?.title ?? ""}</em></h2>
+        <div className={sheet.choiceHeader}>
+          <span className={sheet.warningLabel}><i aria-hidden="true">!</i> 개선할 점</span>
+          <b aria-hidden="true">›</b>
+        </div>
         {improvements[0] ? (
           <>
-            {improvements[0].recommended_expression && <blockquote>추천 “{improvements[0].recommended_expression}”</blockquote>}
+            <strong className={sheet.choiceSummary}>{improvements[0].title}</strong>
+            {improvements[0].recommended_expression && (
+              <div className={sheet.choiceRecommendation}>
+                <span>추천 표현</span>
+                <blockquote>“{improvements[0].recommended_expression}”</blockquote>
+              </div>
+            )}
           </>
         ) : <p>다듬을 점으로 정리된 표현이 없어요.</p>}
       </Link>
@@ -292,7 +328,7 @@ function InterviewResult({ data, view, category, onBack }: { data: SessionResult
           entries={entries.map((score) => ({
             key: score.category,
             label: labels[score.category] ?? score.category,
-            preview: isStrength ? score.strength : score.suggestion,
+            preview: isStrength ? score.strength : improvementPreview(score.summary, score.suggestion),
             toneClass: sheet[score.category] ?? "",
             detail: (
               <>
@@ -316,7 +352,7 @@ function InterviewResult({ data, view, category, onBack }: { data: SessionResult
       <section className={sheet.card}>
         <ScoreBadge score={evaluation.overall_score ?? data.overall_score} />
         <h2>면접 총평</h2>
-        <p>{evaluation.summary ?? data.summary ?? "답변을 바탕으로 면접 결과를 정리했어요."}</p>
+        <p>{compactOverallSummary(evaluation.summary ?? data.summary, "답변을 바탕으로 면접 결과를 정리했어요.")}</p>
       </section>
 
       <p className={sheet.hint}>

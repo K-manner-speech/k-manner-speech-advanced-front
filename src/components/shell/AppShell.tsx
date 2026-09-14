@@ -47,8 +47,8 @@ export function AppShell({ children }: PropsWithChildren) {
         <nav className={styles.navigation} aria-label="주요 메뉴">
           <NavLink to="/" end><NavIcon type="home" />{t("nav.home")}</NavLink>
           <NavLink to="/practice" className={practiceActive ? styles.active : undefined}><NavIcon type="practice" />{t("nav.practice")}</NavLink>
-          <NavLink to="/rooms" end><NavIcon type="chat" />대화 목록</NavLink>
-          <NavLink to="/me"><NavIcon type="account" />내 정보</NavLink>
+          <NavLink to="/rooms" end><NavIcon type="chat" />{t("nav.conversations")}</NavLink>
+          <NavLink to="/me"><NavIcon type="account" />{t("nav.account")}</NavLink>
         </nav>
       )}
     </div>

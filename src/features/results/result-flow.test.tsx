@@ -231,6 +231,34 @@ test("항목 주소로 바로 들어오면 그 항목이 펼쳐진 채 열린다
   expect(screen.getByText("사용자 조사 결과를 바탕으로 개선했습니다.")).toBeInTheDocument();
 });
 
+test("면접 보완 카드는 닫히면 요약만, 열리면 전체 제안을 보여 준다", async () => {
+  vi.mocked(api.resultById).mockResolvedValue({
+    ...snapshot,
+    interview_evaluation: {
+      ...snapshot.interview_evaluation,
+      scores: [{
+        category: "answer_structure",
+        score: 8,
+        max_score: 20,
+        strength: null,
+        summary: "처리 과정과 검증 결과에 대한 설명이 부족해요.",
+        suggestion: "결론을 먼저 말한 뒤 원인, 구체적인 행동, 결과와 검증 방법 순서로 답변하세요.",
+        evidence: "바로 그냥 종료시킵니다",
+      }],
+    },
+  } as never);
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={["/results/res1/improvements"]}><Routes>
+    <Route path="/results/:resultId/improvements" element={<ResultPage source="result" view="improvements" />} />
+  </Routes></MemoryRouter></QueryClientProvider>);
+
+  expect(await screen.findByText("처리 과정과 검증 결과에 대한 설명이 부족해요.")).toBeInTheDocument();
+  expect(screen.queryByText(/결론을 먼저 말한 뒤 원인/)).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: /답변 구조/ }));
+  expect(screen.getByText(/결론을 먼저 말한 뒤 원인/)).toBeInTheDocument();
+  expect(screen.queryByText("처리 과정과 검증 결과에 대한 설명이 부족해요.")).not.toBeInTheDocument();
+});
+
 test("잘한 점과 개선할 점은 각각 한 화면에 표현을 모아 보여 준다", async () => {
   vi.mocked(api.resultById).mockResolvedValue(generalSnapshot as never);
   renderGeneralRoutes("/results/res1");
