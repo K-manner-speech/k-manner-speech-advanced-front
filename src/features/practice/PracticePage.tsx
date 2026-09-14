@@ -13,6 +13,47 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   hard: "어려움",
 };
 
+function conciseGoal(goal: string | null): string {
+  const fallback = "상황에 맞는 표현으로 목표를 달성해 보세요.";
+  const normalized = goal?.trim();
+  if (!normalized) return fallback;
+
+  const sentences = normalized.match(/[^.!?。！？]+[.!?。！？]?/g);
+  if (normalized.length > 50 && sentences && sentences.length > 1) {
+    return sentences.at(-1)?.trim() || normalized;
+  }
+  return normalized;
+}
+
+function personaTraits(description: string | null, roleTitle: string | null): string[] {
+  const source = description ?? "";
+  const role = roleTitle ?? "";
+  const relationship = /선배/.test(role + source)
+    ? "학과 선배"
+    : /팀장|상사/.test(role + source)
+      ? "직장 상사"
+      : /고객/.test(role + source)
+        ? "서비스 고객"
+        : role || "대화 상대";
+  const personality = /친절|편하게/.test(source)
+    ? "친근함"
+    : /일정|근거|꼼꼼/.test(source)
+      ? "꼼꼼함"
+      : /불만|구체적인 해결/.test(source)
+        ? "단호함"
+        : "차분함";
+  return [relationship, personality];
+}
+
+function traitTone(trait: string): string {
+  if (/선배|상사|고객|대화 상대/.test(trait)) return "traitBlue";
+  if (/친근/.test(trait)) return "traitGreen";
+  if (/꼼꼼/.test(trait)) return "traitAmber";
+  if (/단호/.test(trait)) return "traitRose";
+  if (/차분/.test(trait)) return "traitPurple";
+  return "traitNeutral";
+}
+
 export function PracticePage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<"type" | "persona" | "scenario">("type");
@@ -103,24 +144,29 @@ export function PracticePage() {
 
       {step === "persona" && (
         <>
-          <h2 className={styles.headline}>누구와 이야기해 볼까요?</h2>
+          <h2 className={`${styles.headline} ${styles.personaHeadline}`}>누구와 이야기해 볼까요?</h2>
           {personas.data?.items.length ? (
             <div className={styles.list}>
               {personas.data.items.map((persona) => (
                 <button
                   key={persona.id}
-                  className={styles.card}
+                  className={`${styles.card} ${styles.personaCard}`}
                   disabled={createRoom.isPending}
                   onClick={() => createRoom.mutate(persona.id)}
                 >
                   <img
-                    className={styles.icon}
+                    className={styles.personaAvatar}
                     src="/personas/neutral.png"
                     alt={`${persona.role_title ?? "대화 상대"} ${persona.name}의 차분한 표정`}
                   />
                   <span className={styles.text}>
                     <b>{persona.name}</b>
-                    <small>{persona.description ?? persona.role_title ?? "한국어 대화 파트너"}</small>
+                    <span className={styles.traitLabel}>대화 특징</span>
+                    <span className={styles.traits}>
+                      {personaTraits(persona.description, persona.role_title).map((trait) => (
+                        <span className={styles[traitTone(trait)]} key={trait}>{trait}</span>
+                      ))}
+                    </span>
                   </span>
                 </button>
               ))}
@@ -136,23 +182,25 @@ export function PracticePage() {
 
       {step === "scenario" && (
         <>
-          <h2 className={styles.headline}>어떤 상황을 연습할까요?</h2>
+          <h2 className={`${styles.headline} ${styles.scenarioHeadline}`}>어떤 상황을 연습할까요?</h2>
           {scenarios.data?.items.length ? (
             <div className={styles.list}>
               {scenarios.data.items.map((scenario) => (
                 <button
                   key={scenario.id}
-                  className={`${styles.card} ${scenario.id === scenarioId ? styles.highlighted : ""}`}
+                  className={`${styles.card} ${styles.scenarioCard} ${scenario.id === scenarioId ? styles.highlighted : ""}`}
                   aria-pressed={scenario.id === scenarioId}
                   onClick={() => setScenarioId(scenario.id)}
                 >
                   <span className={styles.text}>
                     <b>{scenario.title}</b>
-                    <small>{scenario.goal ?? "상황에 맞는 표현으로 목표를 달성해 보세요."}</small>
+                    <span className={styles.scenarioGoal}>
+                      <em>연습 목표</em>
+                      <small>{conciseGoal(scenario.goal)}</small>
+                    </span>
                     <span className={styles.meta}>
-                      {DIFFICULTY_LABELS[scenario.difficulty ?? ""] ?? scenario.difficulty ?? "기본"}
-                      {" · "}
-                      {scenario.estimated_minutes ?? 5}분
+                      <span>{DIFFICULTY_LABELS[scenario.difficulty ?? ""] ?? scenario.difficulty ?? "기본"}</span>
+                      <span>약 {scenario.estimated_minutes ?? 5}분</span>
                     </span>
                   </span>
                   {scenario.id === scenarioId && <span className={styles.badge}>선택됨</span>}

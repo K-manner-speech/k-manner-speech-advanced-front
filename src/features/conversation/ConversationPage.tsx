@@ -304,14 +304,13 @@ export function ConversationPage() {
   const hasInterviewerMessage = sortedMessages.some((message) => message.sender_type === "persona");
   // 자유채팅에는 미션이 없고, 면접의 안내는 질문 자체가 대신한다.
   const mission = isInterview ? null : room.data?.goal;
-  const hasSpoken = sortedMessages.some((message) => message.sender_type === "user");
-  const isMissionOpen = missionOpen ?? !hasSpoken;
+  const isMissionOpen = missionOpen ?? false;
 
   // 면접은 I 섹션에서 따로 다룬다. 여기서는 자유채팅·시나리오 화면을 그린다.
   const personaLabel = room.data?.persona_name ?? "대화 상대";
 
   return (
-    <div className={chat.screen}>
+    <div className={`${chat.screen} ${isInterview ? chat.interviewScreen : ""}`}>
       <div className={chat.header}>
         <button type="button" className={chat.back} onClick={() => navigate(backDestination)} aria-label="뒤로 가기">‹</button>
         <h1>{isInterview ? "면접 시뮬레이션" : personaLabel}</h1>
@@ -333,111 +332,116 @@ export function ConversationPage() {
         </div>
       </div>
 
-      {/* 미션은 상대 얼굴 위에 겹치지 않는다. 여러 줄짜리 안내가 사진을 덮으면
-          표정을 읽을 수 없고, 표정을 보고 말투를 고르는 연습이 무너진다.
-          아직 한 마디도 하지 않았을 때만 펼쳐 두고 그 뒤로는 접어 둔다. */}
-      {mission && (
-        <section className={chat.mission}>
-          <button
-            type="button"
-            className={chat.missionToggle}
-            aria-expanded={isMissionOpen}
-            onClick={() => setMissionOpen(!isMissionOpen)}
-          >
-            <b>이번 대화의 미션</b>
-            <span aria-hidden="true">{isMissionOpen ? "접기" : "펼치기"}</span>
-          </button>
-          {isMissionOpen && <p className={chat.missionBody}>{mission}</p>}
-        </section>
-      )}
+      <div className={chat.intro}>
+        {mission && (
+          <section className={chat.mission}>
+            <button
+              type="button"
+              className={chat.missionToggle}
+              aria-expanded={isMissionOpen}
+              onClick={() => setMissionOpen(!isMissionOpen)}
+            >
+              <b>이번 대화의 미션</b>
+              <span aria-hidden="true">{isMissionOpen ? "접기" : "펼치기"}</span>
+            </button>
+            {isMissionOpen && <p className={chat.missionBody}>{mission}</p>}
+          </section>
+        )}
 
-      <section className={chat.hero}>
-        <img
-          src={personaImageForEmotion(currentEmotion)}
-          alt={`${isInterview ? "면접 상대" : "대화 상대"}의 ${currentEmotionLabel} 표정`}
-        />
-        <div className={chat.heroOverlay}>
-          <span className={chat.heroText}>
-            <b>{isInterview ? "현우 면접관" : (room.data?.title ?? "대화 연습")}</b>
-            <small>{isInterview ? "기술 면접관 · Technical Interviewer" : `${personaLabel}과 대화 연습`}</small>
-          </span>
-          <span className={chat.emotion}>{currentEmotionLabel}</span>
-        </div>
-      </section>
+        <section className={chat.hero}>
+          <img
+            src={personaImageForEmotion(currentEmotion)}
+            alt={`${isInterview ? "면접 상대" : "대화 상대"}의 ${currentEmotionLabel} 표정`}
+          />
+          <div className={chat.heroOverlay}>
+            <span className={chat.heroText}>
+              <b>{isInterview ? "현우 면접관" : (room.data?.title ?? "대화 연습")}</b>
+              <small>{isInterview ? "기술 면접관 · Technical Interviewer" : `${personaLabel}과 대화 연습`}</small>
+            </span>
+            <span className={chat.emotion}>{currentEmotionLabel}</span>
+          </div>
+        </section>
+      </div>
 
       <section className={chat.messages} aria-live="polite" aria-label="대화 내용">
         {!sortedMessages.length && !isInterview && (
           <p className={chat.empty}>첫 문장을 보내 대화를 시작해 보세요.</p>
         )}
         {isInterview && currentQuestion && !hasInterviewerMessage && (
-          <article className={chat.turn} role="group" aria-label="현우 면접관의 질문">
-            <div className={chat.who}>
-              <img className={chat.avatar} src="/personas/neutral.png" alt="" />
-              <b>현우 면접관 · 면접관</b>
-            </div>
-            <div className={chat.row}>
-              <p className={`${chat.bubble} ${chat.interviewer}`}>{currentQuestion.text}</p>
-              <button type="button" className={chat.speak} aria-label="면접 질문 음성 재생" disabled>◁))</button>
+          <article className={`${chat.turn} ${chat.personaTurn}`} role="group" aria-label="현우 면접관의 질문">
+            <img className={chat.avatar} src="/personas/neutral.png" alt="" />
+            <div className={chat.personaContent}>
+              <b className={chat.senderName}>현우 면접관 · 면접관</b>
+              <div className={chat.row}>
+                <p className={`${chat.bubble} ${chat.interviewer}`}>{currentQuestion.text}</p>
+                <button type="button" className={chat.speak} aria-label="면접 질문 음성 재생" disabled>
+                  <img src="/figma/icon-volume.svg" alt="" />
+                </button>
+              </div>
             </div>
           </article>
         )}
         {sortedMessages.map((message) => message.sender_type === "persona" && isInterview ? (
-          <article key={message.id} className={chat.turn} role="group" aria-label={message.sequence_no === 1 ? "현우 면접관의 질문" : "현우 면접관의 답변"}>
-            <div className={chat.who}>
-              <img className={chat.avatar} src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" />
-              <b>현우 면접관 · 면접관</b>
-            </div>
-            <div className={chat.row}>
-              <p className={`${chat.bubble} ${chat.interviewer}`}>{message.content}</p>
-              <button
-                type="button"
-                className={chat.speak}
-                disabled={message.sequence_no === 1 || mediaAction.isPending}
-                onClick={() => mediaAction.mutate({ message, mode: "manual" })}
-                aria-label="면접관 음성 재생"
-              >
-                ◁))
-              </button>
-            </div>
-          </article>
-        ) : message.sender_type === "user" ? (
-          <article className={chat.turn} key={message.id}>
-            <div className={`${chat.row} ${chat.mine}`}>
-              <span className={chat.inputMode}>
-                {message.input_mode === "voice" ? "음성 입력" : "텍스트 입력"}
-              </span>
-            </div>
-            <div className={`${chat.row} ${chat.mine}`}>
-              <p className={chat.bubble}>{message.content}</p>
-            </div>
-            {!isInterview && (
-              <div className={`${chat.row} ${chat.mine}`}>
-                <button type="button" className={chat.feedbackLink} onClick={() => setFeedbackMessage(message)}>
-                  피드백 보기<span aria-hidden="true"> ›</span>
-                </button>
-              </div>
-            )}
-          </article>
-        ) : (
-          <article className={chat.turn} key={message.id}>
-            <div className={chat.who}>
-              <img className={chat.avatar} src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" />
-              <b>{message.sender_type === "system" ? "시스템" : personaLabel}</b>
-            </div>
-            <div className={chat.row}>
-              <p className={chat.bubble}>{message.content}</p>
-              {/* 시나리오 인사말은 DB 문장이라 음성이 없다. */}
-              {message.sender_type === "persona" && message.sequence_no !== 1 && (
+          <article key={message.id} className={`${chat.turn} ${chat.personaTurn}`} role="group" aria-label={message.sequence_no === 1 ? "현우 면접관의 질문" : "현우 면접관의 답변"}>
+            <img className={chat.avatar} src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" />
+            <div className={chat.personaContent}>
+              <b className={chat.senderName}>현우 면접관 · 면접관</b>
+              <div className={chat.row}>
+                <p className={`${chat.bubble} ${chat.interviewer}`}>{message.content}</p>
                 <button
                   type="button"
                   className={chat.speak}
                   disabled={mediaAction.isPending}
                   onClick={() => mediaAction.mutate({ message, mode: "manual" })}
-                  aria-label="AI 음성 재생"
+                  aria-label="면접관 음성 재생"
                 >
-                  ◁))
+                  <img src="/figma/icon-volume.svg" alt="" />
+                </button>
+              </div>
+            </div>
+          </article>
+        ) : message.sender_type === "user" ? (
+          <article className={`${chat.turn} ${chat.userTurn}`} key={message.id}>
+            <div className={`${chat.row} ${chat.mine}`}>
+              {message.input_mode === "voice" && (
+                <button type="button" className={chat.voiceReplay} aria-label="내 음성 다시 듣기" disabled>
+                  <img src="/figma/icon-volume.svg" alt="" />
                 </button>
               )}
+              <div className={`${chat.bubble} ${chat.userBubble}`}>
+                <span className={chat.inputMode}>
+                  {message.input_mode === "voice"
+                    ? (isInterview ? "음성 입력 · 전송 완료" : "음성 입력")
+                    : "텍스트 입력"}
+                </span>
+                <p>{message.content}</p>
+                {!isInterview && (
+                  <button type="button" className={chat.feedbackLink} onClick={() => setFeedbackMessage(message)}>
+                    피드백 보기<span aria-hidden="true"> ›</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </article>
+        ) : (
+          <article className={`${chat.turn} ${chat.personaTurn}`} key={message.id}>
+            <img className={chat.avatar} src={personaImageForEmotion(message.emotion?.label ?? "neutral")} alt="" />
+            <div className={chat.personaContent}>
+              <b className={chat.senderName}>{message.sender_type === "system" ? "시스템" : personaLabel}</b>
+              <div className={chat.row}>
+                <p className={chat.bubble}>{message.content}</p>
+                {message.sender_type === "persona" && (
+                  <button
+                    type="button"
+                    className={chat.speak}
+                    disabled={mediaAction.isPending}
+                    onClick={() => mediaAction.mutate({ message, mode: "manual" })}
+                    aria-label="AI 음성 재생"
+                  >
+                    <img src="/figma/icon-volume.svg" alt="" />
+                  </button>
+                )}
+              </div>
             </div>
           </article>
         ))}
@@ -448,9 +452,26 @@ export function ConversationPage() {
           </div>
         )}
         {send.isPending && <p className={chat.typing} role="status">AI가 맥락을 살펴보고 있어요…</p>}
+        {isInterview && inputMode === "voice" && content.trim() && (
+          <div className={`${chat.row} ${chat.mine} ${chat.transcriptRow}`}>
+            <button type="button" className={chat.voiceReplay} aria-label="녹음한 음성 다시 듣기" disabled>
+              <img src="/figma/icon-volume.svg" alt="" />
+            </button>
+            <div className={`${chat.transcript} ${chat.interviewTranscript}`}>
+              <span>음성 인식 결과 · 확인 전</span>
+              <p>{content}</p>
+              <div className={chat.transcriptActions}>
+                <Button variant="secondary" compact onClick={() => { setContent(""); setVoiceBlob(null); setInputMode("text"); }}>다시 말하기</Button>
+                <Button compact disabled={!voiceBlob || send.isPending} onClick={beginSend}>
+                  {send.isPending ? "전송 중…" : "보내기"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
-      <div>
+      <div className={`${chat.conversationFooter} ${isTerminal ? chat.terminalFooter : ""}`}>
         {mediaAction.error && <div className={`${chat.notice} ${chat.error}`} role="alert">
           <span>{mediaAction.error.message}</span>
           {failedAudioMessageId && <Button variant="secondary" compact disabled={ttsRetry.isPending} onClick={() => ttsRetry.mutate(failedAudioMessageId)}>{ttsRetry.isPending ? "음성 다시 생성 중…" : "음성 다시 생성"}</Button>}
@@ -476,25 +497,17 @@ export function ConversationPage() {
             <p>마지막 면접관 답변을 확인한 뒤 면접을 종료해 주세요.</p>
           </section>
         ) : isTerminal ? (
-          <section className={chat.notice}>
+          <section className={`${chat.notice} ${chat.terminalNotice}`}>
             <strong>이번 연습이 끝났어요</strong>
             <span>대화 내용은 그대로 유지됩니다. 결과에서 강점과 다음 연습을 확인하세요.</span>
-            <Link className={chat.feedbackLink} to={`/rooms/${roomId}/result`}>결과 보기<span aria-hidden="true"> ›</span></Link>
+            <div className={chat.terminalActions}>
+              <Link className={chat.terminalPrimary} to={`/rooms/${roomId}/result`}>결과 보기</Link>
+              <Link className={chat.terminalSecondary} to="/rooms">대화 목록</Link>
+            </div>
           </section>
         ) : isInterview ? (
           <section className={chat.micOnly} aria-live="polite">
-            {inputMode === "voice" && content.trim() ? (
-              <div className={chat.transcript}>
-                <span>인식된 답변</span>
-                <p>{content}</p>
-                <div className={chat.goalActions}>
-                  <Button variant="secondary" compact onClick={() => { setContent(""); setVoiceBlob(null); setInputMode("text"); }}>다시 녹음</Button>
-                  <Button compact disabled={!voiceBlob || send.isPending} onClick={beginSend}>
-                    {send.isPending ? "답변 전송 중…" : "이 답변 전송"}
-                  </Button>
-                </div>
-              </div>
-            ) : (
+            {!(inputMode === "voice" && content.trim()) && (
               <>
                 <button
                   type="button"
@@ -504,9 +517,8 @@ export function ConversationPage() {
                   aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"}
                   aria-pressed={isListening}
                 >
-                  {isListening ? "■" : "🎙"}
+                  {isListening ? "■" : <img src="/figma/icon-microphone.svg" alt="" />}
                 </button>
-                <p>{isListening ? "답변을 듣고 있어요. 완료되면 버튼을 눌러 주세요." : "마이크로 답변한 뒤 문장을 확인하고 전송해요"}</p>
               </>
             )}
           </section>
@@ -530,14 +542,14 @@ export function ConversationPage() {
               aria-label={isListening ? "음성 입력 중지" : "음성 입력 시작"}
               aria-pressed={isListening}
             >
-              {isListening ? "■" : "🎙"}
+              {isListening ? "■" : <img src="/figma/icon-microphone.svg" alt="" />}
             </button>
             <button
               className={chat.send}
               disabled={!content.trim() || send.isPending || isListening || goalChoicePending || (inputMode === "voice" && !voiceBlob)}
               aria-label="보내기"
             >
-              ➤
+              <img src="/figma/icon-send.svg" alt="" />
             </button>
           </form>
         )}

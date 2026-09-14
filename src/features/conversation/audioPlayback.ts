@@ -67,8 +67,22 @@ function logCompletedPlayback(
 }
 
 export async function playManualMessageAudio(messageId: string): Promise<void> {
-  const completed = await readyAudio(messageId);
-  await playCompletedTts(requireSignedUrl(completed));
+  let audio: AudioAccess | null = null;
+  try {
+    audio = await api.audio(messageId);
+  } catch {
+    // 방 생성 시 DB에 바로 들어가는 첫 인사말·첫 면접 질문은 아직 TTS 행이
+    // 없을 수 있다. 생성 직후 기존 실시간 스트리밍 재생 경로에 연결한다.
+    await api.retryTts(messageId);
+  }
+
+  if (audio?.status === "ready") {
+    await playCompletedTts(requireSignedUrl(audio));
+    return;
+  }
+  if (audio?.status === "failed") throw new AudioGenerationFailedError();
+
+  await playAutomaticMessageAudio(messageId);
 }
 
 export async function playAutomaticMessageAudio(

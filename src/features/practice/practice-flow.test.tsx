@@ -33,11 +33,50 @@ test("자유채팅 버튼을 누르면 즉시 H03 대화 상대 화면으로 이
   expect(await screen.findByRole("heading", { name: "대화 상대", level: 1 })).toBeInTheDocument();
 });
 
+test("페르소나의 긴 설명을 관계와 성격 태그 2개로만 요약한다", async () => {
+  vi.mocked(api.personas).mockResolvedValue({
+    items: [{ id: "p1", name: "민준 팀장", role_title: "팀장", description: "팀원에게 존댓말로 정중하되 분명하게 업무를 요청하고, 일정과 근거를 중요하게 여긴다.", avatar_key: null }],
+    next_cursor: null,
+  });
+
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PracticePage /></MemoryRouter></QueryClientProvider>);
+  await userEvent.click(await screen.findByRole("button", { name: /^자유채팅/ }));
+
+  expect(await screen.findByText("대화 특징")).toBeInTheDocument();
+  expect(screen.getByText("직장 상사")).toBeInTheDocument();
+  expect(screen.getByText("꼼꼼함")).toBeInTheDocument();
+  expect(screen.queryByText("존댓말")).not.toBeInTheDocument();
+  expect(screen.queryByText("정중한 태도")).not.toBeInTheDocument();
+  expect(screen.queryByText(/팀원에게 존댓말로/)).not.toBeInTheDocument();
+});
+
 test("시나리오 버튼을 누르면 즉시 H04 시나리오 화면으로 이동한다", async () => {
   render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PracticePage /></MemoryRouter></QueryClientProvider>);
   await userEvent.click(await screen.findByRole("button", { name: /^시나리오/ }));
   expect(await screen.findByRole("heading", { name: "시나리오", level: 1 })).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: "대화 상대", level: 1 })).not.toBeInTheDocument();
+});
+
+test("긴 시나리오 설명에서는 마지막 달성 목표를 짧게 분리해 강조한다", async () => {
+  vi.mocked(api.scenarios).mockResolvedValue({
+    items: [{
+      id: "s1",
+      practice_type: "scenario",
+      title: "고객 불만 응대",
+      goal: "당신은 고객센터 상담원이다. 고객이 배송 문제로 불만을 제기했다. 불편에 공감하고 해결 방안을 안내해 고객의 수긍을 얻어내자.",
+      location: "고객센터",
+      difficulty: "hard",
+      estimated_minutes: 7,
+    }],
+    next_cursor: null,
+  });
+
+  render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><PracticePage /></MemoryRouter></QueryClientProvider>);
+  await userEvent.click(await screen.findByRole("button", { name: /^시나리오/ }));
+
+  expect(await screen.findByText("연습 목표")).toBeInTheDocument();
+  expect(screen.getByText("불편에 공감하고 해결 방안을 안내해 고객의 수긍을 얻어내자.")).toBeInTheDocument();
+  expect(screen.queryByText(/당신은 고객센터 상담원이다/)).not.toBeInTheDocument();
 });
 
 test("자유채팅 페르소나를 누르면 즉시 방을 만들고 채팅 화면으로 이동한다", async () => {
