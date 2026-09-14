@@ -18,6 +18,10 @@ export const PERSONA_PLACEHOLDER = "/personas/placeholder.svg";
  */
 export const INTERVIEWER_AVATAR_KEY = "test-team-lead";
 
+/** 면접관으로 나서는 페르소나의 이름과 역할. 백엔드의 면접관 음성과 같은 인물이다. */
+export const INTERVIEWER_NAME = "김민준 팀장";
+export const INTERVIEWER_ROLE = "개발팀장";
+
 /** 폴더·파일명은 영문 소문자, 숫자, 하이픈만 쓴다(PERSONA_IMAGE_GUIDE 7절). */
 const avatarKeyPattern = /^[a-z0-9-]+$/;
 
