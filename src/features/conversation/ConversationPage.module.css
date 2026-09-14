@@ -49,13 +49,19 @@
 
 .hero {
   position: relative;
-  height: 190px;
+  /* 페르소나 이미지는 4:5 인물 사진이다. 190px 고정이면 가운데만 남아 얼굴이
+     잘렸다. 4:3 으로 두고 위를 기준으로 담아 머리부터 어깨까지 보이게 한다. */
+  aspect-ratio: 4 / 3;
   margin: var(--space-3) 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-neutral-200);
 }
-.hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero img {
+  width: 100%; height: 100%; display: block;
+  object-fit: cover;
+  object-position: center top;
+}
 
 .heroOverlay {
   position: absolute; inset: auto 0 0 0;
@@ -81,7 +87,11 @@
 
 .turn { display: grid; gap: var(--space-2); }
 .who { display: flex; align-items: center; gap: var(--space-2); }
-.avatar { width: 26px; height: 26px; border-radius: var(--radius-pill); object-fit: cover; }
+/* 정사각형으로 잘리므로 위를 기준으로 담아야 얼굴이 들어온다. */
+.avatar {
+  width: 26px; height: 26px; border-radius: var(--radius-pill);
+  object-fit: cover; object-position: center top;
+}
 .who b { color: var(--color-text); font-size: var(--font-size-body-sm); font-weight: 700; }
 
 .row { display: flex; align-items: flex-start; gap: var(--space-2); }
