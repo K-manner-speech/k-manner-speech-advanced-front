@@ -1,0 +1,38 @@
+.page { display: flex; flex-direction: column; min-height: 100%; padding-bottom: var(--space-4); }
+.lead { margin: var(--space-2) 0 var(--space-6); color: var(--color-text-body); font-size: var(--font-size-body); }
+.sectionTitle { margin: 0 0 var(--space-3); color: var(--color-text-muted); font-size: var(--font-size-body-sm); font-weight: 700; }
+
+/* 한 묶음은 카드 하나다. 줄 사이는 선으로만 가른다. */
+.options {
+  display: grid;
+  border: 1px solid var(--color-card-border); border-radius: var(--radius-lg);
+  background: var(--color-card);
+  overflow: hidden;
+}
+.option {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-4);
+  border: 0; background: transparent;
+  color: var(--color-text); font-family: inherit; text-align: left;
+}
+.option + .option { border-top: 1px solid var(--color-card-border); }
+.optionText { display: grid; gap: 2px; }
+.optionText b { font-size: var(--font-size-body-lg); font-weight: 700; }
+.optionText small { color: var(--color-text-muted); font-size: var(--font-size-caption); }
+
+/* 고른 줄은 색만으로 알리지 않는다. aria-checked 와 표식을 함께 둔다. */
+.check {
+  flex: 0 0 auto; width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  color: var(--color-neutral-50); background: var(--color-accent);
+  font-size: var(--font-size-caption); font-weight: 700;
+}
+
+.notice { display: grid; gap: var(--space-1); margin-top: var(--space-6); }
+.notice strong { color: var(--color-text); font-size: var(--font-size-body); font-weight: 700; }
+.notice span { color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+
+.error { margin: var(--space-4) 0 0; color: var(--color-danger); font-size: var(--font-size-body); }
+.action { margin-top: auto; padding-top: var(--space-6); }

@@ -124,6 +124,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Password
+         * @description 현재 비밀번호를 확인한 뒤 바꾼다. 세션만으로는 바꾸지 않는다.
+         */
+        put: operations["me_password.change"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/personas": {
         parameters: {
             query?: never;
@@ -192,6 +212,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Home */
+        get: operations["home.get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/home/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attend
+         * @description 출석을 기록하고 갱신된 상태를 돌려준다.
+         *
+         *     하루에 한 번만 기록되므로 같은 날 여러 번 눌러도 결과가 같다. 멱등키를
+         *     받지 않는 이유다.
+         */
+        post: operations["home.attend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rooms": {
         parameters: {
             query?: never;
@@ -239,6 +299,40 @@ export interface paths {
         put?: never;
         /** Complete Interview */
         post: operations["interview_room.complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rooms/{room_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Practice */
+        post: operations["practice_room.complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rooms/{room_id}/continue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Continue After Goal */
+        post: operations["practice_room.continue"];
         delete?: never;
         options?: never;
         head?: never;
@@ -759,6 +853,17 @@ export interface components {
             /** Accepted */
             accepted: boolean;
         };
+        /**
+         * CredentialChangeResponse
+         * @description 바꾸기가 끝났음을 알린다. 지금은 비밀번호 변경만 이 응답을 쓴다.
+         */
+        CredentialChangeResponse: {
+            /**
+             * Changed
+             * @default true
+             */
+            changed: boolean;
+        };
         /** DomainJobAccepted */
         DomainJobAccepted: {
             target: components["schemas"]["DomainRef"];
@@ -881,6 +986,24 @@ export interface components {
             /** Code */
             code: string;
         };
+        /**
+         * GeneralScore
+         * @description 자유채팅·시나리오 결과의 항목별 점수. 연습 전체를 기준으로 매긴다.
+         */
+        GeneralScore: {
+            /** Category */
+            category: string;
+            /** Score */
+            score: number;
+            /** Max Score */
+            max_score: number;
+            /** Strength */
+            strength: string | null;
+            /** Suggestion */
+            suggestion: string | null;
+            /** Evidence */
+            evidence: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -944,6 +1067,11 @@ export interface components {
             status: "ready";
             checks: components["schemas"]["HealthChecks"];
         };
+        /** HomeSummary */
+        HomeSummary: {
+            streak: components["schemas"]["LearningStreak"];
+            recommendation: components["schemas"]["RecommendedPractice"] | null;
+        };
         /** InterviewAnalysis */
         InterviewAnalysis: {
             /**
@@ -1003,19 +1131,11 @@ export interface components {
             setup_id: string;
             /** Analysis Ids */
             analysis_ids: string[];
-            /** Conditions */
-            conditions: {
-                [key: string]: unknown;
-            };
             /** Question Count */
             question_count: number;
         };
         /** InterviewConfigurationRegenerateRequest */
         InterviewConfigurationRegenerateRequest: {
-            /** Conditions */
-            conditions?: {
-                [key: string]: unknown;
-            } | null;
             /** Question Count */
             question_count?: number | null;
         };
@@ -1090,6 +1210,8 @@ export interface components {
             strength: string | null;
             /** Suggestion */
             suggestion: string | null;
+            /** Summary */
+            summary?: string | null;
             /** Evidence */
             evidence: string | null;
         };
@@ -1150,7 +1272,7 @@ export interface components {
             /** Desired Role */
             desired_role: string;
             /** Application Type */
-            application_type?: string | null;
+            application_type?: ("신입" | "경력" | "인턴") | null;
         };
         /** Job */
         Job: {
@@ -1214,7 +1336,7 @@ export interface components {
          * JobType
          * @enum {string}
          */
-        JobType: "conversation_text" | "emotion_analysis" | "tts_generation" | "turn_feedback" | "interview_document_analysis" | "interview_configuration_generation" | "session_result_generation";
+        JobType: "conversation_text" | "emotion_analysis" | "tts_generation" | "turn_feedback" | "interview_document_analysis" | "interview_configuration_generation" | "session_result_generation" | "scenario_goal_progress";
         /** LanguageReplaceRequest */
         LanguageReplaceRequest: {
             /**
@@ -1222,6 +1344,31 @@ export interface components {
              * @enum {string}
              */
             display_language: "ko" | "en";
+        };
+        /**
+         * LearningStreak
+         * @description 홈 상단의 연속 학습 상태.
+         *
+         *     `streak_days` 는 오늘까지 이어진 연속 출석 일수다. 오늘 아직 출석하지
+         *     않았어도 어제까지 이어졌다면 그 값을 유지한다. 하루가 다 가기 전에는
+         *     기록이 끊긴 것으로 보지 않는다.
+         *     `goal_days` 중 `recent_days` 는 최근 7일 안에서 출석한 날 수이며, 하루를
+         *     빠뜨렸다고 0 으로 되돌리지 않는다.
+         */
+        LearningStreak: {
+            /** Attended Today */
+            attended_today: boolean;
+            /** Streak Days */
+            streak_days: number;
+            /** Recent Days */
+            recent_days: number;
+            /** Goal Days */
+            goal_days: number;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
         };
         /** MeResponse */
         MeResponse: {
@@ -1348,6 +1495,16 @@ export interface components {
             /** Next Cursor */
             next_cursor: string | null;
         };
+        /**
+         * PasswordChangeRequest
+         * @description 비밀번호 변경. 세션만으로는 바꿀 수 없고 현재 비밀번호를 확인한다.
+         */
+        PasswordChangeRequest: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
         /** PersonaDetail */
         PersonaDetail: {
             /**
@@ -1416,6 +1573,37 @@ export interface components {
             gender: string;
             /** Native Language */
             native_language: string;
+        };
+        /**
+         * RecommendedPractice
+         * @description 오늘의 추천 대화. 하루 동안 같은 것을 보여 준다.
+         */
+        RecommendedPractice: {
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /** Title */
+            title: string;
+            /** Goal */
+            goal: string | null;
+            /** Difficulty */
+            difficulty: string | null;
+            /** Estimated Minutes */
+            estimated_minutes: number | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Persona Avatar Key */
+            persona_avatar_key?: string | null;
+            /** Relationship Label */
+            relationship_label: string | null;
+            /** Opening Message */
+            opening_message: string | null;
+            /** Completed Before */
+            completed_before: boolean;
         };
         /** RepeatRequest */
         RepeatRequest: {
@@ -1550,6 +1738,8 @@ export interface components {
             goal: string | null;
             /** Persona Name */
             persona_name: string | null;
+            /** Persona Avatar Key */
+            persona_avatar_key?: string | null;
             /** Interview Configuration Id */
             interview_configuration_id?: string | null;
             /** Current Interview Question Id */
@@ -1690,6 +1880,12 @@ export interface components {
             failure_code?: string | null;
             /** Missing Categories */
             missing_categories: string[];
+            /** Overall Score */
+            overall_score?: number | null;
+            /** Summary */
+            summary?: string | null;
+            /** Short Summary */
+            short_summary?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1697,12 +1893,13 @@ export interface components {
             created_at: string;
             /** Items */
             items: components["schemas"]["ResultItem"][];
+            /**
+             * Scores
+             * @default []
+             */
+            scores: components["schemas"]["GeneralScore"][];
             /** Source Refs */
             source_refs: components["schemas"]["DomainRef"][];
-            /** Overall Score */
-            overall_score?: number | null;
-            /** Summary */
-            summary?: string | null;
             interview_evaluation?: components["schemas"]["InterviewEvaluationResponse"] | null;
         };
         /** SessionResultSummary */
@@ -1735,6 +1932,12 @@ export interface components {
             failure_code?: string | null;
             /** Missing Categories */
             missing_categories: string[];
+            /** Overall Score */
+            overall_score?: number | null;
+            /** Summary */
+            summary?: string | null;
+            /** Short Summary */
+            short_summary?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -2035,6 +2238,39 @@ export interface operations {
             };
         };
     };
+    "me_password.change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialChangeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     "persona.list": {
         parameters: {
             query: {
@@ -2158,6 +2394,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    "home.get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeSummary"];
+                };
+            };
+        };
+    };
+    "home.attend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeSummary"];
                 };
             };
         };
@@ -2294,6 +2570,68 @@ export interface operations {
         };
     };
     "interview_room.complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Room"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    "practice_room.complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Room"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    "practice_room.continue": {
         parameters: {
             query?: never;
             header?: never;

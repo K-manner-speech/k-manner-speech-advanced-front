@@ -1,0 +1,106 @@
+.page { display: flex; flex-direction: column; min-height: 100%; padding-bottom: var(--space-4); }
+
+.headline {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-h1);
+  line-height: var(--line-height-h1);
+  font-weight: 700;
+}
+
+.lead { margin: var(--space-3) 0 0; color: var(--color-text-body); font-size: var(--font-size-body); line-height: 19px; }
+
+.card {
+  display: grid; gap: var(--space-5);
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 첨부는 파일 상태가 라벨만으로 드러나야 한다. */
+.attachment {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.attached { border-color: var(--color-accent); background: var(--color-brand-50); }
+.attachment input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.attachment span { color: var(--color-accent); font-size: var(--font-size-h3); }
+.attachment strong { grid-column: 2; color: var(--color-text); font-size: var(--font-size-body); font-weight: 700; }
+.attachment small { grid-column: 2; color: var(--color-text-muted); font-size: var(--font-size-caption); }
+.attachment b {
+  grid-row: 1 / 3; grid-column: 3;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-accent); background: var(--color-brand-50);
+  font-size: var(--font-size-caption);
+}
+.attached b { color: var(--color-neutral-50); background: var(--color-accent); }
+
+.attachments { display: grid; gap: var(--space-3); margin-top: var(--space-5); }
+
+.info {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-text-body);
+  background: var(--color-brand-50);
+  font-size: var(--font-size-body-sm);
+}
+
+/* 준비 중 단계 */
+.steps { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
+.step {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.stepActive { background: var(--color-brand-50); }
+.step span {
+  width: 26px; height: 26px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  color: var(--color-neutral-50); background: var(--color-neutral-300);
+  font-size: var(--font-size-caption); font-weight: 700;
+}
+.stepActive span, .stepDone span { background: var(--color-accent); }
+.step strong { display: block; color: var(--color-text); font-size: var(--font-size-body); font-weight: 700; }
+.step small { color: var(--color-text-muted); font-size: var(--font-size-caption); }
+
+.privacy {
+  margin-top: auto;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+.privacy strong { color: var(--color-text); font-size: var(--font-size-body); }
+.privacy p { margin: var(--space-2) 0 0; color: var(--color-text-body); font-size: var(--font-size-body-sm); line-height: 17px; }
+
+/* 최종 확인 */
+.summary { margin-top: var(--space-6); padding: var(--space-5); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.summary h2 { margin: 0; color: var(--color-text); font-size: var(--font-size-h3); font-weight: 700; }
+.summary > p { margin: var(--space-2) 0 var(--space-4); color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+.summary dl { display: grid; gap: var(--space-3); margin: 0; }
+.summary dl > div { display: flex; justify-content: space-between; gap: var(--space-4); }
+.summary dt { color: var(--color-text-muted); font-size: var(--font-size-body-sm); }
+.summary dd { margin: 0; color: var(--color-text); font-size: var(--font-size-body); font-weight: 700; text-align: right; }
+
+.actions { margin-top: auto; padding-top: var(--space-5); display: grid; gap: var(--space-2); }
+
+.error { margin-top: var(--space-4); color: var(--color-danger); font-size: var(--font-size-body); }
+.notice {
+  display: grid; gap: var(--space-1);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-body);
+}
+.notice strong { color: var(--color-text); }
+.notice span, .notice small { color: var(--color-text-body); font-size: var(--font-size-body-sm); }

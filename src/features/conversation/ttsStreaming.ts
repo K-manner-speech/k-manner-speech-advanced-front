@@ -43,6 +43,7 @@ class TtsPcmProcessor extends AudioWorkletProcessor {
 registerProcessor('tts-pcm-processor',TtsPcmProcessor);`;
 
 export interface StreamingPlaybackResult {
+  firstByteMs: number;
   firstRenderMs: number;
   completeMs: number;
   underrunMs: number;
@@ -95,59 +96,65 @@ export async function playStreamingTts(messageId: string): Promise<StreamingPlay
   const player = primedPlayer ? await primedPlayer : await createPlayer();
   primedPlayer = null;
   const { context, node } = player;
+  // stop()과 실패 경로가 겹쳐도 이미 닫힌 컨텍스트를 다시 닫지 않는다.
+  const closePlayer = async () => {
+    if (context.state !== "closed") await context.close().catch(() => undefined);
+  };
   const controller = new AbortController();
   let rejectCancelled!: (reason: Error) => void;
   const cancelled = new Promise<never>((_resolve, reject) => { rejectCancelled = reject; });
   const playback = {
     stop: () => {
       controller.abort();
-      void context.close();
+      void closePlayer();
       rejectCancelled(new Error("음성 재생이 취소되었습니다."));
     },
   };
   activePlayback = playback;
   const started = performance.now();
+  let firstByte = 0;
   let firstRender = 0;
   let underruns = 0;
-  let resolveFirst!: () => void;
   let resolveEnd!: () => void;
-  const first = new Promise<void>((resolve) => { resolveFirst = resolve; });
   const ended = new Promise<void>((resolve) => { resolveEnd = resolve; });
-  const playbackFinished = Promise.race([Promise.all([first, ended]), cancelled]);
+  const playbackFinished = Promise.race([ended, cancelled]);
   void playbackFinished.catch(() => undefined);
   node.port.onmessage = (event) => {
-    if (event.data?.type === "first-render") { firstRender = performance.now(); resolveFirst(); }
+    if (event.data?.type === "first-render") firstRender = performance.now();
     if (event.data?.type === "playback-ended") { underruns = event.data.underruns; resolveEnd(); }
   };
-  const response = await fetch(
-    `${publicConfig.VITE_API_BASE_URL}/api/v1/messages/${messageId}/audio/stream`,
-    { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: controller.signal },
-  );
-  if (!response.ok || !response.body) {
-    await context.close();
-    throw new Error("실시간 음성을 사용할 수 없습니다.");
-  }
-  const reader = response.body.getReader();
   let bytes = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    bytes += value.byteLength;
-    const pcm = value.byteOffset === 0 && value.byteLength === value.buffer.byteLength
-      ? value.buffer
-      : value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
-    node.port.postMessage(pcm, [pcm]);
-  }
-  const completed = performance.now();
-  if (!bytes) {
-    await context.close();
-    throw new Error("실시간 음성이 비어 있습니다.");
+  let completed = 0;
+  try {
+    const response = await fetch(
+      `${publicConfig.VITE_API_BASE_URL}/api/v1/messages/${messageId}/audio/stream`,
+      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: controller.signal },
+    );
+    if (!response.ok || !response.body) throw new Error("실시간 음성을 사용할 수 없습니다.");
+    const reader = response.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!bytes) firstByte = performance.now();
+      bytes += value.byteLength;
+      const pcm = value.byteOffset === 0 && value.byteLength === value.buffer.byteLength
+        ? value.buffer
+        : value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+      node.port.postMessage(pcm, [pcm]);
+    }
+    completed = performance.now();
+    if (!bytes) throw new Error("실시간 음성이 비어 있습니다.");
+  } catch (error) {
+    await closePlayer();
+    if (activePlayback === playback) activePlayback = null;
+    throw error;
   }
   node.port.postMessage("end");
   await playbackFinished;
   if (activePlayback === playback) activePlayback = null;
-  window.setTimeout(() => { void context.close(); }, 100);
+  window.setTimeout(() => { void closePlayer(); }, 100);
   return {
+    firstByteMs: firstByte - started,
     firstRenderMs: firstRender - started,
     completeMs: completed - started,
     underrunMs: underruns * 128 / SAMPLE_RATE * 1000,

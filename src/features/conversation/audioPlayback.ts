@@ -38,28 +38,92 @@ function requireSignedUrl(audio: AudioAccess): string {
   return audio.signed_url;
 }
 
-export async function playManualMessageAudio(messageId: string): Promise<void> {
-  const completed = await readyAudio(messageId);
-  await playCompletedTts(requireSignedUrl(completed));
+function conversationToTts(startedAt: number | undefined, ttsStartedAt: number): number | null {
+  return startedAt === undefined ? null : Math.max(0, ttsStartedAt - startedAt);
 }
 
-export async function playAutomaticMessageAudio(messageId: string): Promise<void> {
+function logCompletedPlayback(
+  messageId: string,
+  mode: "completed" | "fallback",
+  conversationStartedAt: number | undefined,
+  ttsStartedAt: number,
+): void {
+  const firstRenderMs = Math.max(0, performance.now() - ttsStartedAt);
+  const conversationToTtsMs = conversationToTts(conversationStartedAt, ttsStartedAt);
+  console.info("tts_playback_performance", {
+    message_id: messageId,
+    mode,
+    conversation_to_tts_ms: conversationToTtsMs,
+    first_byte_ms: null,
+    first_render_ms: firstRenderMs,
+    total_time_to_audio_ms: conversationToTtsMs === null
+      ? null
+      : conversationToTtsMs + firstRenderMs,
+    stream_complete_ms: null,
+    pcm_duration_ms: null,
+    underrun_ms: null,
+    result: "success",
+  });
+}
+
+export async function playManualMessageAudio(messageId: string): Promise<void> {
+  let audio: AudioAccess | null = null;
+  try {
+    audio = await api.audio(messageId);
+  } catch {
+    // 방 생성 시 DB에 바로 들어가는 첫 인사말·첫 면접 질문은 아직 TTS 행이
+    // 없을 수 있다. 생성 직후 기존 실시간 스트리밍 재생 경로에 연결한다.
+    await api.retryTts(messageId);
+  }
+
+  if (audio?.status === "ready") {
+    await playCompletedTts(requireSignedUrl(audio));
+    return;
+  }
+  if (audio?.status === "failed") throw new AudioGenerationFailedError();
+
+  await playAutomaticMessageAudio(messageId);
+}
+
+export async function playAutomaticMessageAudio(
+  messageId: string,
+  conversationStartedAt?: number,
+): Promise<void> {
+  const ttsStartedAt = performance.now();
   const available = await waitForAudio(
     messageId,
     (audio) => audio.status === "processing" || audio.status === "ready",
   );
   if (available.status === "ready") {
     await playCompletedTts(requireSignedUrl(available));
+    logCompletedPlayback(messageId, "completed", conversationStartedAt, ttsStartedAt);
     return;
   }
 
   let streamedDuration = 0;
   try {
-    streamedDuration = (await playStreamingTts(messageId)).pcmDurationMs;
+    const result = await playStreamingTts(messageId);
+    streamedDuration = result.pcmDurationMs;
+    const conversationToTtsMs = conversationToTts(conversationStartedAt, ttsStartedAt);
+    console.info("tts_playback_performance", {
+      message_id: messageId,
+      mode: "streaming",
+      conversation_to_tts_ms: conversationToTtsMs,
+      first_byte_ms: result.firstByteMs,
+      first_render_ms: result.firstRenderMs,
+      total_time_to_audio_ms: conversationToTtsMs === null
+        ? null
+        : conversationToTtsMs + result.firstRenderMs,
+      stream_complete_ms: result.completeMs,
+      pcm_duration_ms: result.pcmDurationMs,
+      underrun_ms: result.underrunMs,
+      result: "success",
+    });
   } catch {
     // 생성 초기에 빈 스트림이 닫혀도 사용자 조작을 다시 요구하지 않고 WAV로 전환한다.
     const completed = await readyAudio(messageId);
     await playCompletedTts(requireSignedUrl(completed));
+    logCompletedPlayback(messageId, "fallback", conversationStartedAt, ttsStartedAt);
     return;
   }
 

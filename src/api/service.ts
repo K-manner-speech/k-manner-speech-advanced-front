@@ -3,6 +3,10 @@ import { http, unwrap } from "./http";
 import { createIdempotencyKey } from "../lib/idempotency";
 
 export type Me = components["schemas"]["MeResponse"];
+/** 지원 유형은 서버가 세 값만 받는다. 화면이 아무 문자열이나 보내지 못하게 계약에서 가져온다. */
+export type ApplicationType = NonNullable<
+  components["schemas"]["InterviewSetupCreateRequest"]["application_type"]
+>;
 export type Persona = components["schemas"]["PersonaSummary"];
 export type Scenario = components["schemas"]["ScenarioSummary"];
 export type Room = components["schemas"]["Room"];
@@ -19,8 +23,26 @@ export const api = {
   async me() {
     return unwrap(await http.GET("/api/v1/me"));
   },
+  /** 되돌릴 수 없다. 성공하면 세션도 함께 사라진다. */
+  async deleteAccount() {
+    return unwrap(
+      await http.DELETE("/api/v1/me", {
+        params: { header: { "Idempotency-Key": createIdempotencyKey() } },
+      }),
+    );
+  },
+  async home() {
+    return unwrap(await http.GET("/api/v1/home"));
+  },
+  /** 출석은 하루에 한 번만 기록되므로 다시 눌러도 결과가 같다. */
+  async attend() {
+    return unwrap(await http.POST("/api/v1/home/attendance", {}));
+  },
   async saveProfile(body: components["schemas"]["ProfileReplaceRequest"]) {
     return unwrap(await http.PUT("/api/v1/me/profile", { body }));
+  },
+  async changePassword(body: components["schemas"]["PasswordChangeRequest"]) {
+    return unwrap(await http.PUT("/api/v1/me/password", { body }));
   },
   async saveLanguage(display_language: "ko" | "en") {
     return unwrap(await http.PUT("/api/v1/me/language", { body: { display_language } }));
@@ -89,6 +111,20 @@ export const api = {
   async completeInterview(roomId: string) {
     return unwrap(
       await http.POST("/api/v1/rooms/{room_id}/interview-complete", {
+        params: { path: { room_id: roomId } },
+      }),
+    );
+  },
+  async completePractice(roomId: string) {
+    return unwrap(
+      await http.POST("/api/v1/rooms/{room_id}/complete", {
+        params: { path: { room_id: roomId } },
+      }),
+    );
+  },
+  async continueAfterGoal(roomId: string) {
+    return unwrap(
+      await http.POST("/api/v1/rooms/{room_id}/continue", {
         params: { path: { room_id: roomId } },
       }),
     );
@@ -221,11 +257,11 @@ export const api = {
       }),
     );
   },
-  async createInterviewSetup(desiredRole: string, applicationType: string) {
+  async createInterviewSetup(desiredRole: string, applicationType: ApplicationType) {
     return unwrap(
       await http.POST("/api/v1/interview-setups", {
         params: { header: { "Idempotency-Key": createIdempotencyKey() } },
-        body: { desired_role: desiredRole, application_type: applicationType || null },
+        body: { desired_role: desiredRole, application_type: applicationType },
       }),
     );
   },
@@ -279,7 +315,6 @@ export const api = {
         body: {
           setup_id: setupId,
           analysis_ids: Array.isArray(analysisIds) ? analysisIds : [analysisIds],
-          conditions: { difficulty: "junior", language: "ko" },
           question_count: 3,
         },
       }),

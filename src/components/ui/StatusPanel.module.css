@@ -1,0 +1,21 @@
+.panel {
+  display: grid; gap: var(--space-3); justify-items: center;
+  margin: var(--space-10) 0;
+  padding: var(--space-8) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.pulse {
+  width: 34px; height: 34px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-100);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+
+.panel h2 { margin: 0; color: var(--color-text); font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 700; }
+.panel p { margin: 0; color: var(--color-text-body); font-size: var(--font-size-body); line-height: 19px; }
+.retry { width: auto; padding: 0 var(--space-5); }
